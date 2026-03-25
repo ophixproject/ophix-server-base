@@ -1,0 +1,77 @@
+/* Footer fixed at bottom, full width */
+#footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    padding: 6px 10px;
+    background: transparent;
+    /*border-top: 0px solid rgba(0, 0, 0, 0.05);*/
+
+    display: flex;                 /* Make footer a flex container */
+    justify-content: center;       /* Center items horizontally */
+    align-items: center;           /* Align items vertically */
+    gap: 12px;                     /* Space between items */
+
+    font-size: 10px;
+    opacity: 0.75;
+    text-align: center;
+    z-index: 1000;
+}
+
+/* Prevent page content from being overlapped */
+#content {
+    padding-bottom: 40px;
+}
+
+/* Footer items styles (optional tweaks) */
+.ophix-version-footer {
+    opacity: 0.7;
+}
+
+.ophix-copyright-footer {
+    opacity: 0.5;
+}
+
+/* Theme-aware checkbox color for all checkboxes */
+input[type="checkbox"] {
+    accent-color: var(--admin-interface-generic-link-hover-color) !important;
+}
+
+/* Center the header checkbox in the enabled column */
+th.column-enabled {
+    text-align: center;
+}
+
+/* Center list_editable checkboxes */
+td.field-enabled {
+    text-align: center;
+    vertical-align: middle;
+}
+
+td.field-enabled input[type="checkbox"] {
+    display: inline-block;
+    margin: 0;
+    accent-color: var(--admin-interface-generic-link-hover-color) !important;
+}
+
+/* Optional: hover/focus feedback */
+*td.field-enabled input[type="checkbox"]:focus{
+    accent-color: var(--admin-interface-generic-link-color) !important;
+}
+
+td.field-enabled input[type="checkbox"]:hover {
+    accent-color: var(--admin-interface-generic-link-hover-color) !important;
+}
+
+/* Subtle row tint for disabled checkboxes */
+/* Use :has() to target rows with unchecked enabled field */
+tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
+    /* overlay a subtle red/pink tint */
+    box-shadow: inset 0 0 0 9999px color-mix(
+        in srgb,
+        var(--admin-interface-delete-button-background-color) 6%,   /* subtle strength */
+        transparent
+    );
+}

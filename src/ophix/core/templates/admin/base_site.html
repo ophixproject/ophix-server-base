@@ -1,0 +1,23 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'admin/custom.css' %}">
+{% endblock %}
+
+{% block footer %}
+  {{ block.super }}
+
+  {% if display_version_footer and server_version %}
+    <div class="ophix-version-footer">
+      {{ server_version }}
+    </div>
+  {% endif %}
+
+  {% if display_copyright %}
+    <div class="ophix-copyright-footer">
+      © {% now "Y" %} Ophix Project
+    </div>
+  {% endif %}
+{% endblock %}
