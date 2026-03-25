@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 
 from django.core.management.utils import get_random_secret_key
-from dotenv import load_dotenv, set_key
+from dotenv import load_dotenv, set_key, find_dotenv
 
 from .utils import get_bool_env, get_list_env, get_int_env, get_path_env
 
@@ -40,8 +40,7 @@ INSTALL_DIR = get_path_env("INSTALL_DIR", "/home/websites/ophix")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
     SECRET_KEY = get_random_secret_key()
-    # Persist so restarts are stable
-    env_file = ".env"
+    env_file = find_dotenv(usecwd=True) or ".env"
     set_key(env_file, "DJANGO_SECRET_KEY", SECRET_KEY)
 
 DEBUG = get_bool_env("DEBUG", default=False)
