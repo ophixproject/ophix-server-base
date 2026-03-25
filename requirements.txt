@@ -1,0 +1,20 @@
+# =============================================================================
+# Ophix Credentials Server — pip requirements
+#
+# Install the base and all desired plugins here.
+# Pin versions for reproducible deployments.
+# =============================================================================
+
+# Core
+ophix-server-base==2026.03.23.01
+
+# Domain plugin
+ophix-creds==2026.03.23.01
+
+# Optional plugins (uncomment as needed)
+#ophix-docs==2026.03.04.02
+#ophix-theme-tools==2026.03.02.02
+
+# Install from Git during development:
+# ophix-server-base @ git+ssh://git@github.com/ophix/ophix-server-base.git@v2026.03.23.01
+# ophix-creds @ git+ssh://git@github.com/ophix/ophix-creds.git@v2026.03.23.01

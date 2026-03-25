@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ophix-server-base"
+version = "2026.03.23.01"
+description = "Base Django project for Ophix Project Servers"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Ophix Project" }
+]
+dependencies = [
+    "Django>=4.2",
+    "djangorestframework>=3.14",
+    "django-admin-interface>=0.28",
+    "django-colorfield>=0.11",
+    "django-apptemplates>=1.5",
+    "mysqlclient>=2.1",
+    "python-dotenv>=1.0",
+]
+
+[project.scripts]
+ophix-manage = "ophix.manage:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"ophix.core" = [
+    "templates/**/*.html",
+    "static/**/*",
+    "locale/**/*",
+    "fixtures/**/*",
+]
