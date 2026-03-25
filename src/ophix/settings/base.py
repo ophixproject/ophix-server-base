@@ -20,7 +20,7 @@ from .utils import get_bool_env, get_list_env, get_int_env, get_path_env
 # Load environment
 # ---------------------------------------------------------------------------
 
-load_dotenv()
+load_dotenv(find_dotenv(usecwd=True))
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -187,7 +187,8 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
-    BASE_DIR / "core" / "static",
+    d for d in [BASE_DIR / "core" / "static"]
+    if d.exists()
 ]
 
 MEDIA_URL = "/media/"
