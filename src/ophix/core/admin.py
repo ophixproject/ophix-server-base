@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.conf import settings
-from django.contrib.auth.models import User, Group
-from admin_interface.models import Theme
-from admin_interface.admin import ThemeAdmin
+#from django.contrib.auth.models import User, Group
+#from admin_interface.models import Theme
+#from admin_interface.admin import ThemeAdmin
 from importlib import import_module
 from .models import Host, Client
 
@@ -30,7 +30,7 @@ def hide_models(app_label, model_names, toggle: bool):
             pass
 
 # Hide Theme models if toggle is off 
-hide_models("admin_interface", ["Theme", "ThemeColor"], getattr(settings, "ADMIN_THEME_EDITABLE", False))
+hide_models("admin_interface", ["Theme", "ThemeColor"], getattr(settings, "SHOW_THEME_MODEL", False))
 
 # Hide Django auth models if toggle is off
 hide_models("django.contrib.auth", ["User", "Group"], getattr(settings, "SHOW_AUTH_MODELS", False))
