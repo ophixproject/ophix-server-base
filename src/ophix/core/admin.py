@@ -1,8 +1,5 @@
 from django.contrib import admin
 from django.conf import settings
-#from django.contrib.auth.models import User, Group
-#from admin_interface.models import Theme
-#from admin_interface.admin import ThemeAdmin
 from importlib import import_module
 from .models import Host, Client
 
@@ -34,39 +31,6 @@ hide_models("admin_interface", ["Theme", "ThemeColor"], getattr(settings, "SHOW_
 
 # Hide Django auth models if toggle is off
 hide_models("django.contrib.auth", ["User", "Group"], getattr(settings, "SHOW_AUTH_MODELS", False))
-
-
-# --- Auth models ---
-#if not getattr(settings, "SHOW_AUTH_MODELS", False):
-#    try:
-#        admin.site.unregister(User)
-#        admin.site.unregister(Group)
-#    except admin.sites.NotRegistered:
-#        pass
-
-
-# --- Theme ---
-# Always unregister the default registration from admin_interface
-# and re-register under our control so ADMIN_THEME_EDITABLE is honoured.
-# admin_interface is a fixed base dependency so it will always have
-# registered Theme before ophix.core loads.
-#try:
-#    admin.site.unregister(Theme)
-#except admin.sites.NotRegistered:
-#    pass
-
-#if getattr(settings, "ADMIN_THEME_EDITABLE", False):
-#    admin.site.register(Theme, ThemeAdmin)
-#else:
-#    class ReadOnlyThemeAdmin(ThemeAdmin):
-#        def has_add_permission(self, request):
-#            return False
-#        def has_change_permission(self, request, obj=None):
-#            return False
-#        def has_delete_permission(self, request, obj=None):
-#            return False
-
-#    admin.site.register(Theme, ReadOnlyThemeAdmin)
 
 
 # --- Host ---
