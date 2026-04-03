@@ -230,8 +230,7 @@ SILENCED_SYSTEM_CHECKS = ["security.W019"]
 # UI flags — control visibility of various admin sections.
 # All default to False (hidden); enable in .env as required.
 DISPLAY_VERSION_FOOTER = get_bool_env("DISPLAY_VERSION_FOOTER", default=False)
-DISPLAY_COPYRIGHT = get_bool_env("DISPLAY_COPYRIGHT", default=True)
-#ADMIN_THEME_EDITABLE = get_bool_env("ADMIN_THEME_EDITABLE", default=False)
+DISPLAY_COPYRIGHT = get_bool_env("DISPLAY_COPYRIGHT", default=False)
 SHOW_THEME_MODEL = get_bool_env("SHOW_THEME_MODEL", default=False)
 SHOW_AUTH_MODELS = get_bool_env("SHOW_AUTH_MODELS", default=False)
 SHOW_CLIENT_ARTIFACT_MODEL = get_bool_env("SHOW_CLIENT_ARTIFACT_MODEL", default=False)
