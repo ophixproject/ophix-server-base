@@ -6,6 +6,11 @@
   <link rel="stylesheet" href="{% static 'admin/custom.css' %}">
 {% endblock %}
 
+{% block extrahead %}
+  {{ block.super }}
+  <script src="{% static 'admin/custom.js' %}" defer></script>
+{% endblock %}
+
 {% block footer %}
   {{ block.super }}
 

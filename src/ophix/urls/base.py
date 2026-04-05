@@ -11,6 +11,8 @@ Includes:
   - Catch-all redirect to /admin/ (must remain last)
 """
 
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, re_path, include
 from django.views.i18n import set_language
@@ -38,3 +40,8 @@ urlpatterns = [
     path("api/server/ca-cert/", CACertDownloadView.as_view(), name="ca-cert-download"),
     path("api/", include(router.urls)),
 ]
+
+# Serve media files in development.
+# In production this is handled by the web server (nginx/apache).
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
