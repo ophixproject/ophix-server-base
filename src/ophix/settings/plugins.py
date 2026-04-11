@@ -51,7 +51,20 @@ def _load_plugin_settings(module_name: str, target: dict) -> None:
         return  # Plugin has no settings module — perfectly fine.
 
     for key, value in vars(mod).items():
-        if key.isupper() and key not in target:
+        if not key.isupper():
+            continue
+        if key == "INSTALLED_APPS" and isinstance(value, list):
+            # Plugins may declare INSTALLED_APPS to pull in third-party apps they
+            # depend on (e.g. django_object_actions).  Extended into the existing
+            # list with a deduplication check, so multiple plugins declaring the
+            # same app is safe — the list is mutated in-place and each plugin's
+            # additions are immediately visible to subsequent plugins.
+            existing = target.setdefault("INSTALLED_APPS", [])
+            for app in value:
+                if app not in existing:
+                    existing.append(app)
+                    logger.debug("Plugin %s added to INSTALLED_APPS: %s", module_name, app)
+        elif key not in target:
             target[key] = value
             logger.debug("Plugin %s contributed setting %s", module_name, key)
 

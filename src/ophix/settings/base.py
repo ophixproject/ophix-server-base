@@ -40,8 +40,16 @@ INSTALL_DIR = get_path_env("INSTALL_DIR", "/home/websites/ophix")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
     SECRET_KEY = get_random_secret_key()
-    env_file = find_dotenv(usecwd=True) or ".env"
-    set_key(env_file, "DJANGO_SECRET_KEY", SECRET_KEY)
+    # Only persist the generated key if a .env file already exists.
+    # On a fresh install with no .env yet, we generate in memory only —
+    # the operator copies .env.sample → .env and the key is written on
+    # first real startup.  Without this guard, running any management
+    # command (e.g. generate_deploy_config) before .env exists would
+    # silently create a .env containing only DJANGO_SECRET_KEY, which
+    # confuses the bootstrap workflow.
+    env_file = find_dotenv(usecwd=True)
+    if env_file:
+        set_key(env_file, "DJANGO_SECRET_KEY", SECRET_KEY)
 
 DEBUG = get_bool_env("DEBUG", default=False)
 
@@ -234,6 +242,7 @@ DISPLAY_COPYRIGHT = get_bool_env("DISPLAY_COPYRIGHT", default=False)
 SHOW_THEME_MODEL = get_bool_env("SHOW_THEME_MODEL", default=False)
 SHOW_AUTH_MODELS = get_bool_env("SHOW_AUTH_MODELS", default=False)
 SHOW_CLIENT_ARTIFACT_MODEL = get_bool_env("SHOW_CLIENT_ARTIFACT_MODEL", default=False)
+SHOW_ACCESS_LOGS = get_bool_env("SHOW_ACCESS_LOGS", default=False)
 
 # ---------------------------------------------------------------------------
 # Ophix base API settings
@@ -248,3 +257,13 @@ MINIMUM_TOKEN_ROTATE_TIME = get_int_env("MINIMUM_TOKEN_ROTATE_TIME", default=360
 
 # Allow clients to delete artifacts they own. Disabled by default.
 ENABLE_ARTIFACT_DELETE = get_bool_env("ENABLE_ARTIFACT_DELETE", default=False)
+
+# ---------------------------------------------------------------------------
+# Audit logging
+# ---------------------------------------------------------------------------
+
+# Number of events to accumulate before writing a batch.
+AUDIT_BATCH_SIZE = get_int_env("AUDIT_BATCH_SIZE", default=50)
+
+# Maximum seconds to wait before flushing a partial batch.
+AUDIT_FLUSH_INTERVAL = get_int_env("AUDIT_FLUSH_INTERVAL", default=5)

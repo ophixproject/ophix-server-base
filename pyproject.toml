@@ -20,6 +20,7 @@ dependencies = [
     "django-apptemplates>=1.5",
     "mysqlclient>=2.1",
     "python-dotenv>=1.0",
+    "Jinja2>=3.0",
 ]
 
 [project.scripts]
@@ -37,4 +38,6 @@ where = ["src"]
     "static/**/*",
     "locale/**/*",
     "fixtures/**/*",
+    "docs/**/*",
+    "deploy_templates/**/*",
 ]

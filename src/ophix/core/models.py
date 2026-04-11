@@ -24,6 +24,7 @@ ClientArtifactBase
 
 import secrets
 from django.db import models
+from django.utils import timezone
 
 
 # ---------------------------------------------------------------------------
@@ -163,3 +164,50 @@ class ClientArtifactBase(models.Model):
 
     class Meta:
         abstract = True
+
+
+# ---------------------------------------------------------------------------
+# AccessLog
+# ---------------------------------------------------------------------------
+
+class AccessLog(models.Model):
+    """
+    Immutable record of a client artifact access event.
+
+    client and host are SET_NULL FKs — the log survives client/host deletion.
+    artifact_id is a bare integer (not a FK) — the log survives artifact deletion.
+    artifact_name snapshots the artifact name at access time, so renames and
+    deletions do not retroactively alter the audit trail.
+    timestamp is set at event creation (not at DB insert time) so that batch
+    writes preserve the actual time of access.
+    """
+
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    host = models.ForeignKey(
+        Host,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    operation = models.CharField(max_length=10)
+    artifact_type = models.CharField(max_length=100)
+    artifact_name = models.CharField(max_length=200, blank=True)
+    artifact_id = models.IntegerField(null=True, blank=True)
+    timestamp = models.DateTimeField(db_index=True, default=timezone.now)
+
+    class Meta:
+        ordering = ("-timestamp",)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.timestamp:%Y-%m-%d %H:%M:%S} "
+            f"{self.operation} "
+            f"{self.artifact_type}/{self.artifact_name}"
+        )

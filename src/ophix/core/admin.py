@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.conf import settings
 from importlib import import_module
-from .models import Host, Client
+from .models import Host, Client, AccessLog
 from django.utils.translation import gettext_lazy as _
 
 
@@ -27,7 +27,7 @@ def hide_models(app_label, model_names, toggle: bool):
         except (AttributeError, admin.sites.NotRegistered):
             pass
 
-# Hide Theme models if toggle is off 
+# Hide Theme models if toggle is off
 hide_models("admin_interface", ["Theme", "ThemeColor"], getattr(settings, "SHOW_THEME_MODEL", False))
 
 # Hide Django auth models if toggle is off
@@ -119,3 +119,45 @@ class ClientAdmin(admin.ModelAdmin):
             ("Deployment", {"fields": ("deployment_ref", "venv_name", "venv_path")}),
             ("Token", {"fields": ("api_token", "last_token_rotation"), "classes": ("collapse",)}),
         ]
+
+
+# ============================================================
+# AccessLogAdmin
+# ============================================================
+
+@admin.register(AccessLog)
+class AccessLogAdmin(admin.ModelAdmin):
+    list_display = (
+        "timestamp",
+        "client",
+        "host",
+        "operation",
+        "artifact_type",
+        "artifact_name",
+        "artifact_id",
+    )
+    list_filter = (
+        "operation",
+        "artifact_type",
+        "client",
+        "host",
+        ("timestamp", admin.DateFieldListFilter),
+    )
+    search_fields = ("artifact_name", "client__name", "host__name")
+    ordering = ("-timestamp",)
+    date_hierarchy = "timestamp"
+
+    # Read-only: no add, change, or delete
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+# Hide Access Logs unless SHOW_ACCESS_LOGS=True.
+# Must come after AccessLogAdmin is registered above.
+hide_models("ophix.core", ["AccessLog"], getattr(settings, "SHOW_ACCESS_LOGS", False))
