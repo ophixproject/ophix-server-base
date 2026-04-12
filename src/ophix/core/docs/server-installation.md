@@ -62,7 +62,6 @@ cp venv/lib/python3.*/site-packages/ophix/core/../../../sample.env .env
 Or create `.env` directly in your server directory. Minimum required settings:
 
 ```ini
-SERVER_NAME=My Ophix Server
 DEBUG=false
 ALLOWED_HOSTS=your.server.hostname,localhost
 
@@ -77,6 +76,8 @@ INSTALL_DIR=/path/to/myserver
 LANGUAGE_CODE=en-au
 TIME_ZONE=Australia/Melbourne
 ```
+
+`SERVER_NAME` defaults to the domain plugin's built-in value (`certserver`, `credserver`, `confserver`, etc.) and does not need to be set unless you want to customise it for a specific deployment.
 
 For development, additionally set:
 
@@ -160,8 +161,8 @@ All settings are controlled via `.env`. Run `ophix-manage generate_deploy_config
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `SERVER_NAME` | `Ophix Server` | Human-readable label shown in the admin header and footer |
-| `SERVER_VERSION` | _(blank)_ | Version string set by release tooling; shown in the footer if `DISPLAY_VERSION_FOOTER=True` |
+| `SERVER_NAME` | _(domain default)_ | Short name for this server instance. The installed domain plugin supplies a default (`certserver`, `credserver`, `confserver`, etc.). Override in `.env` to customise for a specific deployment. When `DISPLAY_VERSION_FOOTER=True`, the footer displays `SERVER_NAME-SERVER_VERSION`. |
+| `SERVER_VERSION` | _(blank)_ | Version string auto-populated from the installed domain plugin by `generate_deploy_config`. Re-run `generate_deploy_config --append` after upgrading — it detects the new version and updates this value automatically. Shown in the footer as `SERVER_NAME-SERVER_VERSION` when `DISPLAY_VERSION_FOOTER=True`. |
 | `DJANGO_SECRET_KEY` | _(auto)_ | Auto-generated on first run and saved to `.env`. Do not set manually. |
 | `DEBUG` | `False` | Enable Django debug mode. **Never True in production.** |
 | `ALLOWED_HOSTS` | `*` | Comma-separated hostnames/IPs the server responds to. Tighten before going to production. |
@@ -183,6 +184,9 @@ All settings are controlled via `.env`. Run `ophix-manage generate_deploy_config
 | `DB_PASSWORD` | _(blank)_ | MariaDB password |
 | `DB_HOST` | `localhost` | MariaDB host |
 | `DB_PORT` | `3306` | MariaDB port |
+| `DB_SSL_CA` | _(blank)_ | Path to the CA certificate used to verify the MariaDB server. Setting this enables TLS for the database connection. Leave blank for an unencrypted connection. |
+| `DB_SSL_CERT` | _(blank)_ | Path to the client certificate. Only required for mutual TLS (client certificate authentication). Leave blank if the server does not require client certs. |
+| `DB_SSL_KEY` | _(blank)_ | Path to the client private key. Required only when `DB_SSL_CERT` is set. |
 
 Use `ophix-manage configure_database` for interactive setup with a live connection test.
 
@@ -203,7 +207,7 @@ These flags control which models appear in the Django admin navigation. All defa
 | `SHOW_THEME_MODEL` | `False` | Show the Django admin Themes model (django-admin-interface branding) |
 | `SHOW_AUTH_MODELS` | `False` | Show Django's built-in Users and Groups models |
 | `SHOW_CLIENT_ARTIFACT_MODEL` | `False` | Show the raw client-artifact join model (useful for debugging) |
-| `DISPLAY_VERSION_FOOTER` | `False` | Show the server version string in the admin footer |
+| `DISPLAY_VERSION_FOOTER` | `False` | Show `SERVER_NAME-SERVER_VERSION` in the admin footer (e.g. `certserver-2026.04.12.01`) |
 | `DISPLAY_COPYRIGHT` | `False` | Show the Ophix copyright line in the admin footer |
 
 ### API behaviour

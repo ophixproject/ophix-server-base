@@ -7,6 +7,9 @@ Prompts for each database setting, showing the current value as the default.
 Tests the connection directly (bypassing Django's ORM) before writing anything,
 so this command is safe to run before the database schema exists.
 
+TLS is optional.  If a CA certificate path is supplied, TLS is enabled.
+Mutual TLS (client certificate authentication) is a further opt-in.
+
 Usage::
 
     ophix-manage configure_database
@@ -33,33 +36,43 @@ class Command(BaseCommand):
 
         # Current values from environment (set by dotenv at Django startup)
         current = {
-            "DB_HOST": os.getenv("DB_HOST", "localhost"),
-            "DB_PORT": os.getenv("DB_PORT", "3306"),
-            "DB_NAME": os.getenv("DB_NAME", "ophix_db"),
-            "DB_USER": os.getenv("DB_USER", "ophixuser"),
+            "DB_HOST":     os.getenv("DB_HOST", "localhost"),
+            "DB_PORT":     os.getenv("DB_PORT", "3306"),
+            "DB_NAME":     os.getenv("DB_NAME", "ophix_db"),
+            "DB_USER":     os.getenv("DB_USER", "ophixuser"),
             "DB_PASSWORD": os.getenv("DB_PASSWORD", ""),
+        }
+        current_tls = {
+            "DB_SSL_CA":   os.getenv("DB_SSL_CA", ""),
+            "DB_SSL_CERT": os.getenv("DB_SSL_CERT", ""),
+            "DB_SSL_KEY":  os.getenv("DB_SSL_KEY", ""),
         }
 
         host, port, name, user, password = self._prompt_credentials(current)
+        ssl_ca, ssl_cert, ssl_key = self._prompt_tls(current_tls)
 
         # Test → retry loop
         while True:
             self.stdout.write("\nTesting connection... ")
             self.stdout.flush()
-            error = self._test_connection(host, port, name, user, password)
+            error = self._test_connection(host, port, name, user, password,
+                                          ssl_ca, ssl_cert, ssl_key)
             if error is None:
                 self.stdout.write(self.style.SUCCESS("OK\n"))
                 break
 
             self.stdout.write(self.style.ERROR("FAILED\n"))
             self.stderr.write(f"  {error}\n\n")
-            retry = input("Retry with different credentials? [y/N] ").strip().lower()
+            retry = input("Retry with different settings? [y/N] ").strip().lower()
             if retry != "y":
                 self.stderr.write("Aborted — no changes written to .env\n")
                 return
             host, port, name, user, password = self._prompt_credentials(
                 {"DB_HOST": host, "DB_PORT": port, "DB_NAME": name,
                  "DB_USER": user, "DB_PASSWORD": password}
+            )
+            ssl_ca, ssl_cert, ssl_key = self._prompt_tls(
+                {"DB_SSL_CA": ssl_ca, "DB_SSL_CERT": ssl_cert, "DB_SSL_KEY": ssl_key}
             )
 
         # Write to .env
@@ -71,13 +84,16 @@ class Command(BaseCommand):
             )
 
         for key, value in [
-            ("DB_HOST", host),
-            ("DB_PORT", port),
-            ("DB_NAME", name),
-            ("DB_USER", user),
+            ("DB_HOST",     host),
+            ("DB_PORT",     port),
+            ("DB_NAME",     name),
+            ("DB_USER",     user),
             ("DB_PASSWORD", password),
+            ("DB_SSL_CA",   ssl_ca),
+            ("DB_SSL_CERT", ssl_cert),
+            ("DB_SSL_KEY",  ssl_key),
         ]:
-            set_key(env_file, key, value)
+            set_key(env_file, key, value, quote_mode="never")
 
         self.stdout.write(self.style.SUCCESS(f"\nWritten to {env_file}\n"))
         self.stdout.write(
@@ -102,6 +118,64 @@ class Command(BaseCommand):
 
         return host, port, name, user, password
 
+    def _prompt_tls(self, current: dict) -> tuple[str, str, str]:
+        """
+        Prompt for optional TLS settings.
+
+        Returns (ssl_ca, ssl_cert, ssl_key) — empty strings when not in use.
+        TLS is enabled only when ssl_ca is non-empty.
+        Mutual TLS (ssl_cert + ssl_key) is a further opt-in after TLS is enabled.
+        """
+        self.stdout.write("\nDatabase TLS\n")
+        self.stdout.write("-" * 40 + "\n")
+
+        current_ca = current.get("DB_SSL_CA", "")
+        currently_tls = bool(current_ca)
+        tls_indicator = "Y/n" if currently_tls else "y/N"
+        use_tls = input(f"  Use TLS for the database connection? [{tls_indicator}]: ").strip().lower()
+
+        # Interpret answer relative to current state
+        if currently_tls:
+            tls_enabled = use_tls not in ("n", "no")
+        else:
+            tls_enabled = use_tls in ("y", "yes")
+
+        if not tls_enabled:
+            if currently_tls:
+                self.stdout.write(self.style.WARNING("  TLS disabled — clearing existing SSL settings.\n"))
+            return "", "", ""
+
+        ssl_ca = self._prompt("  CA certificate path", current_ca)
+        if not ssl_ca:
+            self.stdout.write(self.style.WARNING("  No CA path entered — TLS not enabled.\n"))
+            return "", "", ""
+
+        if not Path(ssl_ca).exists():
+            self.stdout.write(self.style.WARNING(f"  Warning: {ssl_ca} does not exist\n"))
+
+        current_cert = current.get("DB_SSL_CERT", "")
+        currently_mtls = bool(current_cert)
+        mtls_indicator = "Y/n" if currently_mtls else "y/N"
+        use_mtls = input(f"  Use mutual TLS (client certificate auth)? [{mtls_indicator}]: ").strip().lower()
+
+        if currently_mtls:
+            mtls_enabled = use_mtls not in ("n", "no")
+        else:
+            mtls_enabled = use_mtls in ("y", "yes")
+
+        if not mtls_enabled:
+            return ssl_ca, "", ""
+
+        current_key = current.get("DB_SSL_KEY", "")
+        ssl_cert = self._prompt("  Client certificate path", current_cert)
+        ssl_key  = self._prompt("  Client key path", current_key)
+
+        for label, path in [("Client certificate", ssl_cert), ("Client key", ssl_key)]:
+            if path and not Path(path).exists():
+                self.stdout.write(self.style.WARNING(f"  Warning: {label} path {path} does not exist\n"))
+
+        return ssl_ca, ssl_cert, ssl_key
+
     def _prompt(self, label: str, default: str) -> str:
         result = input(f"  {label} [{default}]: ").strip()
         return result if result else default
@@ -111,7 +185,9 @@ class Command(BaseCommand):
     # -----------------------------------------------------------------------
 
     def _test_connection(
-        self, host: str, port: str, name: str, user: str, password: str
+        self,
+        host: str, port: str, name: str, user: str, password: str,
+        ssl_ca: str = "", ssl_cert: str = "", ssl_key: str = "",
     ) -> str | None:
         """
         Attempt a direct MySQL connection.  Returns None on success, or an
@@ -128,29 +204,40 @@ class Command(BaseCommand):
                 "Run: pip install mysqlclient"
             )
 
+        kwargs = dict(
+            host=host,
+            port=int(port),
+            db=name,
+            user=user,
+            passwd=password,
+            connect_timeout=5,
+        )
+
+        if ssl_ca:
+            ssl_dict = {"ca": ssl_ca}
+            if ssl_cert:
+                ssl_dict["cert"] = ssl_cert
+            if ssl_key:
+                ssl_dict["key"] = ssl_key
+            kwargs["ssl"] = ssl_dict
+
         try:
-            conn = MySQLdb.connect(
-                host=host,
-                port=int(port),
-                db=name,
-                user=user,
-                passwd=password,
-                connect_timeout=5,
-            )
+            conn = MySQLdb.connect(**kwargs)
             conn.close()
             return None
         except MySQLdb.OperationalError as exc:
-            # OperationalError args: (errno, message)
             code, msg = exc.args if len(exc.args) == 2 else (None, str(exc))
             if code == 1049:
                 return (
                     f"Unknown database '{name}'. "
-                    "Create it first: CREATE DATABASE {name} CHARACTER SET utf8mb4;"
+                    f"Create it first: CREATE DATABASE {name} CHARACTER SET utf8mb4;"
                 )
             if code in (1045, 1044):
                 return f"Access denied for user '{user}'@'{host}' — check credentials."
             if code == 2003:
                 return f"Cannot connect to MySQL server at {host}:{port} — is MariaDB running?"
+            if code == 2026:
+                return f"TLS/SSL connection error — check CA certificate path and server TLS configuration."
             return f"MySQL error {code}: {msg}"
         except ValueError:
             return f"Invalid port number: '{port}'"

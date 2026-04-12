@@ -223,6 +223,61 @@ def _parse_env_keys(text: str) -> set[str]:
     return keys
 
 
+def _get_env_value(text: str, key: str) -> str | None:
+    """Return the current value of a specific key in .env text, or None if absent."""
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            k, _, v = stripped.partition("=")
+            if k.strip() == key:
+                return v.strip()
+    return None
+
+
+def _discover_domain_version() -> tuple[str | None, str | None]:
+    """
+    Find the installed domain plugin and return (dist_name, version).
+
+    A domain plugin is an AppConfig with ``is_ophix_domain = True``.
+    Version is read from the plugin's ``_version.__version__`` attribute,
+    which preserves the verbatim string from pyproject.toml (pip normalises
+    leading zeroes away in distribution metadata, making 2026.04.12.01 become
+    2026.4.12.1).  Falls back to importlib.metadata if _version.py is absent.
+
+    Returns (dist_name, version) e.g. ('ophix-certs', '2026.04.12.01'),
+    or (None, None) if no domain plugin is found or version cannot be determined.
+    """
+    try:
+        import importlib
+        from django.apps import apps as django_apps
+        from importlib.metadata import packages_distributions
+
+        domain_app = None
+        for app_config in django_apps.get_app_configs():
+            if getattr(app_config, "is_ophix_domain", False):
+                domain_app = app_config
+                break
+
+        if domain_app is None:
+            return None, None
+
+        # packages_distributions() maps top-level module name → [dist_name, ...]
+        pkg_map = packages_distributions()
+        dists = pkg_map.get(domain_app.name, [])
+        dist_name = dists[0] if dists else domain_app.name
+
+        # Prefer _version.py (verbatim); fall back to normalised metadata version.
+        try:
+            version_mod = importlib.import_module(f"{domain_app.name}._version")
+            return dist_name, version_mod.__version__
+        except (ImportError, AttributeError):
+            from importlib.metadata import version as pkg_version
+            return dist_name, pkg_version(dist_name)
+
+    except Exception:
+        return None, None
+
+
 def _filter_to_missing_blocks(content: str, existing_keys: set[str]) -> str:
     """
     Given rendered fragment content, return only the blocks whose keys are
@@ -421,6 +476,10 @@ class Command(BaseCommand):
 
         # Build shared template context
         install_dir = str(getattr(settings, "INSTALL_DIR", "/var/lib/ophix"))
+        dist_name, domain_ver = _discover_domain_version()
+        domain_version = domain_ver or ""
+        if domain_version:
+            self.stdout.write(f"  Domain plugin: {dist_name} {domain_ver}\n")
         ctx_base = {
             "portal_name": slug,
             "install_dir": install_dir,
@@ -428,6 +487,7 @@ class Command(BaseCommand):
             "static_root": str(settings.STATIC_ROOT),
             "media_root": str(getattr(settings, "MEDIA_ROOT", f"{install_dir}/media")),
             "venv_path": sys.prefix,
+            "domain_version": domain_version,
         }
 
         written = []
@@ -537,6 +597,8 @@ class Command(BaseCommand):
 
         server_name = getattr(settings, "SERVER_NAME", "") or "ophix-server"
         install_dir = str(getattr(settings, "INSTALL_DIR", "/var/lib/ophix"))
+        dist_name_ctx, domain_ver_ctx = _discover_domain_version()
+        domain_version_ctx = domain_ver_ctx or ""
         ctx = {
             "portal_name": _slugify(server_name),
             "install_dir": install_dir,
@@ -544,6 +606,7 @@ class Command(BaseCommand):
             "static_root": str(settings.STATIC_ROOT),
             "media_root": str(getattr(settings, "MEDIA_ROOT", f"{install_dir}/media")),
             "venv_path": sys.prefix,
+            "domain_version": domain_version_ctx,
         }
 
         # Sources: base template first, then plugin fragments.
@@ -619,3 +682,24 @@ class Command(BaseCommand):
             )
         else:
             self.stdout.write("\nAll variables already present — no changes made.\n")
+
+        # --- SERVER_VERSION: always update if domain version has changed ---
+        dist_name, domain_ver = dist_name_ctx, domain_ver_ctx
+        if domain_ver:
+            new_version = domain_ver
+            current_version = _get_env_value(env_file.read_text(encoding="utf-8"), "SERVER_VERSION")
+            if current_version != new_version:
+                from dotenv import set_key as dotenv_set_key
+                dotenv_set_key(str(env_file), "SERVER_VERSION", new_version, quote_mode="never")
+                if current_version:
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"\nUpdated SERVER_VERSION: {current_version!r} → {new_version!r}\n"
+                        )
+                    )
+                else:
+                    self.stdout.write(
+                        self.style.SUCCESS(f"\nSet SERVER_VERSION={new_version}\n")
+                    )
+            else:
+                self.stdout.write(f"\nSERVER_VERSION already up to date: {new_version}\n")

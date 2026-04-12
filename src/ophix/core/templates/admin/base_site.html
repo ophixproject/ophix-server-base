@@ -16,7 +16,7 @@
 
   {% if display_version_footer and server_version %}
     <div class="ophix-version-footer">
-      {{ server_version }}
+      {% if server_name %}{{ server_name }}-{% endif %}{{ server_version }}
     </div>
   {% endif %}
 

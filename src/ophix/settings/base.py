@@ -59,11 +59,13 @@ ALLOWED_HOSTS = get_list_env("ALLOWED_HOSTS", default=["*"])
 # Server identity
 # ---------------------------------------------------------------------------
 
-# Human-readable name shown in the admin header and footer.
-# Each deployed server sets this in .env — e.g. "CredServer", "ConfServer".
-SERVER_NAME = os.getenv("SERVER_NAME", "Ophix Server")
+# Human-readable name for this server instance.
+# NOT set here — the installed domain plugin provides the default
+# (e.g. ophix-certs sets "certserver", ophix-creds sets "credserver").
+# Override in .env to customise for a specific deployment.
+# Falls back to "Ophix Server" in the context processor if no domain is installed.
 
-# Machine-readable version string set by deploy_release.sh.
+# Machine-readable version string — auto-populated by generate_deploy_config.
 SERVER_VERSION = os.getenv("SERVER_VERSION", "")
 
 # ---------------------------------------------------------------------------
@@ -142,6 +144,24 @@ TEMPLATES = [
 # Database — MariaDB via MySQL backend
 # ---------------------------------------------------------------------------
 
+_db_options = {
+    "charset": "utf8mb4",
+    "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+}
+
+# TLS — activated only when DB_SSL_CA is set.
+# DB_SSL_CERT and DB_SSL_KEY are optional (only needed for mutual TLS).
+_db_ssl_ca = os.getenv("DB_SSL_CA", "")
+if _db_ssl_ca:
+    _ssl = {"ca": _db_ssl_ca}
+    _db_ssl_cert = os.getenv("DB_SSL_CERT", "")
+    _db_ssl_key = os.getenv("DB_SSL_KEY", "")
+    if _db_ssl_cert:
+        _ssl["cert"] = _db_ssl_cert
+    if _db_ssl_key:
+        _ssl["key"] = _db_ssl_key
+    _db_options["ssl"] = _ssl
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
@@ -150,10 +170,7 @@ DATABASES = {
         "PASSWORD": os.getenv("DB_PASSWORD", ""),
         "HOST": os.getenv("DB_HOST", "localhost"),
         "PORT": os.getenv("DB_PORT", "3306"),
-        "OPTIONS": {
-            "charset": "utf8mb4",
-            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+        "OPTIONS": _db_options,
     }
 }
 
