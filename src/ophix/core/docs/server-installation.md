@@ -40,6 +40,12 @@ pip install ophix-server-base[mysql]    # MySQL
 pip install ophix-server-base[postgres] # PostgreSQL
 ```
 
+To enable SSO, add the `sso` extra (can be combined with the DB extra):
+
+```bash
+pip install "ophix-server-base[mariadb,sso]"
+```
+
 > **Upgrading an existing MariaDB installation:** `DB_ENGINE` defaults to `mariadb` if not set, so no `.env` change is required. `mysqlclient` is no longer a hard dependency — it is now the `[mariadb]` extra — but pip does not remove already-installed packages, so existing venvs continue to work without any action.
 
 ```bash
@@ -246,3 +252,51 @@ These flags control which models appear in the Django admin navigation. All defa
 | `AUDIT_FLUSH_INTERVAL` | `5` | Maximum seconds to hold a partial batch before flushing. Ensures events are written promptly during low-traffic periods. |
 
 See [Access Auditing](access-auditing) for the full audit log documentation, including how to prune old records.
+
+### SSO — OpenID Connect
+
+SSO requires the `[sso]` extra (`pip install "ophix-server-base[mariadb,sso]"`). It is activated when `OIDC_RP_CLIENT_ID` is set in `.env`. Without that setting, the standard Django username/password login is used and the `[sso]` package does not need to be installed.
+
+When SSO is active, a **Sign in with SSO** button appears on the admin login page alongside the standard username/password form. Both methods remain available — local superuser accounts still work for emergency access.
+
+#### Azure AD setup
+
+1. Register an application in Azure AD → **App registrations → New registration**.
+2. Set the redirect URI to `https://yourserver/oidc/callback/` (type: Web).
+3. Under **Token configuration**, add the **groups** optional claim to the ID token.
+4. Note the **Application (client) ID** and **Directory (tenant) ID**.
+5. Create a client secret under **Certificates & secrets**.
+
+```ini
+OIDC_RP_CLIENT_ID=<application client id>
+OIDC_RP_CLIENT_SECRET=<client secret value>
+OIDC_AZURE_TENANT_ID=<directory tenant id>
+```
+
+Setting `OIDC_AZURE_TENANT_ID` auto-derives all four OIDC endpoint URLs. For other providers (Keycloak, Okta, etc.), set `OIDC_OP_AUTHORIZATION_ENDPOINT`, `OIDC_OP_TOKEN_ENDPOINT`, `OIDC_OP_USER_ENDPOINT`, and `OIDC_OP_JWKS_ENDPOINT` directly.
+
+#### Group-based permissions
+
+By default, all users who successfully authenticate via SSO are granted `is_staff = True` (admin access). To restrict access:
+
+```ini
+OIDC_STAFF_GROUP_ID=<object ID of your staff group>
+OIDC_SUPERUSER_GROUP_ID=<object ID of your superuser group>
+```
+
+Set the value to the group's object ID (GUID) in Azure AD. Users not in either group are denied admin access. A user in the superuser group gets both `is_staff` and `is_superuser`.
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `OIDC_RP_CLIENT_ID` | _(blank)_ | Application (client) ID from your IdP. Setting this activates SSO. |
+| `OIDC_RP_CLIENT_SECRET` | _(blank)_ | Client secret for the application registration. |
+| `OIDC_AZURE_TENANT_ID` | _(blank)_ | Azure AD tenant ID. Auto-derives all four OIDC endpoint URLs when set. |
+| `OIDC_RP_SIGN_ALGO` | `RS256` | Token signing algorithm. Change if required by your IdP. |
+| `OIDC_RP_SCOPES` | `openid profile email` | Scopes to request. No extra scope needed for Azure AD group claims. |
+| `OIDC_OP_AUTHORIZATION_ENDPOINT` | _(blank)_ | Authorization endpoint URL (derived automatically for Azure AD). |
+| `OIDC_OP_TOKEN_ENDPOINT` | _(blank)_ | Token endpoint URL (derived automatically for Azure AD). |
+| `OIDC_OP_USER_ENDPOINT` | _(blank)_ | Userinfo endpoint URL (derived automatically for Azure AD). |
+| `OIDC_OP_JWKS_ENDPOINT` | _(blank)_ | JWKS endpoint URL (derived automatically for Azure AD). |
+| `OIDC_STAFF_GROUP_ID` | _(blank)_ | IdP group ID whose members receive `is_staff`. If blank, all SSO users get staff access. |
+| `OIDC_SUPERUSER_GROUP_ID` | _(blank)_ | IdP group ID whose members receive `is_staff` + `is_superuser`. |
+| `OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS` | `900` | How often (seconds) the session middleware re-validates the OIDC token. |

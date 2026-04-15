@@ -1,0 +1,57 @@
+{% extends "admin/login.html" %}
+{% load i18n %}
+
+{% block content %}
+{{ block.super }}
+
+{% if oidc_enabled %}
+<div class="ophix-sso-section">
+  <div class="ophix-sso-divider">
+    <span>{% trans "or" %}</span>
+  </div>
+  <div class="ophix-sso-button-row">
+    <a href="{% url 'oidc_authentication_init' %}?next={{ request.GET.next|default:'/admin/' }}"
+       class="button ophix-sso-button">
+      {% trans "Sign in with SSO" %}
+    </a>
+  </div>
+</div>
+
+<style>
+  .ophix-sso-section {
+    margin-top: 1em;
+  }
+  .ophix-sso-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+    margin: 1em 0;
+    color: var(--body-quiet-color, #666);
+    font-size: 0.9em;
+  }
+  .ophix-sso-divider::before,
+  .ophix-sso-divider::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--hairline-color, #ddd);
+  }
+  .ophix-sso-button-row {
+    text-align: center;
+  }
+  .ophix-sso-button {
+    display: inline-block;
+    padding: 0.5em 1.5em;
+    background: var(--primary, #417690);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.95em;
+  }
+  .ophix-sso-button:hover,
+  .ophix-sso-button:focus {
+    background: var(--secondary, #205070);
+    color: #fff;
+  }
+</style>
+{% endif %}
+{% endblock %}

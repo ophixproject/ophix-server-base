@@ -41,6 +41,16 @@ urlpatterns = [
     path("api/", include(router.urls)),
 ]
 
+# OIDC authentication URLs (mozilla-django-oidc)
+# Included only when SSO is active (OIDC_RP_CLIENT_ID is set and the package
+# is installed).  Provides /oidc/authenticate/, /oidc/callback/, /oidc/logout/.
+if getattr(settings, "OIDC_ENABLED", False):
+    try:
+        import mozilla_django_oidc  # noqa: F401
+        urlpatterns += [path("oidc/", include("mozilla_django_oidc.urls"))]
+    except ImportError:
+        pass
+
 # Serve media files in development.
 # In production this is handled by the web server (nginx/apache).
 if settings.DEBUG:

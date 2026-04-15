@@ -305,3 +305,102 @@ AUDIT_BATCH_SIZE = get_int_env("AUDIT_BATCH_SIZE", default=50)
 
 # Maximum seconds to wait before flushing a partial batch.
 AUDIT_FLUSH_INTERVAL = get_int_env("AUDIT_FLUSH_INTERVAL", default=5)
+
+# ---------------------------------------------------------------------------
+# SSO — OpenID Connect (optional; requires ophix-server-base[sso])
+#
+# Activated when OIDC_RP_CLIENT_ID is set in .env.
+# When inactive, the standard Django username/password login is used.
+# ---------------------------------------------------------------------------
+
+OIDC_RP_CLIENT_ID = os.getenv("OIDC_RP_CLIENT_ID", "")
+OIDC_ENABLED = bool(OIDC_RP_CLIENT_ID)
+
+if OIDC_ENABLED:
+    try:
+        import mozilla_django_oidc  # noqa: F401
+
+        # Inject mozilla_django_oidc into INSTALLED_APPS
+        INSTALLED_APPS = INSTALLED_APPS + ["mozilla_django_oidc"]
+
+        # Add SessionRefresh middleware after AuthenticationMiddleware
+        _auth_idx = MIDDLEWARE.index(
+            "django.contrib.auth.middleware.AuthenticationMiddleware"
+        )
+        MIDDLEWARE = (
+            MIDDLEWARE[: _auth_idx + 1]
+            + ["mozilla_django_oidc.middleware.SessionRefresh"]
+            + MIDDLEWARE[_auth_idx + 1 :]
+        )
+
+        # Authentication backends — OIDC first, then Django's model backend
+        AUTHENTICATION_BACKENDS = [
+            "ophix.core.oidc.OphixOIDCBackend",
+            "django.contrib.auth.backends.ModelBackend",
+        ]
+
+        # Core OIDC settings
+        OIDC_RP_CLIENT_SECRET = os.getenv("OIDC_RP_CLIENT_SECRET", "")
+        OIDC_RP_SIGN_ALGO = os.getenv("OIDC_RP_SIGN_ALGO", "RS256")
+
+        # Endpoint URLs — set directly, or use the Azure AD tenant shortcut
+        _azure_tenant = os.getenv("OIDC_AZURE_TENANT_ID", "")
+        if _azure_tenant:
+            _azure_base = (
+                f"https://login.microsoftonline.com/{_azure_tenant}/v2.0"
+            )
+            OIDC_OP_AUTHORIZATION_ENDPOINT = os.getenv(
+                "OIDC_OP_AUTHORIZATION_ENDPOINT",
+                f"{_azure_base}/oauth2/v2.0/authorize",
+            )
+            OIDC_OP_TOKEN_ENDPOINT = os.getenv(
+                "OIDC_OP_TOKEN_ENDPOINT",
+                f"{_azure_base}/oauth2/v2.0/token",
+            )
+            OIDC_OP_USER_ENDPOINT = os.getenv(
+                "OIDC_OP_USER_ENDPOINT",
+                f"{_azure_base}/oidc/userinfo",
+            )
+            OIDC_OP_JWKS_ENDPOINT = os.getenv(
+                "OIDC_OP_JWKS_ENDPOINT",
+                f"https://login.microsoftonline.com/{_azure_tenant}/discovery/v2.0/keys",
+            )
+        else:
+            OIDC_OP_AUTHORIZATION_ENDPOINT = os.getenv(
+                "OIDC_OP_AUTHORIZATION_ENDPOINT", ""
+            )
+            OIDC_OP_TOKEN_ENDPOINT = os.getenv("OIDC_OP_TOKEN_ENDPOINT", "")
+            OIDC_OP_USER_ENDPOINT = os.getenv("OIDC_OP_USER_ENDPOINT", "")
+            OIDC_OP_JWKS_ENDPOINT = os.getenv("OIDC_OP_JWKS_ENDPOINT", "")
+
+        # Scopes — include openid + profile + email; add groups for Azure AD
+        OIDC_RP_SCOPES = os.getenv(
+            "OIDC_RP_SCOPES", "openid profile email"
+        )
+
+        # Redirect back to the admin after login/logout
+        LOGIN_REDIRECT_URL = "/admin/"
+        LOGOUT_REDIRECT_URL = "/admin/login/"
+
+        # Session refresh — re-check token validity every N seconds
+        OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = get_int_env(
+            "OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS", default=900
+        )
+
+        # Group-to-permission mapping (object ID strings from the IdP)
+        OIDC_STAFF_GROUP_ID = os.getenv("OIDC_STAFF_GROUP_ID", "")
+        OIDC_SUPERUSER_GROUP_ID = os.getenv("OIDC_SUPERUSER_GROUP_ID", "")
+
+        # Use our custom backend
+        OIDC_AUTHENTICATION_BACKEND = "ophix.core.oidc.OphixOIDCBackend"
+
+    except ImportError:
+        # mozilla-django-oidc not installed — silently disable SSO.
+        # OIDC_RP_CLIENT_ID is set but the package is missing; log a warning.
+        import logging as _logging
+        _logging.getLogger("ophix.core").warning(
+            "OIDC_RP_CLIENT_ID is set but mozilla-django-oidc is not installed. "
+            "Install ophix-server-base[sso] to enable SSO. "
+            "Falling back to Django built-in authentication."
+        )
+        OIDC_ENABLED = False
