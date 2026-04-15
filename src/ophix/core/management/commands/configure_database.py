@@ -1,11 +1,13 @@
 """
 ophix.core.management.commands.configure_database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Interactively configure the MariaDB connection and write credentials to .env.
+Interactively configure the database connection and write credentials to .env.
 
 Prompts for each database setting, showing the current value as the default.
 Tests the connection directly (bypassing Django's ORM) before writing anything,
 so this command is safe to run before the database schema exists.
+
+Supports MariaDB, MySQL, and PostgreSQL. Set DB_ENGINE to select the backend.
 
 TLS is optional.  If a CA certificate path is supplied, TLS is enabled.
 Mutual TLS (client certificate authentication) is a further opt-in.
@@ -19,13 +21,13 @@ import getpass
 import os
 from pathlib import Path
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from dotenv import find_dotenv, set_key
 
 
 class Command(BaseCommand):
     help = (
-        "Interactively configure and test the MariaDB connection, "
+        "Interactively configure and test the database connection, "
         "writing credentials to .env on success"
     )
 
@@ -34,10 +36,18 @@ class Command(BaseCommand):
         self.stdout.write("=" * 40 + "\n")
         self.stdout.write("Press Enter to keep the current value shown in [brackets].\n\n")
 
-        # Current values from environment (set by dotenv at Django startup)
+        # --- Engine ---
+        current_engine = os.getenv("DB_ENGINE", "mariadb").lower()
+        engine = self._prompt_engine(current_engine)
+
+        # Default port depends on engine; snap if currently at a known default.
+        current_port = os.getenv("DB_PORT", "")
+        if not current_port or current_port in ("3306", "5432"):
+            current_port = "5432" if engine == "postgres" else "3306"
+
         current = {
             "DB_HOST":     os.getenv("DB_HOST", "localhost"),
-            "DB_PORT":     os.getenv("DB_PORT", "3306"),
+            "DB_PORT":     current_port,
             "DB_NAME":     os.getenv("DB_NAME", "ophix_db"),
             "DB_USER":     os.getenv("DB_USER", "ophixuser"),
             "DB_PASSWORD": os.getenv("DB_PASSWORD", ""),
@@ -55,7 +65,7 @@ class Command(BaseCommand):
         while True:
             self.stdout.write("\nTesting connection... ")
             self.stdout.flush()
-            error = self._test_connection(host, port, name, user, password,
+            error = self._test_connection(engine, host, port, name, user, password,
                                           ssl_ca, ssl_cert, ssl_key)
             if error is None:
                 self.stdout.write(self.style.SUCCESS("OK\n"))
@@ -67,6 +77,7 @@ class Command(BaseCommand):
             if retry != "y":
                 self.stderr.write("Aborted — no changes written to .env\n")
                 return
+            engine = self._prompt_engine(engine)
             host, port, name, user, password = self._prompt_credentials(
                 {"DB_HOST": host, "DB_PORT": port, "DB_NAME": name,
                  "DB_USER": user, "DB_PASSWORD": password}
@@ -84,6 +95,7 @@ class Command(BaseCommand):
             )
 
         for key, value in [
+            ("DB_ENGINE",   engine),
             ("DB_HOST",     host),
             ("DB_PORT",     port),
             ("DB_NAME",     name),
@@ -103,6 +115,19 @@ class Command(BaseCommand):
     # -----------------------------------------------------------------------
     # Prompting helpers
     # -----------------------------------------------------------------------
+
+    def _prompt_engine(self, current: str) -> str:
+        self.stdout.write("Database engine\n")
+        self.stdout.write("-" * 40 + "\n")
+        self.stdout.write("  Valid values: mariadb, mysql, postgres\n")
+        engine = self._prompt("Database engine", current).lower()
+        if engine not in ("mariadb", "mysql", "postgres"):
+            self.stdout.write(
+                self.style.WARNING(f"  Unknown engine '{engine}' — defaulting to mariadb\n")
+            )
+            engine = "mariadb"
+        self.stdout.write("\n")
+        return engine
 
     def _prompt_credentials(self, current: dict) -> tuple:
         """Prompt for all five DB settings and return (host, port, name, user, password)."""
@@ -134,7 +159,6 @@ class Command(BaseCommand):
         tls_indicator = "Y/n" if currently_tls else "y/N"
         use_tls = input(f"  Use TLS for the database connection? [{tls_indicator}]: ").strip().lower()
 
-        # Interpret answer relative to current state
         if currently_tls:
             tls_enabled = use_tls not in ("n", "no")
         else:
@@ -186,23 +210,29 @@ class Command(BaseCommand):
 
     def _test_connection(
         self,
+        engine: str,
+        host: str, port: str, name: str, user: str, password: str,
+        ssl_ca: str = "", ssl_cert: str = "", ssl_key: str = "",
+    ) -> str | None:
+        if engine == "postgres":
+            return self._test_postgres(host, port, name, user, password,
+                                       ssl_ca, ssl_cert, ssl_key)
+        return self._test_mysql(host, port, name, user, password,
+                                ssl_ca, ssl_cert, ssl_key)
+
+    def _test_mysql(
+        self,
         host: str, port: str, name: str, user: str, password: str,
         ssl_ca: str = "", ssl_cert: str = "", ssl_key: str = "",
     ) -> str | None:
         """
-        Attempt a direct MySQL connection.  Returns None on success, or an
-        error message string on failure.
-
-        Uses MySQLdb directly rather than Django's database layer so that this
-        command is safe to run before migrations have been applied.
+        Attempt a direct MySQL/MariaDB connection. Returns None on success,
+        or an error message string on failure.
         """
         try:
             import MySQLdb
         except ImportError:
-            return (
-                "mysqlclient is not installed.  "
-                "Run: pip install mysqlclient"
-            )
+            return "mysqlclient is not installed.  Run: pip install mysqlclient"
 
         kwargs = dict(
             host=host,
@@ -237,8 +267,59 @@ class Command(BaseCommand):
             if code == 2003:
                 return f"Cannot connect to MySQL server at {host}:{port} — is MariaDB running?"
             if code == 2026:
-                return f"TLS/SSL connection error — check CA certificate path and server TLS configuration."
+                return "TLS/SSL connection error — check CA certificate path and server TLS configuration."
             return f"MySQL error {code}: {msg}"
+        except ValueError:
+            return f"Invalid port number: '{port}'"
+        except Exception as exc:
+            return str(exc)
+
+    def _test_postgres(
+        self,
+        host: str, port: str, name: str, user: str, password: str,
+        ssl_ca: str = "", ssl_cert: str = "", ssl_key: str = "",
+    ) -> str | None:
+        """
+        Attempt a direct PostgreSQL connection. Returns None on success,
+        or an error message string on failure.
+        """
+        try:
+            import psycopg2
+        except ImportError:
+            return "psycopg2 is not installed.  Run: pip install psycopg2-binary"
+
+        kwargs = dict(
+            host=host,
+            port=int(port),
+            dbname=name,
+            user=user,
+            password=password,
+            connect_timeout=5,
+        )
+
+        if ssl_ca:
+            kwargs["sslmode"] = "verify-ca"
+            kwargs["sslrootcert"] = ssl_ca
+            if ssl_cert:
+                kwargs["sslcert"] = ssl_cert
+            if ssl_key:
+                kwargs["sslkey"] = ssl_key
+
+        try:
+            conn = psycopg2.connect(**kwargs)
+            conn.close()
+            return None
+        except psycopg2.OperationalError as exc:
+            msg = str(exc).strip()
+            if "does not exist" in msg:
+                return f"Database '{name}' does not exist. Create it first: CREATE DATABASE {name};"
+            if "password authentication failed" in msg or "role" in msg:
+                return f"Access denied for user '{user}'@'{host}' — check credentials."
+            if "Connection refused" in msg or "could not connect" in msg:
+                return f"Cannot connect to PostgreSQL at {host}:{port} — is PostgreSQL running?"
+            if "SSL" in msg or "certificate" in msg.lower():
+                return "TLS/SSL connection error — check CA certificate path and server TLS configuration."
+            return f"PostgreSQL error: {msg}"
         except ValueError:
             return f"Invalid port number: '{port}'"
         except Exception as exc:

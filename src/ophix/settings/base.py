@@ -141,38 +141,59 @@ TEMPLATES = [
 ]
 
 # ---------------------------------------------------------------------------
-# Database — MariaDB via MySQL backend
+# Database
+# DB_ENGINE: mariadb (default) | mysql | postgres
 # ---------------------------------------------------------------------------
 
-_db_options = {
-    "charset": "utf8mb4",
-    "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-}
-
-# TLS — activated only when DB_SSL_CA is set.
-# DB_SSL_CERT and DB_SSL_KEY are optional (only needed for mutual TLS).
+_db_engine = os.getenv("DB_ENGINE", "mariadb").lower()
 _db_ssl_ca = os.getenv("DB_SSL_CA", "")
-if _db_ssl_ca:
-    _ssl = {"ca": _db_ssl_ca}
-    _db_ssl_cert = os.getenv("DB_SSL_CERT", "")
-    _db_ssl_key = os.getenv("DB_SSL_KEY", "")
-    if _db_ssl_cert:
-        _ssl["cert"] = _db_ssl_cert
-    if _db_ssl_key:
-        _ssl["key"] = _db_ssl_key
-    _db_options["ssl"] = _ssl
+_db_ssl_cert = os.getenv("DB_SSL_CERT", "")
+_db_ssl_key = os.getenv("DB_SSL_KEY", "")
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": os.getenv("DB_NAME", "ophix_db"),
-        "USER": os.getenv("DB_USER", "ophixuser"),
-        "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "3306"),
-        "OPTIONS": _db_options,
+if _db_engine == "postgres":
+    _db_options = {}
+    if _db_ssl_ca:
+        _db_options["sslmode"] = "verify-ca"
+        _db_options["sslrootcert"] = _db_ssl_ca
+        if _db_ssl_cert:
+            _db_options["sslcert"] = _db_ssl_cert
+        if _db_ssl_key:
+            _db_options["sslkey"] = _db_ssl_key
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("DB_NAME", "ophix_db"),
+            "USER": os.getenv("DB_USER", "ophixuser"),
+            "PASSWORD": os.getenv("DB_PASSWORD", ""),
+            "HOST": os.getenv("DB_HOST", "localhost"),
+            "PORT": os.getenv("DB_PORT", "5432"),
+            "OPTIONS": _db_options,
+        }
     }
-}
+else:
+    # mariadb / mysql — the Django MySQL backend handles both
+    _db_options = {
+        "charset": "utf8mb4",
+        "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+    }
+    if _db_ssl_ca:
+        _ssl = {"ca": _db_ssl_ca}
+        if _db_ssl_cert:
+            _ssl["cert"] = _db_ssl_cert
+        if _db_ssl_key:
+            _ssl["key"] = _db_ssl_key
+        _db_options["ssl"] = _ssl
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.getenv("DB_NAME", "ophix_db"),
+            "USER": os.getenv("DB_USER", "ophixuser"),
+            "PASSWORD": os.getenv("DB_PASSWORD", ""),
+            "HOST": os.getenv("DB_HOST", "localhost"),
+            "PORT": os.getenv("DB_PORT", "3306"),
+            "OPTIONS": _db_options,
+        }
+    }
 
 # ---------------------------------------------------------------------------
 # Password validation

@@ -14,7 +14,7 @@ Both are installed in the same virtual environment.
 ## Prerequisites
 
 - Python 3.10 or later
-- MariaDB (with a database and user pre-created)
+- MariaDB, MySQL, or PostgreSQL (with a database and user pre-created)
 - A virtual environment tool (`python -m venv`)
 
 ---
@@ -32,12 +32,19 @@ source venv/bin/activate          # Linux / macOS
 
 ## 2. Install the packages
 
-Install `ophix-server-base` and one or more domain plugins:
+Install `ophix-server-base` with the database driver for your engine, and one or more domain plugins:
 
 ```bash
-pip install ophix-server-base
-pip install ophix-creds           # credential domain
-pip install ophix-confs           # configuration domain
+pip install ophix-server-base[mariadb]  # MariaDB (recommended default)
+pip install ophix-server-base[mysql]    # MySQL
+pip install ophix-server-base[postgres] # PostgreSQL
+```
+
+> **Upgrading an existing MariaDB installation:** `DB_ENGINE` defaults to `mariadb` if not set, so no `.env` change is required. `mysqlclient` is no longer a hard dependency — it is now the `[mariadb]` extra — but pip does not remove already-installed packages, so existing venvs continue to work without any action.
+
+```bash
+pip install ophix-creds                 # credential domain
+pip install ophix-confs                 # configuration domain
 ```
 
 Optional plugins:
@@ -65,11 +72,14 @@ Or create `.env` directly in your server directory. Minimum required settings:
 DEBUG=false
 ALLOWED_HOSTS=your.server.hostname,localhost
 
+# DB_ENGINE defaults to mariadb. Set to postgres for PostgreSQL.
+# DB_ENGINE=postgres
+
 DB_NAME=ophix_db
 DB_USER=ophixuser
 DB_PASSWORD=yourpassword
 DB_HOST=localhost
-DB_PORT=3306
+DB_PORT=3306    # use 5432 for PostgreSQL
 
 INSTALL_DIR=/path/to/myserver
 
@@ -92,9 +102,19 @@ AUTH_LEAK_INFO=true
 
 ## 4. Create the database
 
+**MariaDB / MySQL:**
+
 ```sql
 CREATE DATABASE ophix_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 GRANT ALL ON ophix_db.* TO 'ophixuser'@'localhost' IDENTIFIED BY 'yourpassword';
+```
+
+**PostgreSQL:**
+
+```sql
+CREATE DATABASE ophix_db;
+CREATE USER ophixuser WITH PASSWORD 'yourpassword';
+GRANT ALL PRIVILEGES ON DATABASE ophix_db TO ophixuser;
 ```
 
 ---
@@ -179,16 +199,17 @@ All settings are controlled via `.env`. Run `ophix-manage generate_deploy_config
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `DB_NAME` | `ophix_db` | MariaDB database name |
-| `DB_USER` | `ophixuser` | MariaDB user |
-| `DB_PASSWORD` | _(blank)_ | MariaDB password |
-| `DB_HOST` | `localhost` | MariaDB host |
-| `DB_PORT` | `3306` | MariaDB port |
-| `DB_SSL_CA` | _(blank)_ | Path to the CA certificate used to verify the MariaDB server. Setting this enables TLS for the database connection. Leave blank for an unencrypted connection. |
-| `DB_SSL_CERT` | _(blank)_ | Path to the client certificate. Only required for mutual TLS (client certificate authentication). Leave blank if the server does not require client certs. |
+| `DB_ENGINE` | `mariadb` | Database backend. Valid values: `mariadb`, `mysql`, `postgres`. Install the matching driver extra: `ophix-server-base[mariadb]`, `[mysql]`, or `[postgres]`. |
+| `DB_NAME` | `ophix_db` | Database name |
+| `DB_USER` | `ophixuser` | Database user |
+| `DB_PASSWORD` | _(blank)_ | Database password |
+| `DB_HOST` | `localhost` | Database host |
+| `DB_PORT` | `3306` | Database port. Default is `3306` for MariaDB/MySQL; use `5432` for PostgreSQL. |
+| `DB_SSL_CA` | _(blank)_ | Path to the CA certificate used to verify the database server. Setting this enables TLS. For PostgreSQL, `sslmode=verify-ca` is used when this is set. Leave blank for an unencrypted connection. |
+| `DB_SSL_CERT` | _(blank)_ | Path to the client certificate. Only required for mutual TLS (client certificate authentication). |
 | `DB_SSL_KEY` | _(blank)_ | Path to the client private key. Required only when `DB_SSL_CERT` is set. |
 
-Use `ophix-manage configure_database` for interactive setup with a live connection test.
+Use `ophix-manage configure_database` for interactive setup with a live connection test. The command prompts for the engine first and adjusts port defaults accordingly.
 
 ### Localisation
 
