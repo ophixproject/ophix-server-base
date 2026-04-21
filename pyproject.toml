@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ophix-server-base"
-version = "2026.04.15.02"
+version = "2026.04.21.01"
 description = "Base Django project for Ophix Project Servers"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -20,13 +20,8 @@ dependencies = [
     "django-apptemplates>=1.5",
     "python-dotenv>=1.0",
     "Jinja2>=3.0",
+    "mysqlclient>=2.1",
 ]
-
-[project.optional-dependencies]
-mariadb = ["mysqlclient>=2.1"]
-mysql = ["mysqlclient>=2.1"]
-postgres = ["psycopg2-binary>=2.9"]
-sso = ["mozilla-django-oidc>=4.0"]
 
 [project.scripts]
 ophix-manage = "ophix.manage:main"

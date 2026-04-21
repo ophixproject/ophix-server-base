@@ -142,7 +142,13 @@ TEMPLATES = [
 
 # ---------------------------------------------------------------------------
 # Database
-# DB_ENGINE: mariadb (default) | mysql | postgres
+# DB_ENGINE: mariadb (default) | mysql | postgres | sqlserver | oracle | cockroachdb
+#
+# Plugin packages supply the required driver for non-default engines:
+#   ophix-dbengine-postgres     psycopg2-binary
+#   ophix-dbengine-mssql        mssql-django + ODBC Driver 17/18 (OS-level)
+#   ophix-dbengine-oracle       oracledb (thin mode, no OS dep)
+#   ophix-dbengine-cockroachdb  django-cockroachdb + psycopg2-binary
 # ---------------------------------------------------------------------------
 
 _db_engine = os.getenv("DB_ENGINE", "mariadb").lower()
@@ -170,6 +176,68 @@ if _db_engine == "postgres":
             "OPTIONS": _db_options,
         }
     }
+
+elif _db_engine == "sqlserver":
+    # Requires: pip install ophix-dbengine-mssql
+    # OS dep: ODBC Driver 17 or 18 for SQL Server
+    # TLS is negotiated by the ODBC driver; set Encrypt/TrustServerCertificate
+    # via DB_SQLSERVER_ENCRYPT / DB_SQLSERVER_TRUST_CERT if needed.
+    _db_options = {
+        "driver": os.getenv("DB_SQLSERVER_DRIVER", "ODBC Driver 18 for SQL Server"),
+        "Encrypt": os.getenv("DB_SQLSERVER_ENCRYPT", "yes"),
+        "TrustServerCertificate": os.getenv("DB_SQLSERVER_TRUST_CERT", "no"),
+    }
+    DATABASES = {
+        "default": {
+            "ENGINE": "mssql",
+            "NAME": os.getenv("DB_NAME", "ophix_db"),
+            "USER": os.getenv("DB_USER", "ophixuser"),
+            "PASSWORD": os.getenv("DB_PASSWORD", ""),
+            "HOST": os.getenv("DB_HOST", "localhost"),
+            "PORT": os.getenv("DB_PORT", "1433"),
+            "OPTIONS": _db_options,
+        }
+    }
+
+elif _db_engine == "oracle":
+    # Requires: pip install ophix-dbengine-oracle
+    # Runs in thin mode by default (pure Python, no Oracle Instant Client needed).
+    # Switch to thick mode by installing Oracle Instant Client and setting
+    # DB_ORACLE_THICK_MODE=True in .env.
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.oracle",
+            "NAME": os.getenv("DB_NAME", "ophix_db"),  # service name or DSN
+            "USER": os.getenv("DB_USER", "ophixuser"),
+            "PASSWORD": os.getenv("DB_PASSWORD", ""),
+            "HOST": os.getenv("DB_HOST", "localhost"),
+            "PORT": os.getenv("DB_PORT", "1521"),
+        }
+    }
+
+elif _db_engine == "cockroachdb":
+    # Requires: pip install ophix-dbengine-cockroachdb
+    # CockroachDB uses PostgreSQL-style TLS options.
+    _db_options = {}
+    if _db_ssl_ca:
+        _db_options["sslmode"] = "verify-ca"
+        _db_options["sslrootcert"] = _db_ssl_ca
+        if _db_ssl_cert:
+            _db_options["sslcert"] = _db_ssl_cert
+        if _db_ssl_key:
+            _db_options["sslkey"] = _db_ssl_key
+    DATABASES = {
+        "default": {
+            "ENGINE": "django_cockroachdb",
+            "NAME": os.getenv("DB_NAME", "ophix_db"),
+            "USER": os.getenv("DB_USER", "ophixuser"),
+            "PASSWORD": os.getenv("DB_PASSWORD", ""),
+            "HOST": os.getenv("DB_HOST", "localhost"),
+            "PORT": os.getenv("DB_PORT", "26257"),
+            "OPTIONS": _db_options,
+        }
+    }
+
 else:
     # mariadb / mysql — the Django MySQL backend handles both
     _db_options = {
@@ -307,100 +375,8 @@ AUDIT_BATCH_SIZE = get_int_env("AUDIT_BATCH_SIZE", default=50)
 AUDIT_FLUSH_INTERVAL = get_int_env("AUDIT_FLUSH_INTERVAL", default=5)
 
 # ---------------------------------------------------------------------------
-# SSO — OpenID Connect (optional; requires ophix-server-base[sso])
-#
-# Activated when OIDC_RP_CLIENT_ID is set in .env.
-# When inactive, the standard Django username/password login is used.
+# SSO and LDAP authentication are provided by optional plugins:
+#   pip install ophix-auth-oidc   (OpenID Connect / Azure AD)
+#   pip install ophix-auth-ldap   (Active Directory / LDAP)
+# Each plugin activates via its own env variable once installed.
 # ---------------------------------------------------------------------------
-
-OIDC_RP_CLIENT_ID = os.getenv("OIDC_RP_CLIENT_ID", "")
-OIDC_ENABLED = bool(OIDC_RP_CLIENT_ID)
-
-if OIDC_ENABLED:
-    try:
-        import mozilla_django_oidc  # noqa: F401
-
-        # Inject mozilla_django_oidc into INSTALLED_APPS
-        INSTALLED_APPS = INSTALLED_APPS + ["mozilla_django_oidc"]
-
-        # Add SessionRefresh middleware after AuthenticationMiddleware
-        _auth_idx = MIDDLEWARE.index(
-            "django.contrib.auth.middleware.AuthenticationMiddleware"
-        )
-        MIDDLEWARE = (
-            MIDDLEWARE[: _auth_idx + 1]
-            + ["mozilla_django_oidc.middleware.SessionRefresh"]
-            + MIDDLEWARE[_auth_idx + 1 :]
-        )
-
-        # Authentication backends — OIDC first, then Django's model backend
-        AUTHENTICATION_BACKENDS = [
-            "ophix.core.oidc.OphixOIDCBackend",
-            "django.contrib.auth.backends.ModelBackend",
-        ]
-
-        # Core OIDC settings
-        OIDC_RP_CLIENT_SECRET = os.getenv("OIDC_RP_CLIENT_SECRET", "")
-        OIDC_RP_SIGN_ALGO = os.getenv("OIDC_RP_SIGN_ALGO", "RS256")
-
-        # Endpoint URLs — set directly, or use the Azure AD tenant shortcut
-        _azure_tenant = os.getenv("OIDC_AZURE_TENANT_ID", "")
-        if _azure_tenant:
-            _azure_base = (
-                f"https://login.microsoftonline.com/{_azure_tenant}/v2.0"
-            )
-            OIDC_OP_AUTHORIZATION_ENDPOINT = os.getenv(
-                "OIDC_OP_AUTHORIZATION_ENDPOINT",
-                f"{_azure_base}/oauth2/v2.0/authorize",
-            )
-            OIDC_OP_TOKEN_ENDPOINT = os.getenv(
-                "OIDC_OP_TOKEN_ENDPOINT",
-                f"{_azure_base}/oauth2/v2.0/token",
-            )
-            OIDC_OP_USER_ENDPOINT = os.getenv(
-                "OIDC_OP_USER_ENDPOINT",
-                f"{_azure_base}/oidc/userinfo",
-            )
-            OIDC_OP_JWKS_ENDPOINT = os.getenv(
-                "OIDC_OP_JWKS_ENDPOINT",
-                f"https://login.microsoftonline.com/{_azure_tenant}/discovery/v2.0/keys",
-            )
-        else:
-            OIDC_OP_AUTHORIZATION_ENDPOINT = os.getenv(
-                "OIDC_OP_AUTHORIZATION_ENDPOINT", ""
-            )
-            OIDC_OP_TOKEN_ENDPOINT = os.getenv("OIDC_OP_TOKEN_ENDPOINT", "")
-            OIDC_OP_USER_ENDPOINT = os.getenv("OIDC_OP_USER_ENDPOINT", "")
-            OIDC_OP_JWKS_ENDPOINT = os.getenv("OIDC_OP_JWKS_ENDPOINT", "")
-
-        # Scopes — include openid + profile + email; add groups for Azure AD
-        OIDC_RP_SCOPES = os.getenv(
-            "OIDC_RP_SCOPES", "openid profile email"
-        )
-
-        # Redirect back to the admin after login/logout
-        LOGIN_REDIRECT_URL = "/admin/"
-        LOGOUT_REDIRECT_URL = "/admin/login/"
-
-        # Session refresh — re-check token validity every N seconds
-        OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = get_int_env(
-            "OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS", default=900
-        )
-
-        # Group-to-permission mapping (object ID strings from the IdP)
-        OIDC_STAFF_GROUP_ID = os.getenv("OIDC_STAFF_GROUP_ID", "")
-        OIDC_SUPERUSER_GROUP_ID = os.getenv("OIDC_SUPERUSER_GROUP_ID", "")
-
-        # Use our custom backend
-        OIDC_AUTHENTICATION_BACKEND = "ophix.core.oidc.OphixOIDCBackend"
-
-    except ImportError:
-        # mozilla-django-oidc not installed — silently disable SSO.
-        # OIDC_RP_CLIENT_ID is set but the package is missing; log a warning.
-        import logging as _logging
-        _logging.getLogger("ophix.core").warning(
-            "OIDC_RP_CLIENT_ID is set but mozilla-django-oidc is not installed. "
-            "Install ophix-server-base[sso] to enable SSO. "
-            "Falling back to Django built-in authentication."
-        )
-        OIDC_ENABLED = False

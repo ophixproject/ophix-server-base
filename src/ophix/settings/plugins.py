@@ -64,6 +64,44 @@ def _load_plugin_settings(module_name: str, target: dict) -> None:
                 if app not in existing:
                     existing.append(app)
                     logger.debug("Plugin %s added to INSTALLED_APPS: %s", module_name, app)
+        elif key == "AUTHENTICATION_BACKENDS_PREPEND" and isinstance(value, list):
+            # Plugins declare backends to insert before ModelBackend.
+            # Multiple plugins may each contribute backends — they accumulate.
+            MODEL_BACKEND = "django.contrib.auth.backends.ModelBackend"
+            backends = target.setdefault("AUTHENTICATION_BACKENDS", [MODEL_BACKEND])
+            for backend in reversed(value):
+                if backend not in backends:
+                    if MODEL_BACKEND in backends:
+                        backends.insert(backends.index(MODEL_BACKEND), backend)
+                    else:
+                        backends.insert(0, backend)
+                    logger.debug(
+                        "Plugin %s prepended authentication backend: %s",
+                        module_name,
+                        backend,
+                    )
+        elif key == "MIDDLEWARE_INSERT_AFTER" and isinstance(value, dict):
+            # Plugins declare middleware to insert after a named target class.
+            # {target_class: [new_class, ...]}
+            middleware = target.setdefault("MIDDLEWARE", [])
+            for target_class, new_classes in value.items():
+                if target_class in middleware:
+                    insert_at = middleware.index(target_class) + 1
+                    for new_class in reversed(new_classes):
+                        if new_class not in middleware:
+                            middleware.insert(insert_at, new_class)
+                            logger.debug(
+                                "Plugin %s inserted middleware %s after %s",
+                                module_name,
+                                new_class,
+                                target_class,
+                            )
+                else:
+                    logger.warning(
+                        "Plugin %s: MIDDLEWARE_INSERT_AFTER target '%s' not found in MIDDLEWARE — skipping.",
+                        module_name,
+                        target_class,
+                    )
         elif key not in target:
             target[key] = value
             logger.debug("Plugin %s contributed setting %s", module_name, key)

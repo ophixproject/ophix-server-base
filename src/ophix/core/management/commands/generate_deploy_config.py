@@ -51,7 +51,17 @@ TEMPLATES_DIR = Path(__file__).resolve().parent.parent.parent / "deploy_template
 EPILOG = """
 BOOTSTRAP GUIDE
 ===============
-Follow these steps to get a freshly pip-installed Ophix server running.
+The recommended way to deploy a fresh Ophix server is the guided installer:
+
+   ophix-manage configure_install <slug>   # interactive wizard
+   ophix-manage run_install <slug>         # runs migrate, collectstatic, creates superuser
+   sudo bash <slug>_sudo_install.sh        # sets ownership, installs nginx + systemd
+
+Where <slug> is a short name for this server instance (e.g. credserver, confserver).
+
+MANUAL BOOTSTRAP (advanced)
+============================
+Use generate_deploy_config if you prefer to manage each step yourself.
 
 1. Generate deployment files
    ophix-manage generate_deploy_config --all \\
@@ -78,7 +88,7 @@ Follow these steps to get a freshly pip-installed Ophix server running.
    Place your certificate and private key at:
      $INSTALL_DIR/ssl/certs/<slug>.crt
      $INSTALL_DIR/ssl/private/<slug>.key
-   If using CA-tools or ophix-certs, those tools will place them here.
+   If using ophix-certs, those tools will place them here.
 
 6. Install the nginx configuration
    sudo cp <slug>.nginx.conf /etc/nginx/sites-available/<slug>.conf

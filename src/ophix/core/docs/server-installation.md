@@ -5,166 +5,238 @@ order: 1
 section: Getting Started
 ---
 
-An Ophix server is a Django application composed of two pip packages: `ophix-server-base`, which provides the core authentication, host/client management, and admin UI, and a domain plugin (e.g. `ophix-creds`, `ophix-confs`) that adds the specific functionality you need.
+An Ophix server is a Django application composed of two pip packages:
 
-Both are installed in the same virtual environment.
+- **`ophix-server-base`** — core authentication, host/client management, admin UI, and management commands
+- **A domain plugin** (e.g. `ophix-creds`, `ophix-confs`, `ophix-certs`) — adds the specific functionality for this server instance
+
+Both are installed in the same virtual environment. Each domain runs as its own server — a single instance runs one domain only.
 
 ---
 
 ## Prerequisites
 
 - Python 3.10 or later
-- MariaDB, MySQL, or PostgreSQL (with a database and user pre-created)
+- MariaDB (recommended) or another supported database engine, with a database and user pre-created
 - A virtual environment tool (`python -m venv`)
+- nginx and systemd (for production deployments)
 
 ---
 
 ## 1. Create the server directory and virtual environment
 
 ```bash
-mkdir myserver && cd myserver
+mkdir credserver && cd credserver
 python -m venv venv
-source venv/bin/activate          # Linux / macOS
-# venv\Scripts\activate           # Windows
+source venv/bin/activate
 ```
 
 ---
 
-## 2. Install the packages
+## 2. Install packages
 
-Install `ophix-server-base` with the database driver for your engine, and one or more domain plugins:
+MariaDB support is built into `ophix-server-base` — no extra required. Install the base package and your domain plugin:
 
 ```bash
-pip install ophix-server-base[mariadb]  # MariaDB (recommended default)
-pip install ophix-server-base[mysql]    # MySQL
-pip install ophix-server-base[postgres] # PostgreSQL
+pip install ophix-server-base
+pip install ophix-creds        # or ophix-confs, ophix-certs, etc.
 ```
 
-To enable SSO, add the `sso` extra (can be combined with the DB extra):
+**Other database engines** require a driver plugin in addition to the base package:
 
 ```bash
-pip install "ophix-server-base[mariadb,sso]"
+pip install ophix-dbengine-postgres     # PostgreSQL
+pip install ophix-dbengine-mssql        # SQL Server (also requires ODBC Driver 17/18)
+pip install ophix-dbengine-oracle       # Oracle
+pip install ophix-dbengine-cockroachdb  # CockroachDB
 ```
 
-> **Upgrading an existing MariaDB installation:** `DB_ENGINE` defaults to `mariadb` if not set, so no `.env` change is required. `mysqlclient` is no longer a hard dependency — it is now the `[mariadb]` extra — but pip does not remove already-installed packages, so existing venvs continue to work without any action.
+**Optional plugins** (install as needed):
 
 ```bash
-pip install ophix-creds                 # credential domain
-pip install ophix-confs                 # configuration domain
-```
-
-Optional plugins:
-
-```bash
-pip install ophix-docs            # inline documentation
-pip install ophix-codemirror      # code editor widgets
-pip install ophix-theme-tools     # theme management commands
-pip install ophix-theme-imago     # Imago branding theme
+pip install ophix-docs             # inline markdown documentation in admin
+pip install ophix-theme-tools      # theme management commands
+pip install ophix-theme-imago      # Imago branding theme
+pip install ophix-codemirror       # code editor widgets (used by ophix-confs)
+pip install ophix-auth-oidc        # OpenID Connect / Azure AD SSO
+pip install ophix-auth-ldap        # Active Directory / LDAP authentication
 ```
 
 ---
 
-## 3. Configure the environment
+## 3. Run the guided installer
 
-Copy the sample environment file from the server-base package and edit it:
+The guided installer collects all required settings interactively and performs every setup step in sequence. Replace `credserver` with a short slug that identifies this server instance (e.g. `confserver`, `certserver`).
+
+### Step 1 — Configure
 
 ```bash
-cp venv/lib/python3.*/site-packages/ophix/core/../../../sample.env .env
+ophix-manage configure_install credserver
 ```
 
-Or create `.env` directly in your server directory. Minimum required settings:
+This wizard collects:
+
+- Install directory (runtime data: logs, SSL certs, socket)
+- Server hostname (used in nginx config and TLS certificate validation)
+- Service user and group
+- TLS certificate and private key paths (validated against the hostname)
+- Database connection details, with a live connection test before saving
+- Superuser username, email, and password
+- Theme to activate and admin title (if a theme package is installed)
+
+Any installed domain plugin or extension that requires a generated key (such as `CRED_ENCRYPTION_KEY` for `ophix-creds` or `CA_KEY_ENCRYPTION_KEY` for `ophix-certs-ca`) is prompted for at the end of the wizard. For fresh installs the key is auto-generated; if you are rebuilding a venv against an existing database you can supply the original key instead.
+
+The wizard writes two files:
+
+- `.credserver.conf` — machine-readable configuration used by `run_install` (chmod 600)
+- `.env` — Django environment settings with all values already patched in (chmod 600)
+
+The wizard is **idempotent**: re-run it at any time to update individual settings. Existing values are loaded as defaults so you only need to change what has actually changed.
+
+### Step 2 — Install
+
+```bash
+ophix-manage run_install credserver
+```
+
+This command reads `.credserver.conf` and performs all remaining setup steps:
+
+1. Creates the `INSTALL_DIR` directory structure (`logs/`, `ssl/`, `run/`, etc.)
+2. Copies TLS certificate and key into `ssl/certs/` and `ssl/private/`
+3. Generates `credserver.nginx.conf`
+4. Generates `credserver.service` (systemd unit for gunicorn)
+5. Generates `credserver_sudo_install.sh` — the root script for step 3
+6. Generates `credserver_sudo_uninstall.sh`
+7. Writes any plugin-generated keys to `.env` (e.g. `CRED_ENCRYPTION_KEY`)
+8. Runs `migrate`
+9. Runs `collectstatic --noinput`
+10. Creates or updates the superuser
+11. Activates the selected theme and sets the admin title
+
+Available flags: `--skip-migrate`, `--skip-collectstatic`, `--skip-superuser`
+
+### Step 3 — System integration (as root)
+
+```bash
+sudo bash credserver_sudo_install.sh
+```
+
+This script:
+
+- Sets ownership and permissions on `INSTALL_DIR`
+- Installs `credserver.nginx.conf` into `/etc/nginx/sites-available/` and enables it
+- Installs `credserver.service` into `/etc/systemd/system/`
+- Enables and starts the service
+
+After this step, the server is running and the admin UI is available at `https://your.hostname/admin/`.
+
+---
+
+## Upgrading
+
+For most upgrades no reconfiguration is required — just upgrade the packages, run `migrate` and `collectstatic`, and restart the service:
+
+```bash
+pip install --upgrade ophix-server-base ophix-creds   # and any other installed packages
+ophix-manage migrate
+ophix-manage collectstatic --noinput
+sudo systemctl restart credserver
+```
+
+**If the upgrade adds new `.env` settings**, use `generate_deploy_config --append` to add them without touching existing values:
+
+```bash
+ophix-manage generate_deploy_config --append
+# Review any new keys added to .env and set non-default values if needed
+ophix-manage migrate
+ophix-manage collectstatic --noinput
+sudo systemctl restart credserver
+```
+
+`--append` discovers all installed plugin env fragments and adds only the keys not already present in `.env`. Existing values and manual edits are never modified.
+
+**If you need to change configuration** (new hostname, replace a TLS certificate, change database):
+
+```bash
+ophix-manage configure_install credserver    # re-prompts with existing values as defaults
+ophix-manage run_install credserver --skip-superuser
+sudo bash credserver_sudo_install.sh
+```
+
+Avoid re-running `configure_install` for routine upgrades — it rewrites `.env` from scratch, which would discard any manual edits not captured in `.credserver.conf`.
+
+---
+
+## Development setup
+
+For a local development environment, skip the guided installer and set `.env` manually:
 
 ```ini
-DEBUG=false
-ALLOWED_HOSTS=your.server.hostname,localhost
-
-# DB_ENGINE defaults to mariadb. Set to postgres for PostgreSQL.
-# DB_ENGINE=postgres
+DEBUG=True
+AUTH_LEAK_INFO=True
+ALLOWED_HOSTS=localhost,127.0.0.1
 
 DB_NAME=ophix_db
 DB_USER=ophixuser
 DB_PASSWORD=yourpassword
 DB_HOST=localhost
-DB_PORT=3306    # use 5432 for PostgreSQL
+DB_PORT=3306
 
-INSTALL_DIR=/path/to/myserver
-
-LANGUAGE_CODE=en-au
-TIME_ZONE=Australia/Melbourne
+INSTALL_DIR=/path/to/credserver
 ```
 
-`SERVER_NAME` defaults to the domain plugin's built-in value (`certserver`, `credserver`, `confserver`, etc.) and does not need to be set unless you want to customise it for a specific deployment.
-
-For development, additionally set:
-
-```ini
-DEBUG=true
-AUTH_LEAK_INFO=true
-```
-
-`DJANGO_SECRET_KEY` is generated automatically on first run and written back to `.env`. You do not need to set it manually.
-
----
-
-## 4. Create the database
-
-**MariaDB / MySQL:**
-
-```sql
-CREATE DATABASE ophix_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-GRANT ALL ON ophix_db.* TO 'ophixuser'@'localhost' IDENTIFIED BY 'yourpassword';
-```
-
-**PostgreSQL:**
-
-```sql
-CREATE DATABASE ophix_db;
-CREATE USER ophixuser WITH PASSWORD 'yourpassword';
-GRANT ALL PRIVILEGES ON DATABASE ophix_db TO ophixuser;
-```
-
----
-
-## 5. Run migrations
-
-The `ophix-manage` command is the Django management entry point, installed by `ophix-server-base`:
+Then:
 
 ```bash
 ophix-manage migrate
-```
-
-This runs migrations for the base app and all installed domain plugins.
-
----
-
-## 6. Create a superuser
-
-```bash
 ophix-manage createsuperuser
-```
-
----
-
-## 7. Start the server
-
-For development:
-
-```bash
 ophix-manage runserver
 ```
 
 The admin UI is available at `http://localhost:8000/admin/`.
 
-For production, serve via gunicorn or uwsgi behind a reverse proxy (nginx recommended). See the deployment notes below.
+`DJANGO_SECRET_KEY` is generated automatically on first run and written back to `.env`.
+
+---
+
+## Manual / legacy installation
+
+The guided installer is recommended for all new deployments. If you prefer to manage each step yourself, the following commands are available individually:
+
+| Command | Purpose |
+| --- | --- |
+| `generate_deploy_config --all` | Generate `.env.sample`, nginx config, and systemd service file |
+| `generate_deploy_config --append` | Add new plugin env keys to an existing `.env` without modifying existing values |
+| `configure_database` | Interactive database credentials setup with live connection test |
+| `init_deploy` | Create `INSTALL_DIR` subdirectory structure |
+| `migrate` | Apply database migrations |
+| `collectstatic --noinput` | Collect static files |
+| `createsuperuser` | Create an admin user interactively |
+| `run_uninstall <slug>` | Regenerate the sudo uninstall script |
+
+Full legacy sequence: `generate_deploy_config --all` → `configure_database` → `init_deploy` → place TLS files → deploy nginx and systemd files → `migrate` → `collectstatic` → `createsuperuser` → `systemctl start`.
 
 ---
 
 ## Production notes
 
-- Set `DEBUG=false` and `AUTH_LEAK_INFO=false` in `.env`
-- Set `ALLOWED_HOSTS` to your server's hostname
-- Run `ophix-manage collectstatic` and serve `/static/` from nginx
-- If behind a reverse proxy, the proxy **must** strip and re-set `X-Forwarded-For` — Ophix uses the source IP as part of client authentication. A misconfigured proxy allows IP spoofing.
+- `.env` and `.credserver.conf` both contain secrets — they are written with `chmod 600` by the installer. Verify this after any manual edits.
+- Set `DEBUG=False` and `AUTH_LEAK_INFO=False` in production (both are `False` by default).
+- If deployed behind a load balancer, the LB **must** strip and re-set `X-Forwarded-For` before requests reach nginx. Ophix uses the source IP as part of client authentication — a misconfigured proxy allows IP spoofing.
+- Back up `CRED_ENCRYPTION_KEY` and `CA_KEY_ENCRYPTION_KEY` (if applicable) to secure offline storage. These keys are not recoverable if lost, and losing them means losing access to all encrypted data.
+
+---
+
+## Adding a plugin to an existing deployment
+
+```bash
+pip install ophix-<plugin>
+ophix-manage generate_deploy_config --append
+# Edit .env to set any new values if required
+ophix-manage migrate
+ophix-manage collectstatic --noinput
+sudo systemctl restart credserver
+```
 
 ---
 
@@ -179,124 +251,86 @@ You do not need to pre-create Client records. Registration is handled by the cli
 
 ---
 
-## Server settings
+## Server settings reference
 
-All settings are controlled via `.env`. Run `ophix-manage generate_deploy_config --env` to generate an annotated sample with all variables and their descriptions.
+All settings are controlled via `.env`. Run `ophix-manage generate_deploy_config --env` to generate an annotated sample with all variables.
 
 ### Identity and security
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `SERVER_NAME` | _(domain default)_ | Short name for this server instance. The installed domain plugin supplies a default (`certserver`, `credserver`, `confserver`, etc.). Override in `.env` to customise for a specific deployment. When `DISPLAY_VERSION_FOOTER=True`, the footer displays `SERVER_NAME-SERVER_VERSION`. |
-| `SERVER_VERSION` | _(blank)_ | Version string auto-populated from the installed domain plugin by `generate_deploy_config`. Re-run `generate_deploy_config --append` after upgrading — it detects the new version and updates this value automatically. Shown in the footer as `SERVER_NAME-SERVER_VERSION` when `DISPLAY_VERSION_FOOTER=True`. |
+| `SERVER_NAME` | _(domain default)_ | Short name for this server instance. The domain plugin supplies a default (`credserver`, `confserver`, `certserver`, etc.). Override to customise for a specific deployment. |
+| `SERVER_VERSION` | _(blank)_ | Version string auto-populated from the installed domain plugin. Updated automatically by `generate_deploy_config --append` after an upgrade. |
 | `DJANGO_SECRET_KEY` | _(auto)_ | Auto-generated on first run and saved to `.env`. Do not set manually. |
-| `DEBUG` | `False` | Enable Django debug mode. **Never True in production.** |
-| `ALLOWED_HOSTS` | `*` | Comma-separated hostnames/IPs the server responds to. Tighten before going to production. |
-| `AUTH_LEAK_INFO` | `False` | Include error detail in API responses. Set `True` during development only — `False` prevents auth failure fingerprinting in production. |
+| `DEBUG` | `False` | Enable Django debug mode. **Never `True` in production.** |
+| `ALLOWED_HOSTS` | `*` | Comma-separated hostnames/IPs this server responds to. Tighten before production. |
+| `AUTH_LEAK_INFO` | `False` | Include error detail in API responses. `True` during development only — `False` prevents auth failure fingerprinting in production. |
 
 ### Paths
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `INSTALL_DIR` | `/home/websites/ophix` | Root directory for runtime data: logs, media, socket, SSL certs. Must be writable by the service user. |
+| `INSTALL_DIR` | _(current directory)_ | Root directory for runtime data: logs, media, socket, SSL certs. Must be writable by the service user. |
 | `DJANGO_MEDIA_ROOT` | `INSTALL_DIR/media` | Override the media files root if needed. |
 
 ### Database
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `DB_ENGINE` | `mariadb` | Database backend. Valid values: `mariadb`, `mysql`, `postgres`. Install the matching driver extra: `ophix-server-base[mariadb]`, `[mysql]`, or `[postgres]`. |
+| `DB_ENGINE` | `mariadb` | Database backend. Valid values: `mariadb`, `mysql`, `postgres`, `sqlserver`, `oracle`, `cockroachdb`. Install the matching driver plugin for non-MariaDB engines. |
 | `DB_NAME` | `ophix_db` | Database name |
 | `DB_USER` | `ophixuser` | Database user |
 | `DB_PASSWORD` | _(blank)_ | Database password |
 | `DB_HOST` | `localhost` | Database host |
-| `DB_PORT` | `3306` | Database port. Default is `3306` for MariaDB/MySQL; use `5432` for PostgreSQL. |
-| `DB_SSL_CA` | _(blank)_ | Path to the CA certificate used to verify the database server. Setting this enables TLS. For PostgreSQL, `sslmode=verify-ca` is used when this is set. Leave blank for an unencrypted connection. |
-| `DB_SSL_CERT` | _(blank)_ | Path to the client certificate. Only required for mutual TLS (client certificate authentication). |
-| `DB_SSL_KEY` | _(blank)_ | Path to the client private key. Required only when `DB_SSL_CERT` is set. |
-
-Use `ophix-manage configure_database` for interactive setup with a live connection test. The command prompts for the engine first and adjusts port defaults accordingly.
+| `DB_PORT` | `3306` | Database port. Default `3306` for MariaDB/MySQL; `5432` for PostgreSQL; `1433` for SQL Server; `1521` for Oracle; `26257` for CockroachDB. |
+| `DB_SSL_CA` | _(blank)_ | CA certificate path for database TLS. Setting this enables TLS. |
+| `DB_SSL_CERT` | _(blank)_ | Client certificate path. Only required for mutual TLS. |
+| `DB_SSL_KEY` | _(blank)_ | Client private key path. Required only when `DB_SSL_CERT` is set. |
 
 ### Localisation
 
 | Variable | Default | Description |
 | --- | --- | --- |
 | `LANGUAGE_CODE` | `en-au` | Django language code |
-| `TIME_ZONE` | `UTC` | Server timezone (used for admin display and timestamps) |
+| `TIME_ZONE` | `UTC` | Server timezone |
 
 ### Admin UI visibility
 
-These flags control which models appear in the Django admin navigation. All default to `False` (hidden). Enable in `.env` as required.
+All default to `False`. Enable in `.env` as needed.
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `SHOW_ACCESS_LOGS` | `False` | Show the Access Logs model — audit trail of client artifact access |
-| `SHOW_THEME_MODEL` | `False` | Show the Django admin Themes model (django-admin-interface branding) |
-| `SHOW_AUTH_MODELS` | `False` | Show Django's built-in Users and Groups models |
-| `SHOW_CLIENT_ARTIFACT_MODEL` | `False` | Show the raw client-artifact join model (useful for debugging) |
-| `DISPLAY_VERSION_FOOTER` | `False` | Show `SERVER_NAME-SERVER_VERSION` in the admin footer (e.g. `certserver-2026.04.12.01`) |
-| `DISPLAY_COPYRIGHT` | `False` | Show the Ophix copyright line in the admin footer |
+| Variable | Description |
+| --- | --- |
+| `SHOW_ACCESS_LOGS` | Show the Access Logs model — audit trail of client artifact access |
+| `SHOW_THEME_MODEL` | Show the Django admin Themes model |
+| `SHOW_AUTH_MODELS` | Show Django's built-in Users and Groups models |
+| `SHOW_CLIENT_ARTIFACT_MODEL` | Show the raw client-artifact join model (useful for debugging) |
+| `DISPLAY_VERSION_FOOTER` | Show `SERVER_NAME-SERVER_VERSION` in the admin footer |
+| `DISPLAY_COPYRIGHT` | Show the Ophix copyright line in the admin footer |
 
 ### API behaviour
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `MINIMUM_TOKEN_ROTATE_TIME` | `3600` | Minimum seconds between token rotations. Prevents rotation abuse. Default is 1 hour. |
-| `ENABLE_ARTIFACT_DELETE` | `False` | Allow clients to delete artifacts they own. Disabled by default — enable only if client-driven deletion is required. |
+| `MINIMUM_TOKEN_ROTATE_TIME` | `3600` | Minimum seconds between token rotations |
+| `ENABLE_ARTIFACT_DELETE` | `False` | Allow clients to delete their own artifacts |
 
 ### Audit logging
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `AUDIT_BATCH_SIZE` | `50` | Number of access events to accumulate before writing a batch to the database |
-| `AUDIT_FLUSH_INTERVAL` | `5` | Maximum seconds to hold a partial batch before flushing. Ensures events are written promptly during low-traffic periods. |
+| `AUDIT_BATCH_SIZE` | `50` | Access events to accumulate before a batch database write |
+| `AUDIT_FLUSH_INTERVAL` | `5` | Maximum seconds to hold a partial batch before flushing |
 
-See [Access Auditing](access-auditing) for the full audit log documentation, including how to prune old records.
+See [Access Auditing](access-auditing) for the full audit log documentation.
 
-### SSO — OpenID Connect
+### Authentication plugins
 
-SSO requires the `[sso]` extra (`pip install "ophix-server-base[mariadb,sso]"`). It is activated when `OIDC_RP_CLIENT_ID` is set in `.env`. Without that setting, the standard Django username/password login is used and the `[sso]` package does not need to be installed.
+SSO and LDAP are optional plugins, not part of `ophix-server-base`. Install the plugin and re-run `generate_deploy_config --append` to add the relevant settings block to `.env`.
 
-When SSO is active, a **Sign in with SSO** button appears on the admin login page alongside the standard username/password form. Both methods remain available — local superuser accounts still work for emergency access.
-
-#### Azure AD setup
-
-1. Register an application in Azure AD → **App registrations → New registration**.
-2. Set the redirect URI to `https://yourserver/oidc/callback/` (type: Web).
-3. Under **Token configuration**, add the **groups** optional claim to the ID token.
-4. Note the **Application (client) ID** and **Directory (tenant) ID**.
-5. Create a client secret under **Certificates & secrets**.
-
-```ini
-OIDC_RP_CLIENT_ID=<application client id>
-OIDC_RP_CLIENT_SECRET=<client secret value>
-OIDC_AZURE_TENANT_ID=<directory tenant id>
+```bash
+pip install ophix-auth-oidc    # OpenID Connect / Azure AD
+pip install ophix-auth-ldap    # Active Directory / LDAP
+ophix-manage generate_deploy_config --append
 ```
 
-Setting `OIDC_AZURE_TENANT_ID` auto-derives all four OIDC endpoint URLs. For other providers (Keycloak, Okta, etc.), set `OIDC_OP_AUTHORIZATION_ENDPOINT`, `OIDC_OP_TOKEN_ENDPOINT`, `OIDC_OP_USER_ENDPOINT`, and `OIDC_OP_JWKS_ENDPOINT` directly.
-
-#### Group-based permissions
-
-By default, all users who successfully authenticate via SSO are granted `is_staff = True` (admin access). To restrict access:
-
-```ini
-OIDC_STAFF_GROUP_ID=<object ID of your staff group>
-OIDC_SUPERUSER_GROUP_ID=<object ID of your superuser group>
-```
-
-Set the value to the group's object ID (GUID) in Azure AD. Users not in either group are denied admin access. A user in the superuser group gets both `is_staff` and `is_superuser`.
-
-| Variable | Default | Description |
-| --- | --- | --- |
-| `OIDC_RP_CLIENT_ID` | _(blank)_ | Application (client) ID from your IdP. Setting this activates SSO. |
-| `OIDC_RP_CLIENT_SECRET` | _(blank)_ | Client secret for the application registration. |
-| `OIDC_AZURE_TENANT_ID` | _(blank)_ | Azure AD tenant ID. Auto-derives all four OIDC endpoint URLs when set. |
-| `OIDC_RP_SIGN_ALGO` | `RS256` | Token signing algorithm. Change if required by your IdP. |
-| `OIDC_RP_SCOPES` | `openid profile email` | Scopes to request. No extra scope needed for Azure AD group claims. |
-| `OIDC_OP_AUTHORIZATION_ENDPOINT` | _(blank)_ | Authorization endpoint URL (derived automatically for Azure AD). |
-| `OIDC_OP_TOKEN_ENDPOINT` | _(blank)_ | Token endpoint URL (derived automatically for Azure AD). |
-| `OIDC_OP_USER_ENDPOINT` | _(blank)_ | Userinfo endpoint URL (derived automatically for Azure AD). |
-| `OIDC_OP_JWKS_ENDPOINT` | _(blank)_ | JWKS endpoint URL (derived automatically for Azure AD). |
-| `OIDC_STAFF_GROUP_ID` | _(blank)_ | IdP group ID whose members receive `is_staff`. If blank, all SSO users get staff access. |
-| `OIDC_SUPERUSER_GROUP_ID` | _(blank)_ | IdP group ID whose members receive `is_staff` + `is_superuser`. |
-| `OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS` | `900` | How often (seconds) the session middleware re-validates the OIDC token. |
+Each plugin activates when its trigger variable is set in `.env`: `OIDC_RP_CLIENT_ID` for OIDC, `LDAP_SERVER_URI` for LDAP. Both can be active simultaneously.
