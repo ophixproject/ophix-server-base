@@ -117,11 +117,13 @@ class Command(BaseCommand):
     # -----------------------------------------------------------------------
 
     def _prompt_engine(self, current: str) -> str:
+        _VALID_ENGINES = ("mariadb", "mysql", "postgres", "sqlserver", "oracle", "cockroachdb")
         self.stdout.write("Database engine\n")
         self.stdout.write("-" * 40 + "\n")
-        self.stdout.write("  Valid values: mariadb, mysql, postgres\n")
+        self.stdout.write(f"  Valid values: {', '.join(_VALID_ENGINES)}\n")
+        self.stdout.write("  Extra engines require the matching ophix-dbengine-* plugin.\n")
         engine = self._prompt("Database engine", current).lower()
-        if engine not in ("mariadb", "mysql", "postgres"):
+        if engine not in _VALID_ENGINES:
             self.stdout.write(
                 self.style.WARNING(f"  Unknown engine '{engine}' — defaulting to mariadb\n")
             )

@@ -469,6 +469,18 @@ class Command(BaseCommand):
         # ------------------------------------------------------------------ #
         self.stdout.write("Plugin setup\n")
         _call_plugin_run_hooks(conf, self)
+
+        # Reload .env so that any keys written by plugin hooks (e.g.
+        # CRED_ENCRYPTION_KEY) are visible to the migrate step.  set_key()
+        # writes to disk but does not update os.environ in the running process.
+        try:
+            from dotenv import find_dotenv, load_dotenv
+            _env_file = find_dotenv(usecwd=True)
+            if _env_file:
+                load_dotenv(_env_file, override=True)
+        except Exception:
+            pass
+
         self.stdout.write("\n")
 
         # ------------------------------------------------------------------ #

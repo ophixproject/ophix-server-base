@@ -494,18 +494,47 @@ class Command(BaseCommand):
         return result if result else default
 
     def _prompt_path(self, label, default, required=True):
-        while True:
-            result = self._prompt(label, default)
-            if not result:
-                if not required:
-                    return ""
-                self.stdout.write(self.style.ERROR(f"  {label} is required.\n"))
-                continue
-            if not Path(result).exists():
-                self.stdout.write(self.style.WARNING(f"  Warning: {result} does not exist.\n"))
-                confirm = input("  Use this path anyway? [y/N]: ").strip().lower()
-                if confirm == "y":
-                    return result
-                default = result
-                continue
-            return result
+        # Enable tab completion for file paths on Linux (readline not available on Windows).
+        _readline_active = False
+        try:
+            import glob as _glob
+            import readline as _rl
+
+            def _path_completer(text, state):
+                return (_glob.glob(text + "*") + [None])[state]
+
+            _rl.set_completer(_path_completer)
+            _rl.set_completer_delims(" \t\n;")
+            _rl.parse_and_bind("tab: complete")
+            _readline_active = True
+        except ImportError:
+            pass
+
+        try:
+            while True:
+                result = self._prompt(label, default)
+                if not result:
+                    if not required:
+                        return ""
+                    self.stdout.write(self.style.ERROR(f"  {label} is required.\n"))
+                    continue
+                try:
+                    exists = Path(result).exists()
+                except (PermissionError, OSError):
+                    # Can't verify the path (e.g. no read permission on parent dir).
+                    # Ask to confirm rather than crashing.
+                    exists = False
+                if not exists:
+                    self.stdout.write(self.style.WARNING(f"  Warning: {result} does not exist or is not accessible.\n"))
+                    confirm = input("  Use this path anyway? [y/N]: ").strip().lower()
+                    if confirm == "y":
+                        return result
+                    default = result
+                    continue
+                return result
+        finally:
+            if _readline_active:
+                try:
+                    _rl.set_completer(None)
+                except Exception:
+                    pass
