@@ -14,7 +14,7 @@ List name, pip package, module, and version:
 """
 
 import importlib
-from importlib.metadata import entry_points
+from importlib.metadata import entry_points, metadata as dist_metadata
 
 from django.core.management.base import BaseCommand
 
@@ -55,24 +55,34 @@ class Command(BaseCommand):
             help="Show pip package name, module, and version for each plugin.",
         )
 
+    def _base_row(self):
+        """Return the (name, package, module, version) row for ophix-server-base itself."""
+        try:
+            meta = dist_metadata("ophix-server-base")
+            pip_name = meta["Name"]
+        except Exception:
+            pip_name = "ophix-server-base"
+        version = _get_plugin_version("ophix", ep=None)
+        if version == "unknown":
+            try:
+                version = dist_metadata("ophix-server-base")["Version"]
+            except Exception:
+                pass
+        return ("ophix-server-base", pip_name, "ophix", version)
+
     def handle(self, *args, **options):
         details = options["details"]
 
-        discovered = list(entry_points(group=ENTRY_POINT_GROUP))
-
-        if not discovered:
-            self.stdout.write("No Ophix plugins found.")
-            return
-
-        discovered = sorted(discovered, key=lambda ep: ep.name)
+        discovered = sorted(entry_points(group=ENTRY_POINT_GROUP), key=lambda ep: ep.name)
 
         if not details:
+            self.stdout.write("ophix-server-base")
             for ep in discovered:
                 self.stdout.write(ep.name)
             return
 
         # Detailed output — collect rows then format as a table.
-        rows = []
+        rows = [self._base_row()]
         for ep in discovered:
             module_name = ep.value
             pip_name = ep.dist.metadata["Name"] if ep.dist else "—"
