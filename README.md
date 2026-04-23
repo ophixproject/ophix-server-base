@@ -26,6 +26,9 @@ pip install ophix-server-base ophix-creds ophix-docs ophix-theme-tools ophix-cod
 ## Guided installation
 
 The recommended way to deploy a new server is the three-step guided installer.
+The examples below use `credserver` / `ophix-creds` — substitute your domain slug
+and package name (`confserver`, `certserver`, etc.) as appropriate. The pattern is
+identical for every domain.
 
 **Step 1 — configure**
 
@@ -57,6 +60,7 @@ Reads `.credserver.conf` and performs all non-root steps:
 - Copies TLS certificate, key, and CA bundle into place
 - Generates `credserver.nginx.conf` and `credserver.service` (systemd unit)
 - Generates `credserver_sudo_install.sh` and `credserver_sudo_uninstall.sh`
+- Runs plugin setup hooks (e.g. writes encryption keys to `.env`)
 - Runs `migrate`, `collectstatic`, and creates the superuser
 - Activates the configured theme and sets the admin title
 
@@ -99,12 +103,25 @@ scratch.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `SERVER_NAME` | `Ophix Server` | Human-readable name shown in admin |
-| `DB_NAME` | `ophix_db` | MariaDB database name |
-| `INSTALL_DIR` | `/home/websites/ophix` | Root for persistent runtime data |
-| `CA_CERT_FILE` | — | Path to internal CA cert (served unauthenticated) |
-| `AUTH_LEAK_INFO` | `false` | Verbose API errors (development only) |
+| `SERVER_NAME` | *(slug)* | Short name for this server instance |
+| `SERVER_VERSION` | *(domain version)* | Shown in the admin footer |
+| `INSTALL_DIR` | *(prompted)* | Root for runtime data: logs, media, ssl, static |
+| `ALLOWED_HOSTS` | *(hostname)* | Comma-separated hostnames this server accepts |
+| `DEBUG` | `False` | Enable only during development — never in production |
+| `DB_ENGINE` | `mariadb` | `mariadb` \| `mysql` \| `postgres` \| `sqlserver` \| `oracle` \| `cockroachdb` |
+| `DB_HOST` | `localhost` | Database host |
+| `DB_PORT` | `3306` | Database port |
+| `DB_NAME` | `ophix_db` | Database name |
+| `DB_USER` | `ophixuser` | Database user |
+| `DB_PASSWORD` | — | Database password |
+| `DB_SSL_CA` | — | Path to DB CA cert — enables TLS for the database connection |
+| `CA_CERT_FILE` | — | Path to internal CA cert served to clients unauthenticated |
+| `AUTH_LEAK_INFO` | `False` | Include error detail in API responses — development only |
+| `MINIMUM_TOKEN_ROTATE_TIME` | `3600` | Minimum seconds between token rotations |
 | `OPHIX_DISABLE` | — | Comma-separated plugin modules to suppress |
+
+Domain plugins add their own variables (e.g. `CRED_ENCRYPTION_KEY` from `ophix-creds`).
+Full documentation will be available on the Ophix Project website at release.
 
 ---
 
