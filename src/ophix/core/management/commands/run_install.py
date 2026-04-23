@@ -18,6 +18,7 @@ Steps performed directly:
   - Creates or updates the superuser
   - Activates theme (if configured)
   - Sets admin title and header on the active theme
+  - Loads documentation for all installed apps (if ophix-docs is installed)
 
 After this command succeeds, run:
     sudo bash <server_name>_sudo_install.sh
@@ -264,6 +265,31 @@ def _set_admin_labels(title: str, header: str, stdout, style):
             stdout.write(style.WARNING("  No active theme found — admin title not set.\n"))
     except Exception as exc:
         stdout.write(style.WARNING(f"  Could not set admin title: {exc}\n"))
+
+
+def _auto_install_docs(stdout, style):
+    """Load docs for all installed apps that ship them, if ophix-docs is installed."""
+    try:
+        from django.apps import apps as django_apps
+        if not django_apps.is_installed("ophix_docs"):
+            return
+        from pathlib import Path as _Path
+        found = []
+        for app_config in django_apps.get_app_configs():
+            docs_path = _Path(app_config.path) / "docs"
+            if (docs_path.is_dir()
+                    and list(docs_path.glob("*.md"))
+                    and (docs_path / "sections.yaml").is_file()):
+                found.append(app_config.name)
+        if not found:
+            stdout.write(style.WARNING("  ophix-docs installed but no app docs found.\n"))
+            return
+        app_list = ",".join(found)
+        stdout.write(f"  Found docs in: {app_list}\n")
+        call_command("ophix_docs_update", include_app_docs=app_list, verbosity=0)
+        stdout.write(style.SUCCESS("  Documentation loaded.\n"))
+    except Exception as exc:
+        stdout.write(style.WARNING(f"  Could not auto-load docs: {exc}\n"))
 
 
 def _create_or_update_superuser(username: str, email: str, password: str, stdout, style):
@@ -533,6 +559,13 @@ class Command(BaseCommand):
             if admin_title or admin_header:
                 _set_admin_labels(admin_title, admin_header, self.stdout, self.style)
             self.stdout.write("\n")
+
+        # ------------------------------------------------------------------ #
+        # 11. Load documentation
+        # ------------------------------------------------------------------ #
+        self.stdout.write("Loading documentation\n")
+        _auto_install_docs(self.stdout, self.style)
+        self.stdout.write("\n")
 
         # ------------------------------------------------------------------ #
         # Summary

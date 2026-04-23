@@ -125,6 +125,24 @@ Full documentation will be available on the Ophix Project website at release.
 
 ---
 
+## Documentation
+
+If `ophix-docs` is installed, documentation for all installed packages is loaded
+automatically at the end of `run_install`. No further action is needed for a fresh install.
+
+To load or refresh docs manually after upgrading packages, run `ophix_docs_list_sources`
+to see which app module names to include, then:
+
+```bash
+ophix-manage ophix_docs_update --include-app-docs ophix.core,ophix_creds,ophix_docs,ophix_theme_tools
+```
+
+Substitute the module list for your server type — see
+[ophix-docs](https://github.com/ophixproject/ophix-docs) for per-server examples and
+the full list of documentation management commands.
+
+---
+
 ## Django management
 
 ```bash
