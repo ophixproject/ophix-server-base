@@ -143,7 +143,79 @@ the full list of documentation management commands.
 
 ---
 
-## Django management
+## Management commands
+
+### Guided installer
+
+| Command | Purpose |
+|---|---|
+| `configure_install <slug>` | Interactive wizard — collects all settings, tests the DB connection, writes `.env` and `.<slug>.conf`. Idempotent; safe to re-run. |
+| `run_install <slug>` | Reads `.<slug>.conf`; creates the directory structure, copies TLS files, runs `migrate` / `collectstatic` / superuser, activates the theme, loads docs. |
+| `run_uninstall <slug>` | Regenerates or prints the sudo uninstall script. Data directory is never removed automatically. |
+
+See [Guided installation](#guided-installation) above for the full three-step walkthrough.
+
+---
+
+### Manual / legacy deployment
+
+These commands underpin `configure_install` / `run_install` and remain available for scripted or customised deployments.
+
+**`generate_deploy_config`** — generates deployment files from templates:
+
+| Flag | Output |
+|---|---|
+| `--env` | `.env.sample` (base settings + all installed plugin env fragments appended) |
+| `--nginx` | `<slug>.nginx.conf` (HTTP redirect + HTTPS reverse proxy) |
+| `--systemd` | `<slug>.service` (gunicorn systemd unit) |
+| `--all` | All three of the above |
+| `--append` | Appends any missing plugin variables to the existing `.env`. Use after installing a new plugin. Never modifies existing values. |
+
+```bash
+ophix-manage generate_deploy_config --all \
+    --server-hostname credserver.example.com \
+    --service-user ophix
+
+# After installing a new plugin into an existing deployment:
+ophix-manage generate_deploy_config --append
+```
+
+**`configure_database`** — interactive prompt to configure and live-test the database connection, then write the result to `.env`. Supports MariaDB, MySQL, PostgreSQL. Optional TLS and mutual TLS.
+
+```bash
+ophix-manage configure_database
+```
+
+**`init_deploy`** — creates the `INSTALL_DIR` subdirectory structure (`logs/`, `ssl/`, `static/`, `media/`, `run/`). Prints the equivalent shell commands for any steps that require root.
+
+```bash
+ophix-manage init_deploy
+ophix-manage init_deploy --install-dir /var/lib/credserver
+ophix-manage init_deploy --dry-run
+```
+
+---
+
+### Operations
+
+**`list_ophix_plugins`** — lists all installed Ophix plugins discovered via the `ophix.plugins` entry point group, plus `ophix-server-base` itself.
+
+```bash
+ophix-manage list_ophix_plugins             # names only
+ophix-manage list_ophix_plugins --details   # name, package, module, version
+```
+
+**`prune_access_log`** — deletes `AccessLog` records older than N days. Intended to be run periodically via cron.
+
+```bash
+ophix-manage prune_access_log               # default: 90 days
+ophix-manage prune_access_log --days 30
+ophix-manage prune_access_log --days 30 --dry-run
+```
+
+---
+
+### Standard Django commands
 
 ```bash
 # Using the installed entry point
