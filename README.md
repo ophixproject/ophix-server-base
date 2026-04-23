@@ -15,10 +15,10 @@ with plugin auto-discovery, and URL assembly.
 pip install ophix-server-base
 ```
 
-Install domain plugins alongside it:
+Install one domain plugin and any other optional plugins alongside it:
 
 ```bash
-pip install ophix-server-base ophix-creds ophix-docs ophix-theme-tools ophix-codemirror
+pip install ophix-server-base ophix-creds ophix-docs ophix-theme-tools ophix-codemirror ophix-theme-midnight
 ```
 
 ---
