@@ -25,6 +25,7 @@ ClientArtifactBase
 import secrets
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 # ---------------------------------------------------------------------------
@@ -68,19 +69,19 @@ class Client(models.Model):
         max_length=200,
         blank=True,
         null=True,
-        help_text="Deployment reference (repository name or similar identifier)",
+        help_text=_("Deployment reference (repository name or similar identifier)"),
     )
     venv_name = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        help_text="Name of the Python virtual environment",
+        help_text=_("Name of the Python virtual environment"),
     )
     venv_path = models.CharField(
         max_length=500,
         blank=True,
         null=True,
-        help_text="Absolute path to the Python virtual environment",
+        help_text=_("Absolute path to the Python virtual environment"),
     )
     enabled = models.BooleanField(default=True)
     api_token = models.CharField(
@@ -146,19 +147,19 @@ class ClientArtifactBase(models.Model):
     )
     enabled = models.BooleanField(
         default=True,
-        help_text="Client can read this artifact (can_read).",
+        help_text=_("Client can read this artifact (can_read)."),
     )
     can_update = models.BooleanField(
         default=False,
-        help_text="Client may overwrite this artifact.",
+        help_text=_("Client may overwrite this artifact."),
     )
     can_delete = models.BooleanField(
         default=False,
-        help_text="Client may delete this artifact.",
+        help_text=_("Client may delete this artifact."),
     )
     can_share = models.BooleanField(
         default=False,
-        help_text="Reserved: future client-driven sharing. Currently unused.",
+        help_text=_("Reserved: future client-driven sharing. Currently unused."),
     )
     notes = models.TextField(null=True, blank=True)
 

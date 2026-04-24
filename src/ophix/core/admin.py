@@ -116,8 +116,8 @@ class ClientAdmin(admin.ModelAdmin):
     def get_fieldsets(self, request, obj=None):
         return [
             (None, {"fields": ("host", "name", "enabled")}),
-            ("Deployment", {"fields": ("deployment_ref", "venv_name", "venv_path")}),
-            ("Token", {"fields": ("api_token", "last_token_rotation"), "classes": ("collapse",)}),
+            (_("Deployment"), {"fields": ("deployment_ref", "venv_name", "venv_path")}),
+            (_("Token"), {"fields": ("api_token", "last_token_rotation"), "classes": ("collapse",)}),
         ]
 
 
