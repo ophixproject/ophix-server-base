@@ -156,7 +156,7 @@ echo "=== Installing systemd service ==="
 cp "$INSTALL_DIR/{{ slug }}.service" /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable "$SLUG"
-systemctl start "$SLUG"
+systemctl restart "$SLUG"
 
 echo ""
 echo "Installation complete. Check service status:"
