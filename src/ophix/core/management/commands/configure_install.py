@@ -478,7 +478,7 @@ class Command(BaseCommand):
 
         from dotenv import set_key
         pairs = [
-            ("SERVER_NAME",   server_name),
+            ("SERVER_NAME",   getattr(django_settings, "SERVER_NAME", server_name)),
             ("SERVER_VERSION", domain_ver or ""),
             ("INSTALL_DIR",   install_dir),
             ("ALLOWED_HOSTS", hostname),
