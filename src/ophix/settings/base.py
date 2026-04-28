@@ -299,7 +299,7 @@ USE_TZ = True
 # ---------------------------------------------------------------------------
 
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = get_path_env("DJANGO_STATIC_ROOT", INSTALL_DIR / "static")
 STATICFILES_DIRS = [
     d for d in [BASE_DIR / "core" / "static"]
     if d.exists()

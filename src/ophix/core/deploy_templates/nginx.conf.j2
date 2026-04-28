@@ -12,6 +12,7 @@
 #   your actual certificate and private key files.  If using ophix-certs or
 #   CA-tools, place the files at the paths shown.
 
+{% if http_redirect %}
 # HTTP → HTTPS redirect
 server {
     listen 80;
@@ -19,6 +20,7 @@ server {
     return 301 https://$host$request_uri;
 }
 
+{% endif %}
 # HTTPS
 server {
     listen 443 ssl;

@@ -114,6 +114,10 @@ SLUG="{{ slug }}"
 echo "=== Setting ownership ==="
 chown -R "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR"
 
+# Parent directory needs world-execute so nginx can traverse into the install dir.
+# Home directories are 750 by default — this adds traverse-only, not read access.
+chmod o+x "$(dirname "$INSTALL_DIR")"
+
 # logs/ and run/ need nginx group read access
 for dir in logs media run; do
     chown "$SERVICE_USER:$NGINX_GROUP" "$INSTALL_DIR/$dir"
@@ -373,9 +377,10 @@ class Command(BaseCommand):
         su_email    = _get("superuser", "email", "")
         su_password = _get("superuser", "password", "")
 
-        activate_theme = _get("admin", "activate_theme", "")
-        admin_title    = _get("admin", "admin_title", "")
-        admin_header   = _get("admin", "admin_header", "")
+        activate_theme  = _get("admin", "activate_theme", "")
+        admin_title     = _get("admin", "admin_title", "")
+        admin_header    = _get("admin", "admin_header", "")
+        http_redirect   = conf.getboolean("server", "http_redirect", fallback=True)
 
         slug = _slugify(server_name)
         nginx_group = options["nginx_group"]
@@ -417,14 +422,15 @@ class Command(BaseCommand):
         # ------------------------------------------------------------------ #
         self.stdout.write("Generating nginx config\n")
         ctx = {
-            "portal_name":    slug,
+            "portal_name":     slug,
             "server_hostname": hostname,
-            "install_dir":    str(install_dir),
-            "server_name":    server_name,
-            "static_root":    str(install_dir / "static"),
-            "media_root":     str(install_dir / "media"),
-            "venv_path":      sys.prefix,
-            "domain_version": domain_ver or "",
+            "install_dir":     str(install_dir),
+            "server_name":     server_name,
+            "static_root":     str(install_dir / "static"),
+            "media_root":      str(install_dir / "media"),
+            "venv_path":       sys.prefix,
+            "domain_version":  domain_ver or "",
+            "http_redirect":   http_redirect,
         }
         if ca_bundle_dest:
             ctx["ca_bundle_dest"] = ca_bundle_dest

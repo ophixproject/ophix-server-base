@@ -211,6 +211,14 @@ class Command(BaseCommand):
         hostname = self._prompt("Server hostname (FQDN)", default_host)
         conf.set("server", "hostname", hostname)
 
+        default_http_redirect = conf.getboolean("server", "http_redirect", fallback=True)
+        http_redirect = self._prompt_bool(
+            "Enable HTTP→HTTPS redirect on port 80?",
+            "Disable if another process (e.g. Apache) already owns port 80.",
+            default_http_redirect,
+        )
+        conf.set("server", "http_redirect", "yes" if http_redirect else "no")
+
         default_svc_user = conf.get("server", "service_user", fallback="ophix")
         service_user = self._prompt("Service user", default_svc_user)
         conf.set("server", "service_user", service_user)
@@ -492,6 +500,15 @@ class Command(BaseCommand):
     def _prompt(self, label, default):
         result = input(f"  {label} [{default}]: ").strip()
         return result if result else default
+
+    def _prompt_bool(self, label, hint, default):
+        indicator = "[Y/n]" if default else "[y/N]"
+        if hint:
+            self.stdout.write(f"  {hint}\n")
+        result = input(f"  {label} {indicator}: ").strip().lower()
+        if not result:
+            return default
+        return result in ("y", "yes")
 
     def _prompt_path(self, label, default, required=True):
         # Enable tab completion for file paths on Linux (readline not available on Windows).
