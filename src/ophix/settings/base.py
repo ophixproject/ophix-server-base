@@ -282,7 +282,6 @@ LANGUAGE_CODE = os.getenv("LANGUAGE_CODE", "en-au")
 
 LANGUAGES = [
     ("en-au", "Australian English"),
-    ("en-us", "American English"),
 ]
 
 # Locale files from all installed apps are discovered automatically via APP_DIRS.
