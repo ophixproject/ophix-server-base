@@ -17,7 +17,7 @@ Steps performed directly:
   - Runs: collectstatic --noinput
   - Creates or updates the superuser
   - Activates theme (if configured)
-  - Sets admin title and header on the active theme
+  - Sets admin title on the active theme
   - Loads documentation for all installed apps (if ophix-docs is installed)
 
 After this command succeeds, run:
@@ -252,17 +252,14 @@ def _activate_theme(theme_name: str, stdout, style):
         stdout.write(style.WARNING(f"  Could not activate theme '{theme_name}': {exc}\n"))
 
 
-def _set_admin_labels(title: str, header: str, stdout, style):
-    if not title and not header:
+def _set_admin_title(title: str, stdout, style):
+    if not title:
         return
     try:
         from admin_interface.models import Theme
         active = Theme.objects.filter(active=True).first()
         if active:
-            if title:
-                active.title = title
-            if header:
-                active.name = header
+            active.title = title
             active.save()
             stdout.write(style.SUCCESS(f"  Admin title set: {title!r}\n"))
         else:
@@ -379,7 +376,6 @@ class Command(BaseCommand):
 
         activate_theme  = _get("admin", "activate_theme", "")
         admin_title     = _get("admin", "admin_title", "")
-        admin_header    = _get("admin", "admin_header", "")
         http_redirect   = conf.getboolean("server", "http_redirect", fallback=True)
 
         slug = _slugify(server_name)
@@ -562,8 +558,8 @@ class Command(BaseCommand):
             self.stdout.write("Configuring admin UI\n")
             if activate_theme:
                 _activate_theme(activate_theme, self.stdout, self.style)
-            if admin_title or admin_header:
-                _set_admin_labels(admin_title, admin_header, self.stdout, self.style)
+            if admin_title:
+                _set_admin_title(admin_title, self.stdout, self.style)
             self.stdout.write("\n")
 
         # ------------------------------------------------------------------ #

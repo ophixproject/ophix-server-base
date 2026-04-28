@@ -388,10 +388,6 @@ class Command(BaseCommand):
         admin_title = self._prompt("Admin site title", default_title)
         conf.set("admin", "admin_title", admin_title)
 
-        default_header = conf.get("admin", "admin_header", fallback=admin_title)
-        admin_header = self._prompt("Admin site header", default_header)
-        conf.set("admin", "admin_header", admin_header)
-
         self.stdout.write("\n")
 
         # ------------------------------------------------------------------ #
