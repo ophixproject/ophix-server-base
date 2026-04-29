@@ -64,6 +64,16 @@ def _load_plugin_settings(module_name: str, target: dict) -> None:
                 if app not in existing:
                     existing.append(app)
                     logger.debug("Plugin %s added to INSTALLED_APPS: %s", module_name, app)
+        elif key == "LANGUAGES" and isinstance(value, list):
+            # Lang packs extend the available language list.
+            # Deduplicate on language code (first element of each tuple).
+            existing = target.setdefault("LANGUAGES", [])
+            existing_codes = {lang[0] for lang in existing}
+            for lang in value:
+                if lang[0] not in existing_codes:
+                    existing.append(lang)
+                    existing_codes.add(lang[0])
+                    logger.debug("Plugin %s added language: %s", module_name, lang[0])
         elif key == "AUTHENTICATION_BACKENDS_PREPEND" and isinstance(value, list):
             # Plugins declare backends to insert before ModelBackend.
             # Multiple plugins may each contribute backends — they accumulate.
