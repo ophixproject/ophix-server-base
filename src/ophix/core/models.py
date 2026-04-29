@@ -20,6 +20,7 @@ ClientArtifactBase
         can_update  — client can overwrite the artifact
         can_delete  — client can delete the artifact
         can_share   — placeholder: future client-driven sharing
+
 """
 
 import secrets
@@ -42,13 +43,15 @@ def generate_api_token() -> str:
 # ---------------------------------------------------------------------------
 
 class Host(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    ipv4_address = models.GenericIPAddressField(protocol="IPv4", unique=True)
-    description = models.TextField(blank=True, null=True)
-    enabled = models.BooleanField(default=True)
+    name = models.CharField(_("name"), max_length=100, unique=True)
+    ipv4_address = models.GenericIPAddressField(_("IPv4 address"), protocol="IPv4", unique=True)
+    description = models.TextField(_("description"), blank=True, null=True)
+    enabled = models.BooleanField(_("enabled"), default=True)
 
     class Meta:
         ordering = ("name",)
+        verbose_name = _("Host")
+        verbose_name_plural = _("Hosts")
 
     def __str__(self) -> str:
         return f"{self.name} ({self.ipv4_address})"
@@ -61,38 +64,50 @@ class Host(models.Model):
 class Client(models.Model):
     host = models.ForeignKey(
         Host,
+        verbose_name=_("host"),
         on_delete=models.CASCADE,
         related_name="clients",
     )
-    name = models.CharField(max_length=100)
+    name = models.CharField(_("name"), max_length=100)
     deployment_ref = models.CharField(
+        _("deployment reference"),
         max_length=200,
         blank=True,
         null=True,
         help_text=_("Deployment reference (repository name or similar identifier)"),
     )
     venv_name = models.CharField(
+        _("virtual environment name"),
         max_length=100,
         blank=True,
         null=True,
         help_text=_("Name of the Python virtual environment"),
     )
     venv_path = models.CharField(
+        _("virtual environment path"),
         max_length=500,
         blank=True,
         null=True,
         help_text=_("Absolute path to the Python virtual environment"),
     )
-    enabled = models.BooleanField(default=True)
+    enabled = models.BooleanField(_("enabled"), default=True)
     api_token = models.CharField(
+        _("API token"),
         max_length=64,
         unique=True,
         default=generate_api_token,
     )
-    last_token_rotation = models.DateTimeField(null=True, blank=True, default=None)
+    last_token_rotation = models.DateTimeField(
+        _("last token rotation"),
+        null=True,
+        blank=True,
+        default=None,
+    )
 
     class Meta:
         ordering = ("name",)
+        verbose_name = _("Client")
+        verbose_name_plural = _("Clients")
         constraints = [
             models.UniqueConstraint(
                 fields=["host", "name"],
@@ -142,26 +157,31 @@ class ClientArtifactBase(models.Model):
 
     client = models.ForeignKey(
         Client,
+        verbose_name=_("client"),
         on_delete=models.CASCADE,
         related_name="+",  # subclasses define their own related_name
     )
     enabled = models.BooleanField(
+        _("enabled"),
         default=True,
         help_text=_("Client can read this artifact (can_read)."),
     )
     can_update = models.BooleanField(
+        _("can update"),
         default=False,
         help_text=_("Client may overwrite this artifact."),
     )
     can_delete = models.BooleanField(
+        _("can delete"),
         default=False,
         help_text=_("Client may delete this artifact."),
     )
     can_share = models.BooleanField(
+        _("can share"),
         default=False,
         help_text=_("Reserved: future client-driven sharing. Currently unused."),
     )
-    notes = models.TextField(null=True, blank=True)
+    notes = models.TextField(_("notes"), null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -185,6 +205,7 @@ class AccessLog(models.Model):
 
     client = models.ForeignKey(
         Client,
+        verbose_name=_("client"),
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -192,19 +213,22 @@ class AccessLog(models.Model):
     )
     host = models.ForeignKey(
         Host,
+        verbose_name=_("host"),
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="+",
     )
-    operation = models.CharField(max_length=10)
-    artifact_type = models.CharField(max_length=100)
-    artifact_name = models.CharField(max_length=200, blank=True)
-    artifact_id = models.IntegerField(null=True, blank=True)
-    timestamp = models.DateTimeField(db_index=True, default=timezone.now)
+    operation = models.CharField(_("operation"), max_length=10)
+    artifact_type = models.CharField(_("artifact type"), max_length=100)
+    artifact_name = models.CharField(_("artifact name"), max_length=200, blank=True)
+    artifact_id = models.IntegerField(_("artifact ID"), null=True, blank=True)
+    timestamp = models.DateTimeField(_("timestamp"), db_index=True, default=timezone.now)
 
     class Meta:
         ordering = ("-timestamp",)
+        verbose_name = _("Access Log")
+        verbose_name_plural = _("Access Logs")
 
     def __str__(self) -> str:
         return (
