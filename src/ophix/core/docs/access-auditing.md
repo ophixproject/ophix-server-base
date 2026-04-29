@@ -1,7 +1,7 @@
 ---
 title: Access Auditing
 slug: access-auditing
-order: 10
+order: 30
 section: Getting Started
 ---
 

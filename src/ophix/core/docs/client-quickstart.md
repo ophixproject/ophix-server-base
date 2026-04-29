@@ -1,7 +1,7 @@
 ---
 title: Client Quickstart
 slug: client-quickstart
-order: 2
+order: 20
 section: Getting Started
 ---
 

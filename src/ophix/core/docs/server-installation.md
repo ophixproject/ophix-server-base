@@ -1,7 +1,7 @@
 ---
 title: Server Installation
 slug: server-installation
-order: 1
+order: 10
 section: Getting Started
 ---
 
