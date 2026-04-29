@@ -271,23 +271,60 @@ def _set_admin_title(title: str, stdout, style):
 def _auto_install_docs(stdout, style):
     """Load docs for all installed apps that ship them, if ophix-docs is installed."""
     try:
+        import importlib
         from django.apps import apps as django_apps
         if not django_apps.is_installed("ophix_docs"):
             return
         from pathlib import Path as _Path
-        found = []
+
+        default_apps = []   # docs with no language tag
+        lang_apps = {}      # language_code -> [app_name, ...]
+
         for app_config in django_apps.get_app_configs():
             docs_path = _Path(app_config.path) / "docs"
-            if (docs_path.is_dir()
+            if not (docs_path.is_dir()
                     and list(docs_path.glob("*.md"))
                     and (docs_path / "sections.yaml").is_file()):
-                found.append(app_config.name)
-        if not found:
+                continue
+
+            # If the app declares LANGUAGES in its settings.py it is a lang
+            # pack — import its docs tagged with that language code.
+            lang_code = None
+            try:
+                settings_mod = importlib.import_module(f"{app_config.name}.settings")
+                langs = getattr(settings_mod, "LANGUAGES", None)
+                if langs and isinstance(langs, list):
+                    lang_code = langs[0][0]
+            except Exception:
+                pass
+
+            if lang_code:
+                lang_apps.setdefault(lang_code, []).append(app_config.name)
+            else:
+                default_apps.append(app_config.name)
+
+        all_found = default_apps + [n for names in lang_apps.values() for n in names]
+        if not all_found:
             stdout.write(style.WARNING("  ophix-docs installed but no app docs found.\n"))
             return
-        app_list = ",".join(found)
-        stdout.write(f"  Found docs in: {app_list}\n")
-        call_command("ophix_docs_update", include_app_docs=app_list, verbosity=0)
+
+        stdout.write(f"  Found docs in: {','.join(all_found)}\n")
+
+        if default_apps:
+            call_command(
+                "ophix_docs_update",
+                include_app_docs=",".join(default_apps),
+                verbosity=0,
+            )
+
+        for lang_code, app_names in lang_apps.items():
+            call_command(
+                "ophix_docs_update",
+                include_app_docs=",".join(app_names),
+                language=lang_code,
+                verbosity=0,
+            )
+
         stdout.write(style.SUCCESS("  Documentation loaded.\n"))
     except Exception as exc:
         stdout.write(style.WARNING(f"  Could not auto-load docs: {exc}\n"))
