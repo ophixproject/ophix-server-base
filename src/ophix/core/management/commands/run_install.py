@@ -447,6 +447,9 @@ class Command(BaseCommand):
             ca_dest = install_dir / "ssl" / "certs" / ca_name
             _copy_tls(ca_bundle_src, ca_dest, self.stdout, self.style, "CA bundle")
             ca_bundle_dest = str(ca_dest)
+            from dotenv import set_key as _set_key
+            _set_key(str(Path.cwd() / ".env"), "CA_CERT_FILE", ca_bundle_dest, quote_mode="never")
+            self.stdout.write(self.style.SUCCESS(f"  CA_CERT_FILE set in .env\n"))
 
         self.stdout.write("\n")
 
