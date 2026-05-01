@@ -304,6 +304,18 @@ STATICFILES_DIRS = [
     if d.exists()
 ]
 
+# Content-hash suffixes on static file URLs (admin.abc123.css) mean the browser
+# always fetches fresh files after collectstatic, without needing a hard refresh.
+# Requires collectstatic to be run before serving — already part of the deploy workflow.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+    },
+}
+
 MEDIA_URL = "/media/"
 MEDIA_ROOT = get_path_env("DJANGO_MEDIA_ROOT", INSTALL_DIR / "media")
 
