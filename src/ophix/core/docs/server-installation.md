@@ -321,6 +321,26 @@ All default to `False`. Enable in `.env` as needed.
 | `AUDIT_BATCH_SIZE` | `50` | Access events to accumulate before a batch database write |
 | `AUDIT_FLUSH_INTERVAL` | `5` | Maximum seconds to hold a partial batch before flushing |
 
+Access log timestamps are always stored in UTC regardless of the `TIME_ZONE` setting.
+
+**MariaDB / MySQL — timezone tables required for non-UTC `TIME_ZONE`**
+
+When `TIME_ZONE=UTC` (the default), the Access Logs admin view works out of the box. If you set a non-UTC `TIME_ZONE` (e.g. `Australia/Sydney`), the admin date filtering and date hierarchy rely on MariaDB's `CONVERT_TZ()` function, which requires the timezone tables to be populated. Without them you will see:
+
+```text
+ValueError: Database returned an invalid datetime value.
+Are time zone definitions for your database installed?
+```
+
+To install the timezone tables (one-time, per MariaDB/MySQL instance):
+
+```bash
+mysql_tzinfo_to_sql /usr/share/zoneinfo | sudo mysql mysql
+sudo systemctl restart mariadb
+```
+
+PostgreSQL, SQL Server, Oracle, and CockroachDB are not affected — they carry their own timezone data.
+
 See [Access Auditing](access-auditing) for the full audit log documentation.
 
 ### Authentication plugins
