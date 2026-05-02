@@ -242,7 +242,7 @@ else:
     # mariadb / mysql — the Django MySQL backend handles both
     _db_options = {
         "charset": "utf8mb4",
-        "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+        "init_command": "SET sql_mode='STRICT_TRANS_TABLES', time_zone='+00:00'",
     }
     if _db_ssl_ca:
         _ssl = {"ca": _db_ssl_ca}
