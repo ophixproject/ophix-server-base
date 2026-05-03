@@ -335,9 +335,11 @@ Are time zone definitions for your database installed?
 To install the timezone tables (one-time, per MariaDB/MySQL instance):
 
 ```bash
-mysql_tzinfo_to_sql /usr/share/zoneinfo | sudo mysql mysql
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -h 127.0.0.1 -u root -p mysql
 sudo systemctl restart mariadb
 ```
+
+`-h 127.0.0.1` connects explicitly to localhost (adjust if your MariaDB/MySQL is on a different host). `-u root` uses the root database user. `-p` prompts for the password interactively. The target database is `mysql` — this is the system database where timezone tables live and is not the Ophix application database.
 
 PostgreSQL, SQL Server, Oracle, and CockroachDB are not affected — they carry their own timezone data.
 
