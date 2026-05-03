@@ -117,6 +117,8 @@ scratch.
 | `DB_PASSWORD` | — | Database password |
 | `DB_SSL_CA` | — | Path to DB CA cert — enables TLS for the database connection |
 | `CA_CERT_FILE` | — | Path to internal CA cert served to clients unauthenticated |
+| `TIME_ZONE` | `UTC` | Server timezone. UTC is strongly recommended. If set to a non-UTC value and using MariaDB or MySQL, the database timezone tables must be populated — see [Audit logging](src/ophix/core/docs/server-installation.md#audit-logging) in the installation docs. |
+| `LANGUAGE_CODE` | `en-au` | Django language code |
 | `AUTH_LEAK_INFO` | `False` | Include error detail in API responses — development only |
 | `MINIMUM_TOKEN_ROTATE_TIME` | `3600` | Minimum seconds between token rotations |
 | `OPHIX_DISABLE` | — | Comma-separated plugin modules to suppress |
