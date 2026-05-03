@@ -18,10 +18,12 @@ This made the CLI harder to learn and prevented building consistent mental model
 
 All Tier 1 domain client CLIs standardise on two option names:
 
-| Option | Meaning |
-|---|---|
-| `--name <n>` | The artifact name on the remote server |
-| `--var <VAR>` | A key in the local `.domain.env` file whose value is the artifact name |
+| Option | Meaning | Metavar |
+| --- | --- | --- |
+| `--name <n>` | The artifact name on the remote server | `NAME` |
+| `--var <VAR>` | A key in the local `.domain.env` file whose value is the artifact name | `ENV_VAR` |
+
+The metavar values (`NAME`, `ENV_VAR`) must be used consistently so argparse help output is uniform across all commands and clients.
 
 ### fetch
 
