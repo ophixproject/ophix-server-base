@@ -84,7 +84,7 @@ This wizard collects:
 - Superuser username, email, and password
 - Theme to activate and admin title (if a theme package is installed)
 
-Any installed domain plugin or extension that requires a generated key (such as `CRED_ENCRYPTION_KEY` for `ophix-creds` or `CA_KEY_ENCRYPTION_KEY` for `ophix-certs-ca`) is prompted for at the end of the wizard. For fresh installs the key is auto-generated; if you are rebuilding a venv against an existing database you can supply the original key instead.
+Any installed domain plugin or extension that requires a generated key (such as `CRED_ENCRYPTION_KEY` for `ophix-creds` or `CA_KEY_ENCRYPTION_KEY` for `ophix-certs-ca`) is prompted for at the end of the wizard. For fresh installs the key is auto-generated; if you are rebuilding a venv against an existing database you must supply the original key instead.
 
 The wizard writes two files:
 
