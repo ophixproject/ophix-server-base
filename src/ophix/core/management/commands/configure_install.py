@@ -414,6 +414,7 @@ class Command(BaseCommand):
             install_dir=install_dir,
             hostname=hostname,
             domain_ver=domain_ver,
+            ca_bundle=ca_bundle,
             engine=engine,
             db_host=host,
             db_port=port,
@@ -436,6 +437,7 @@ class Command(BaseCommand):
 
     def _write_env(
         self, server_name, install_dir, hostname, domain_ver,
+        ca_bundle,
         engine, db_host, db_port, db_name, db_user, db_password,
         db_ssl_ca, db_ssl_cert, db_ssl_key,
     ):
@@ -473,11 +475,16 @@ class Command(BaseCommand):
             pass
 
         from dotenv import set_key
+        ca_cert_file = (
+            str(Path(install_dir) / "ssl" / "certs" / Path(ca_bundle).name)
+            if ca_bundle else ""
+        )
         pairs = [
             ("SERVER_NAME",   getattr(django_settings, "SERVER_NAME", server_name)),
             ("SERVER_VERSION", domain_ver or ""),
             ("INSTALL_DIR",   install_dir),
             ("ALLOWED_HOSTS", hostname),
+            ("CA_CERT_FILE",  ca_cert_file),
             ("DB_ENGINE",     engine),
             ("DB_HOST",       db_host),
             ("DB_PORT",       db_port),
