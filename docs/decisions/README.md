@@ -21,3 +21,4 @@ Each ADR is a markdown file named `ADR-NNN-short-title.md`. Status values: `Acce
 | [ADR-003](ADR-003-dual-token-ip-authentication.md) | Dual token + IP authentication | Accepted |
 | [ADR-004](ADR-004-client-cli-option-naming.md) | Tier 1 client CLI option naming | Accepted |
 | [ADR-005](ADR-005-domain-independence.md) | Domain independence and no cross-domain coupling | Accepted |
+| [ADR-006](ADR-006-rbac-django-groups.md) | RBAC for admin UI using Django groups | Accepted — not yet implemented |
