@@ -233,6 +233,21 @@ def _parse_env_keys(text: str) -> set[str]:
     return keys
 
 
+def _parse_all_keys(text: str) -> set[str]:
+    """
+    Return variable names from both active (KEY=val) and commented (# KEY=val) lines.
+    Used to detect whether an opt-in (all-commented) fragment has already been appended.
+    """
+    keys = set()
+    for line in text.splitlines():
+        stripped = line.strip().lstrip("#").strip()
+        if stripped and "=" in stripped:
+            key = stripped.split("=", 1)[0].strip()
+            if key and all(c.isalnum() or c == "_" for c in key):
+                keys.add(key)
+    return keys
+
+
 def _get_env_value(text: str, key: str) -> str | None:
     """Return the current value of a specific key in .env text, or None if absent."""
     for line in text.splitlines():
@@ -640,9 +655,12 @@ class Command(BaseCommand):
             self.stdout.write("No sources found — nothing to append.\n")
             return
 
-        appended = []   # list of (label, [new_key, ...])
+        appended = []   # list of (label, [key, ...], is_comment_only)
         skipped = []
         additions = []
+
+        # Track all keys seen in .env — active and commented — to detect opt-in blocks.
+        existing_all_keys = _parse_all_keys(existing_text)
 
         for label, content in sources:
             filtered = _filter_to_missing_blocks(content, existing_keys)
@@ -651,6 +669,16 @@ class Command(BaseCommand):
                 for line in filtered.splitlines()
                 if line.strip() and not line.strip().startswith("#") and "=" in line
             ]
+            is_comment_only = False
+            if not new_keys:
+                # Fragment may be entirely commented-out (opt-in settings block).
+                # Append it if it contains variable names not yet seen anywhere in .env.
+                frag_all_keys = _parse_all_keys(filtered)
+                new_commented = sorted(frag_all_keys - existing_all_keys)
+                if new_commented:
+                    new_keys = new_commented
+                    is_comment_only = True
+
             if new_keys:
                 header = (
                     f"\n# {'=' * 70}\n"
@@ -658,9 +686,10 @@ class Command(BaseCommand):
                     f"# {'=' * 70}\n\n"
                 )
                 additions.append(header + filtered.lstrip("\n"))
-                appended.append((label, new_keys))
-                # Update existing_keys so later sources don't re-append the same key
-                existing_keys.update(new_keys)
+                appended.append((label, new_keys, is_comment_only))
+                if not is_comment_only:
+                    existing_keys.update(new_keys)
+                existing_all_keys.update(new_keys)
             else:
                 skipped.append(label)
 
@@ -668,16 +697,23 @@ class Command(BaseCommand):
             with env_file.open("a", encoding="utf-8") as f:
                 for block in additions:
                     f.write(block)
-            for label, new_keys in appended:
-                self.stdout.write(self.style.SUCCESS(f"  Appended from {label}:\n"))
+            for label, new_keys, is_comment_only in appended:
+                if is_comment_only:
+                    self.stdout.write(self.style.SUCCESS(
+                        f"  Appended settings block from {label}"
+                        f" (all commented — fill in to activate):\n"
+                    ))
+                else:
+                    self.stdout.write(self.style.SUCCESS(f"  Appended from {label}:\n"))
                 for key in new_keys:
-                    self.stdout.write(f"    {key}\n")
+                    prefix = "    # " if is_comment_only else "    "
+                    self.stdout.write(f"{prefix}{key}\n")
         if skipped:
             for label in skipped:
                 self.stdout.write(f"  All variables already present: {label}\n")
 
         if additions:
-            all_new_keys = [key for _, keys in appended for key in keys]
+            all_new_keys = [key for _, keys, _ in appended for key in keys]
             self.stdout.write(
                 self.style.SUCCESS(
                     f"\nDone. {len(appended)} source(s) had new variables appended "
