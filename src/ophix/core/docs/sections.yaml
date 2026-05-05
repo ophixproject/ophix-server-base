@@ -1,3 +1,5 @@
 sections:
   - name: Getting Started
     collapsed: false
+  - name: Credits
+    collapsed: true
