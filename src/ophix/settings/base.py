@@ -353,13 +353,13 @@ X_FRAME_OPTIONS = "SAMEORIGIN"
 SILENCED_SYSTEM_CHECKS = ["security.W019"]
 
 # UI flags — control visibility of various admin sections.
-# All default to False (hidden); enable in .env as required.
-DISPLAY_VERSION_FOOTER = get_bool_env("DISPLAY_VERSION_FOOTER", default=False)
-DISPLAY_COPYRIGHT = get_bool_env("DISPLAY_COPYRIGHT", default=False)
+# Footer and access logs default to True; internal model views default to False.
+DISPLAY_VERSION_FOOTER = get_bool_env("DISPLAY_VERSION_FOOTER", default=True)
+DISPLAY_COPYRIGHT = get_bool_env("DISPLAY_COPYRIGHT", default=True)
 SHOW_THEME_MODEL = get_bool_env("SHOW_THEME_MODEL", default=False)
 SHOW_AUTH_MODELS = get_bool_env("SHOW_AUTH_MODELS", default=False)
 SHOW_CLIENT_ARTIFACT_MODEL = get_bool_env("SHOW_CLIENT_ARTIFACT_MODEL", default=False)
-SHOW_ACCESS_LOGS = get_bool_env("SHOW_ACCESS_LOGS", default=False)
+SHOW_ACCESS_LOGS = get_bool_env("SHOW_ACCESS_LOGS", default=True)
 
 # ---------------------------------------------------------------------------
 # Ophix base API settings
