@@ -84,3 +84,12 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
         transparent
     );
 }
+
+/* Subtle grey tint for paused rows */
+tr:has(td.field-paused input[type="checkbox"]:checked) {
+    box-shadow: inset 0 0 0 9999px color-mix(
+        in srgb,
+        #808080 8%,
+        transparent
+    );
+}
