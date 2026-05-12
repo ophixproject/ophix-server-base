@@ -52,21 +52,26 @@ def _build_event(access, operation: str) -> dict:
     """
     Extract and snapshot fields from the join record at the moment of the call.
 
-    The artifact FK field name varies by domain:
-      ClientCredential     → .credential
-      ClientConfiguration  → .configuration
-      ClientCertAccess     → .bundle
-    We try a fixed list of names so audit.py has no domain imports.
+    The artifact FK field name varies by domain. We discover it by inspecting
+    the model's concrete fields for ForeignKeys that are not 'client', so new
+    domains require no changes here.
     """
     client = getattr(access, "client", None)
     host = getattr(client, "host", None) if client else None
 
     artifact = None
-    for attr in ("credential", "configuration", "bundle"):
-        candidate = getattr(access, attr, None)
-        if candidate is not None:
-            artifact = candidate
-            break
+    try:
+        for field in access.__class__._meta.get_fields():
+            if (
+                hasattr(field, "many_to_one") and field.many_to_one
+                and field.name != "client"
+            ):
+                candidate = getattr(access, field.name, None)
+                if candidate is not None:
+                    artifact = candidate
+                    break
+    except Exception:
+        pass
 
     artifact_type = type(artifact).__name__ if artifact else ""
     artifact_name = str(getattr(artifact, "name", "")) if artifact else ""
