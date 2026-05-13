@@ -74,11 +74,28 @@ td.field-enabled input[type="checkbox"]:hover {
     accent-color: var(--admin-interface-generic-link-hover-color) !important;
 }
 
-/* Subtle grey tint for paused rows */
+/*
+ * Ophix row-state colours.
+ *
+ * --ophix-paused-color:   tint for paused rows. No theme equivalent exists in
+ *                         django-admin-interface, so a default is provided here.
+ *                         Override in a theme pack's custom CSS to change it.
+ *
+ * --ophix-disabled-color: derives from the theme's delete/danger button colour
+ *                         so it tracks the active theme automatically.
+ *                         Override only if you need to decouple it from the
+ *                         delete button colour.
+ */
+:root {
+    --ophix-paused-color: #b45309;
+    --ophix-disabled-color: var(--admin-interface-delete-button-background-color);
+}
+
+/* Subtle amber tint for paused rows */
 tr:has(td.field-paused input[type="checkbox"]:checked) {
     box-shadow: inset 0 0 0 9999px color-mix(
         in srgb,
-        #808080 8%,
+        var(--ophix-paused-color) 8%,
         transparent
     );
 }
@@ -87,7 +104,7 @@ tr:has(td.field-paused input[type="checkbox"]:checked) {
 tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
     box-shadow: inset 0 0 0 9999px color-mix(
         in srgb,
-        var(--admin-interface-delete-button-background-color) 6%,
+        var(--ophix-disabled-color) 6%,
         transparent
     );
 }
