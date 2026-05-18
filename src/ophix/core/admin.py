@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.conf import settings
 from importlib import import_module
-from .models import Host, Client, AccessLog
+from .models import Host, Client, AccessLog, PackageUpdateRecord
 from django.utils.translation import gettext_lazy as _
 
 
@@ -161,3 +161,41 @@ class AccessLogAdmin(admin.ModelAdmin):
 # Hide Access Logs unless SHOW_ACCESS_LOGS=True.
 # Must come after AccessLogAdmin is registered above.
 hide_models("ophix.core", ["AccessLog"], getattr(settings, "SHOW_ACCESS_LOGS", False))
+
+
+# ============================================================
+# PackageUpdateRecordAdmin
+# ============================================================
+
+@admin.register(PackageUpdateRecord)
+class PackageUpdateRecordAdmin(admin.ModelAdmin):
+    list_display = (
+        "package_name",
+        "installed_version",
+        "latest_version",
+        "update_available",
+        "last_checked_at",
+        "first_recorded_at",
+    )
+    list_filter = ("update_available",)
+    search_fields = ("package_name",)
+    ordering = ("package_name",)
+    # All fields except notice are set by the management command, not the operator.
+    readonly_fields = (
+        "package_name",
+        "installed_version",
+        "latest_version",
+        "update_available",
+        "first_recorded_at",
+        "last_checked_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+# Hide Package Update Records unless SHOW_PACKAGE_UPDATE_MODEL=True.
+hide_models("ophix.core", ["PackageUpdateRecord"], getattr(settings, "SHOW_PACKAGE_UPDATE_MODEL", False))

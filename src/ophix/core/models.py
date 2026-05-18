@@ -236,3 +236,60 @@ class AccessLog(models.Model):
             f"{self.operation} "
             f"{self.artifact_type}/{self.artifact_name}"
         )
+
+
+# ---------------------------------------------------------------------------
+# PackageUpdateRecord
+# ---------------------------------------------------------------------------
+
+class PackageUpdateRecord(models.Model):
+    """
+    Snapshot of an installed Ophix package as of the last check_ophix_updates run.
+
+    Rows are upserted by the management command — never created via the admin.
+    The ``notice`` field is the only admin-editable field and is intended for
+    operator notes or Ophix Project notices about a specific package.
+    """
+
+    package_name = models.CharField(
+        _("package name"),
+        max_length=200,
+        unique=True,
+    )
+    installed_version = models.CharField(
+        _("installed version"),
+        max_length=100,
+    )
+    latest_version = models.CharField(
+        _("latest version"),
+        max_length=100,
+        blank=True,
+        help_text=_("Blank when the package could not be found in the configured index."),
+    )
+    update_available = models.BooleanField(
+        _("update available"),
+        default=False,
+    )
+    first_recorded_at = models.DateTimeField(
+        _("first recorded"),
+        auto_now_add=True,
+        help_text=_("When this package was first seen by check_ophix_updates."),
+    )
+    last_checked_at = models.DateTimeField(
+        _("last checked"),
+        null=True,
+        blank=True,
+    )
+    notice = models.TextField(
+        _("notice"),
+        blank=True,
+        help_text=_("Optional operator note or notice from the Ophix Project."),
+    )
+
+    class Meta:
+        ordering = ("package_name",)
+        verbose_name = _("Package Update Record")
+        verbose_name_plural = _("Package Update Records")
+
+    def __str__(self) -> str:
+        return self.package_name

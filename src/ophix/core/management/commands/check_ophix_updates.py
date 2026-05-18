@@ -8,10 +8,14 @@ Uses ``pip index versions`` under the hood, so every pip source configured
 for this environment (local mirror, private index, PyPI, etc.) is respected
 automatically.  No extra network configuration is needed.
 
+Results are stored in the PackageUpdateRecord table and optionally displayed
+on screen.  Use --quiet to suppress output (suitable for cron jobs).
+
 Examples
 --------
     ophix-manage check_ophix_updates
     ophix-manage check_ophix_updates --timeout 60
+    ophix-manage check_ophix_updates --quiet   # cron-friendly, DB only
 """
 
 import re
@@ -22,6 +26,7 @@ from importlib.metadata import entry_points, metadata as dist_metadata
 from packaging.version import Version, InvalidVersion
 
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from ophix.core.management.commands.list_ophix_plugins import (
     _get_plugin_version,
@@ -81,9 +86,15 @@ class Command(BaseCommand):
             metavar="SECONDS",
             help="Per-package pip query timeout in seconds (default: 30).",
         )
+        parser.add_argument(
+            "--quiet",
+            action="store_true",
+            help="Suppress table output. Results are still written to the database.",
+        )
 
     def handle(self, *args, **options):
         timeout = options["timeout"]
+        quiet = options["quiet"]
 
         # --- Collect (plugin_name, pip_package, installed_version) rows -----
         rows = []
@@ -117,6 +128,23 @@ class Command(BaseCommand):
             results.append((plugin_name, pip_name, installed, latest or "—", status))
 
         self.stderr.write(" " * 60 + "\r", ending="")  # clear progress line
+
+        # --- Upsert PackageUpdateRecord rows ---------------------------------
+        from ophix.core.models import PackageUpdateRecord
+        now = timezone.now()
+        for plugin_name, pip_name, installed, latest, status in results:
+            PackageUpdateRecord.objects.update_or_create(
+                package_name=pip_name,
+                defaults={
+                    "installed_version": installed,
+                    "latest_version": latest if latest != "—" else "",
+                    "update_available": status == _STATUS_UPDATE,
+                    "last_checked_at": now,
+                },
+            )
+
+        if quiet:
+            return
 
         # --- Format and print table ------------------------------------------
         w_plugin    = max(len("Plugin"),    max(len(r[0]) for r in results))
