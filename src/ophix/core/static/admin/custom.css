@@ -87,7 +87,7 @@ td.field-enabled input[type="checkbox"]:hover {
  *                         delete button colour.
  */
 /* Subtle amber tint for paused rows — colour from theme warning/paused field */
-tr.ophix-row-paused {
+tr:has(td.field-paused input[type="checkbox"]:checked) {
     box-shadow: inset 0 0 0 9999px color-mix(
         in srgb,
         var(--admin-interface-warning-color, #E67E22) 8%,
@@ -97,7 +97,7 @@ tr.ophix-row-paused {
 
 /* Subtle red/pink tint for disabled rows — colour from theme delete button field.
    Declared last so it wins over paused when both classes are present. */
-tr.ophix-row-disabled {
+tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
     box-shadow: inset 0 0 0 9999px color-mix(
         in srgb,
         var(--admin-interface-delete-button-background-color, #BA2121) 12%,
