@@ -39,7 +39,22 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // -----------------------------------------------------------------------
-    // 3. Auto-save on checkbox change.
+    // 3. Stamp row-state classes on each changelist row so CSS can colour them.
+    //    Pure-CSS :has(td.field-enabled input:not(:checked)) is unreliable when
+    //    a row also contains td.field-paused — the class approach is explicit.
+    // -----------------------------------------------------------------------
+    function stampRowStates() {
+        form.querySelectorAll('tr').forEach(function (row) {
+            var enabledCb = row.querySelector('td.field-enabled input[type="checkbox"]');
+            var pausedCb  = row.querySelector('td.field-paused  input[type="checkbox"]');
+            row.classList.toggle('ophix-row-disabled', !!(enabledCb && !enabledCb.checked));
+            row.classList.toggle('ophix-row-paused',   !!(pausedCb  &&  pausedCb.checked));
+        });
+    }
+    stampRowStates();
+
+    // -----------------------------------------------------------------------
+    // 4. Auto-save on checkbox change.
     //    Hidden buttons still respond to .click() and include their
     //    name/value in the form submission, so this works even after step 2.
     // -----------------------------------------------------------------------
