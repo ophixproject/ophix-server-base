@@ -1,5 +1,11 @@
 # ophix-server-base Release Notes
 
+## 2026.05.19.09
+
+- Release notes rendered with scoped CSS (`.ophix-release-notes`): version
+  headers display as lightweight link-coloured dividers rather than picking up
+  Django admin's fieldset `h2` styling.
+
 ## 2026.05.19.08
 
 - Renamed model display name from "Package Update Records" to "Plugin Versions".
