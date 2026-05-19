@@ -1,5 +1,10 @@
 # ophix-server-base Release Notes
 
+## 2026.05.19.12
+
+- Added migration 0006: records `verbose_name` and `help_text` change on
+  `PackageUpdateRecord.notice` (renamed to "release notes" in 2026.05.19.07).
+
 ## 2026.05.19.11
 
 - Fixed migration 0005 dependency: app label must be `ophix_core`, not `core`.
