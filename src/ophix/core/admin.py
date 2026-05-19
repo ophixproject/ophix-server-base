@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.conf import settings
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from importlib import import_module
 from .models import Host, Client, AccessLog, PackageUpdateRecord
 from django.utils.translation import gettext_lazy as _
@@ -194,7 +195,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
     @admin.display(description=_("Up To Date"))
     def up_to_date(self, obj):
         if not obj.update_available:
-            return format_html(
+            return mark_safe(
                 '<span style="color:var(--admin-interface-generic-link-hover-color);'
                 'font-size:1.2em">✓</span>'
             )
