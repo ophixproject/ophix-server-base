@@ -1,5 +1,15 @@
 # ophix-server-base Release Notes
 
+## 2026.05.19.07
+
+- `PackageUpdateRecord` detail view: added `fieldsets` to suppress the raw
+  `update_available` boolean field (which showed Django's default red ✗ icon);
+  the themed `Up To Date` column is the only status indicator now.
+- Renamed `notice` field label to "Release Notes"; updated help text to describe
+  the field accurately (populated from `OPHIX_RELEASE_NOTES.md` at check time).
+- Release notes are now rendered as markdown in the detail view (`markdown`
+  package added as a dependency).
+
 ## 2026.05.19.06
 
 - Fixed `UnboundLocalError` in `check_ophix_updates --prune`: `_` used as a
@@ -12,7 +22,6 @@
   rows for packages that are no longer installed.
 - Fixed `TypeError` in `PackageUpdateRecord` admin list view on Django 6.0.4+
   (`format_html` now requires at least one argument; static HTML uses `mark_safe`).
-
 
 ## 2026.05.19.04
 
