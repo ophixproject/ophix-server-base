@@ -1,5 +1,13 @@
 # ophix-server-base Release Notes
 
+## 2026.05.19.05
+
+- `check_ophix_updates`: added `--prune` flag to remove `PackageUpdateRecord`
+  rows for packages that are no longer installed.
+- Fixed `TypeError` in `PackageUpdateRecord` admin list view on Django 6.0.4+
+  (`format_html` now requires at least one argument; static HTML uses `mark_safe`).
+
+
 ## 2026.05.19.04
 
 - `PackageUpdateRecord` detail view is now read-only; release notes from each
