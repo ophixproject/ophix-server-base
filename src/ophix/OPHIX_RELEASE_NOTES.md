@@ -1,5 +1,9 @@
 # ophix-server-base Release Notes
 
+## 2026.05.19.11
+
+- Fixed migration 0005 dependency: app label must be `ophix_core`, not `core`.
+
 ## 2026.05.19.10
 
 - Added `ipv6_address` field to `Host` model (nullable, unique). `ipv4_address`
