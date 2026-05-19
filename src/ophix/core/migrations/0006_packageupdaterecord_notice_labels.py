@@ -17,12 +17,4 @@ class Migration(migrations.Migration):
                 verbose_name="release notes",
             ),
         ),
-        migrations.AlterModelOptions(
-            name="packageupdaterecord",
-            options={
-                "ordering": ("package_name",),
-                "verbose_name": "Plugin",
-                "verbose_name_plural": "Plugin Versions",
-            },
-        ),
     ]
