@@ -200,7 +200,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
             "first_recorded_at",
             "last_checked_at",
         )}),
-        (_("Notice"), {"fields": ("notice",)}),
+        (_("Release Notes"), {"fields": ("notice",)}),
     )
 
     @admin.display(description=_("Up To Date"))

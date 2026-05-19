@@ -247,8 +247,8 @@ class PackageUpdateRecord(models.Model):
     Snapshot of an installed Ophix package as of the last check_ophix_updates run.
 
     Rows are upserted by the management command — never created via the admin.
-    The ``notice`` field is the only admin-editable field and is intended for
-    operator notes or Ophix Project notices about a specific package.
+    The ``notice`` field stores release notes read from each package's
+    ``OPHIX_RELEASE_NOTES.md`` file at check time.
     """
 
     package_name = models.CharField(
@@ -281,9 +281,9 @@ class PackageUpdateRecord(models.Model):
         blank=True,
     )
     notice = models.TextField(
-        _("notice"),
+        _("release notes"),
         blank=True,
-        help_text=_("Optional operator note or notice from the Ophix Project."),
+        help_text=_("Package release notes read from OPHIX_RELEASE_NOTES.md at last check."),
     )
 
     class Meta:
