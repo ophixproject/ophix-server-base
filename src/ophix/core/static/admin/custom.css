@@ -105,6 +105,12 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
     );
 }
 
+/* Match address fields to the width of standard text fields */
+.field-ipv4_address input,
+.field-ipv6_address input {
+    width: 610px;
+}
+
 /* Rendered markdown release notes in PackageUpdateRecord detail view */
 .ophix-release-notes h2 {
     font-size: 0.85em;
