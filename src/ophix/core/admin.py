@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.conf import settings
+from django.utils.html import format_html
 from importlib import import_module
 from .models import Host, Client, AccessLog, PackageUpdateRecord
 from django.utils.translation import gettext_lazy as _
@@ -185,14 +186,22 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
         "package_name",
         "installed_version",
         "latest_version",
-        "update_available",
+        "up_to_date",
         "first_recorded_at",
         "last_checked_at",
     )
 
-    @admin.display(boolean=True, description="Up To Date")
+    @admin.display(description="Up To Date")
     def up_to_date(self, obj):
-        return not obj.update_available
+        if not obj.update_available:
+            return format_html(
+                '<span style="color:var(--admin-interface-generic-link-hover-color);'
+                'font-size:1.2em">✓</span>'
+            )
+        return format_html(
+            '<span style="color:var(--admin-interface-warning-color,#E67E22);'
+            'font-weight:bold">⬆ Update available</span>'
+        )
 
     def has_add_permission(self, request):
         return False
