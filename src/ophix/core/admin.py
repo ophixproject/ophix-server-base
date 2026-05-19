@@ -42,24 +42,11 @@ hide_models("django.contrib.auth", ["User", "Group"], getattr(settings, "SHOW_AU
 
 @admin.register(Host)
 class HostAdmin(admin.ModelAdmin):
-    list_display = (
-        'name',
-        'ipv4_address',
-        'enabled',
-        'description',
-    )
+    list_display = ('name', 'ipv4_address', 'enabled', 'description')
     list_editable = ('enabled',)
     search_fields = ('name', 'ipv4_address', 'description')
     list_filter = ('enabled',)
     actions = None
-
-    def __init__(self, model, admin_site):
-        super().__init__(model, admin_site)
-        if getattr(settings, 'SHOW_IPV6_ADDRESS', True):
-            self.list_display = (
-                'name', 'ipv4_address', 'ipv6_address', 'enabled', 'description',
-            )
-            self.search_fields = ('name', 'ipv4_address', 'ipv6_address', 'description')
 
     _registered_inlines = []
     _registered_columns = []
@@ -79,7 +66,24 @@ class HostAdmin(admin.ModelAdmin):
         return self._registered_inlines
 
     def get_list_display(self, request):
-        return list(self.list_display) + self._registered_columns
+        cols = ['name', 'ipv4_address']
+        if getattr(settings, 'SHOW_IPV6_ADDRESS', True):
+            cols.append('ipv6_address')
+        cols += ['enabled', 'description']
+        return cols + self._registered_columns
+
+    def get_search_fields(self, request):
+        fields = ['name', 'ipv4_address', 'description']
+        if getattr(settings, 'SHOW_IPV6_ADDRESS', True):
+            fields.append('ipv6_address')
+        return fields
+
+    def get_fields(self, request, obj=None):
+        fields = ['name', 'ipv4_address']
+        if getattr(settings, 'SHOW_IPV6_ADDRESS', True):
+            fields.append('ipv6_address')
+        fields += ['description', 'enabled']
+        return fields
 
 
 # ============================================================
