@@ -173,7 +173,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
         "package_name",
         "installed_version",
         "latest_version",
-        "update_available",
+        "up_to_date",
         "last_checked_at",
         "first_recorded_at",
     )
@@ -189,6 +189,10 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
         "first_recorded_at",
         "last_checked_at",
     )
+
+    @admin.display(boolean=True, description="Up To Date")
+    def up_to_date(self, obj):
+        return not obj.update_available
 
     def has_add_permission(self, request):
         return False

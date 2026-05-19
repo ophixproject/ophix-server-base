@@ -63,6 +63,23 @@ def _get_latest_version(pip_name: str, timeout: int) -> str | None:
     return None
 
 
+def _format_ophix_version(version: str) -> str:
+    """Restore leading zeros stripped by PEP 440 normalisation.
+
+    Our format is always YYYY.MM.DD.NN. pip normalises 2026.05.18.03 to
+    2026.5.18.3 — this puts the leading zeros back on the last three parts.
+    Passes through unchanged if the string doesn't match the 4-part pattern.
+    """
+    parts = version.split(".")
+    if len(parts) == 4 and parts[0].isdigit() and len(parts[0]) == 4:
+        try:
+            year, month, day, seq = parts
+            return f"{year}.{int(month):02d}.{int(day):02d}.{int(seq):02d}"
+        except ValueError:
+            pass
+    return version
+
+
 def _compare(installed: str, latest: str) -> str:
     try:
         if Version(latest) > Version(installed):
@@ -120,12 +137,14 @@ class Command(BaseCommand):
         for i, (plugin_name, pip_name, installed) in enumerate(rows, 1):
             self.stderr.write(f"  Checking {pip_name} ({i}/{total})...\r", ending="")
             self.stderr.flush()
-            latest = _get_latest_version(pip_name, timeout)
-            if latest is None:
+            installed_fmt = _format_ophix_version(installed)
+            latest_raw = _get_latest_version(pip_name, timeout)
+            latest_fmt = _format_ophix_version(latest_raw) if latest_raw else None
+            if latest_fmt is None:
                 status = _STATUS_UNAVAILABLE
             else:
-                status = _compare(installed, latest)
-            results.append((plugin_name, pip_name, installed, latest or "—", status))
+                status = _compare(installed, latest_raw)  # compare on raw for Version()
+            results.append((plugin_name, pip_name, installed_fmt, latest_fmt or "—", status))
 
         self.stderr.write(" " * 60 + "\r", ending="")  # clear progress line
 
@@ -137,7 +156,7 @@ class Command(BaseCommand):
                 package_name=pip_name,
                 defaults={
                     "installed_version": installed,
-                    "latest_version": latest if latest != "—" else "",
+                    "latest_version": latest if latest != "—" else "",  # latest is already formatted
                     "update_available": status == _STATUS_UPDATE,
                     "last_checked_at": now,
                 },
