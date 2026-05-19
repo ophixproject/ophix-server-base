@@ -1,9 +1,16 @@
 # ophix-server-base Release Notes
 
+## 2026.05.19.13
+
+- Added migration 0007: `PackageUpdateRecord` singular `verbose_name` changed
+  to "Plugin" — admin now reads "Select Plugin to View" / "View Plugin".
+
 ## 2026.05.19.12
 
 - Added migration 0006: records `verbose_name` and `help_text` change on
   `PackageUpdateRecord.notice` (renamed to "release notes" in 2026.05.19.07).
+- `PackageUpdateRecord` singular `verbose_name` changed to "Plugin" so the
+  admin reads "Select Plugin to View" / "View Plugin".
 
 ## 2026.05.19.11
 
