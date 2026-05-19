@@ -1,5 +1,11 @@
 # ophix-server-base Release Notes
 
+## 2026.05.19.06
+
+- Fixed `UnboundLocalError` in `check_ophix_updates --prune`: `_` used as a
+  throwaway in tuple unpacking shadowed the `gettext_lazy` alias for the
+  entire `handle()` method. Changed to index access (`.delete()[0]`).
+
 ## 2026.05.19.05
 
 - `check_ophix_updates`: added `--prune` flag to remove `PackageUpdateRecord`
