@@ -179,7 +179,6 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
         "first_recorded_at",
     )
     list_filter = ("update_available",)
-    list_display_links = None
     search_fields = ("package_name",)
     ordering = ("package_name",)
     readonly_fields = (
