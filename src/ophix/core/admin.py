@@ -191,6 +191,17 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
         "last_checked_at",
         "notice",
     )
+    fieldsets = (
+        (None, {"fields": (
+            "package_name",
+            "installed_version",
+            "latest_version",
+            "up_to_date",
+            "first_recorded_at",
+            "last_checked_at",
+        )}),
+        (_("Notice"), {"fields": ("notice",)}),
+    )
 
     @admin.display(description=_("Up To Date"))
     def up_to_date(self, obj):
