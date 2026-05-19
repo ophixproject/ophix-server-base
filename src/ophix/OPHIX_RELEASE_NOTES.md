@@ -1,5 +1,10 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- Renamed model display name from "Package Update Records" to "Plugin Versions".
+- Renamed `SHOW_PACKAGE_UPDATE_MODEL` env var to `SHOW_PLUGIN_VERSION_MODEL`.
+
 ## 2026.05.19.07
 
 - `PackageUpdateRecord` detail view: added `fieldsets` to suppress the raw
@@ -36,8 +41,8 @@
 - Added `check_ophix_updates` management command — checks all installed Ophix
   plugins against the configured pip index and reports available updates.
 - Added `PackageUpdateRecord` model — stores per-package update state and
-  release notes. Enable the admin view with `SHOW_PACKAGE_UPDATE_MODEL=True`.
-- Added `SHOW_PACKAGE_UPDATE_MODEL` setting (default `False`).
+  release notes. Enable the admin view with `SHOW_PLUGIN_VERSION_MODEL=True`.
+- Added `SHOW_PLUGIN_VERSION_MODEL` setting (default `False`).
 
 ## 2026.05.18.03
 

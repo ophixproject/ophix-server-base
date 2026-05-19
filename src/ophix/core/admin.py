@@ -233,5 +233,5 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
         return False
 
 
-# Hide Package Update Records unless SHOW_PACKAGE_UPDATE_MODEL=True.
-hide_models("ophix.core", ["PackageUpdateRecord"], getattr(settings, "SHOW_PACKAGE_UPDATE_MODEL", False))
+# Hide Plugin Versions unless SHOW_PLUGIN_VERSION_MODEL=True.
+hide_models("ophix.core", ["PackageUpdateRecord"], getattr(settings, "SHOW_PLUGIN_VERSION_MODEL", False))

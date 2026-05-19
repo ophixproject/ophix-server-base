@@ -360,7 +360,7 @@ SHOW_THEME_MODEL = get_bool_env("SHOW_THEME_MODEL", default=False)
 SHOW_AUTH_MODELS = get_bool_env("SHOW_AUTH_MODELS", default=False)
 SHOW_CLIENT_ARTIFACT_MODEL = get_bool_env("SHOW_CLIENT_ARTIFACT_MODEL", default=False)
 SHOW_ACCESS_LOGS = get_bool_env("SHOW_ACCESS_LOGS", default=True)
-SHOW_PACKAGE_UPDATE_MODEL = get_bool_env("SHOW_PACKAGE_UPDATE_MODEL", default=False)
+SHOW_PLUGIN_VERSION_MODEL = get_bool_env("SHOW_PLUGIN_VERSION_MODEL", default=False)
 
 # ---------------------------------------------------------------------------
 # Ophix base API settings
