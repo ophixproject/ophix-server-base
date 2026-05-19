@@ -34,6 +34,9 @@ package-dir = { "" = "src" }
 where = ["src"]
 
 [tool.setuptools.package-data]
+"ophix" = [
+    "OPHIX_RELEASE_NOTES.md",
+]
 "ophix.core" = [
     "templates/**/*.html",
     "static/**/*",

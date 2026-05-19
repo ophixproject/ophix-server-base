@@ -181,7 +181,6 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
     list_filter = ("update_available",)
     search_fields = ("package_name",)
     ordering = ("package_name",)
-    # All fields except notice are set by the management command, not the operator.
     readonly_fields = (
         "package_name",
         "installed_version",
@@ -189,9 +188,10 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
         "up_to_date",
         "first_recorded_at",
         "last_checked_at",
+        "notice",
     )
 
-    @admin.display(description="Up To Date")
+    @admin.display(description=_("Up To Date"))
     def up_to_date(self, obj):
         if not obj.update_available:
             return format_html(
@@ -200,10 +200,14 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
             )
         return format_html(
             '<span style="color:var(--admin-interface-warning-color,#E67E22);'
-            'font-weight:bold">⬆ Update available</span>'
+            'font-weight:bold">⬆ {}</span>',
+            _("Update available"),
         )
 
     def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
         return False
 
     def has_delete_permission(self, request, obj=None):

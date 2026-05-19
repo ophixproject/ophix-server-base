@@ -11,6 +11,9 @@ automatically.  No extra network configuration is needed.
 Results are stored in the PackageUpdateRecord table and optionally displayed
 on screen.  Use --quiet to suppress output (suitable for cron jobs).
 
+Release notes are read from an ``OPHIX_RELEASE_NOTES.md`` file in each
+package's installed directory, if present, and stored in the notice field.
+
 Examples
 --------
     ophix-manage check_ophix_updates
@@ -22,19 +25,24 @@ import re
 import subprocess
 import sys
 from importlib.metadata import entry_points, metadata as dist_metadata
+from importlib.util import find_spec
+from pathlib import Path
 
 from packaging.version import Version, InvalidVersion
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from ophix.core.management.commands.list_ophix_plugins import (
     _get_plugin_version,
     ENTRY_POINT_GROUP,
 )
 
-_STATUS_OK          = "OK"
-_STATUS_UPDATE      = "UPDATE AVAILABLE"
+# Internal status tokens — plain strings used for logic and comparison.
+# Translated labels are applied only at display time.
+_STATUS_OK          = "ok"
+_STATUS_UPDATE      = "update"
 _STATUS_UNAVAILABLE = "unavailable"
 _STATUS_UNKNOWN     = "unknown"
 
@@ -89,11 +97,25 @@ def _compare(installed: str, latest: str) -> str:
         return _STATUS_UNKNOWN if installed != latest else _STATUS_OK
 
 
+def _read_release_notes(module_name: str) -> str:
+    """Read OPHIX_RELEASE_NOTES.md from the package's installed directory.
+
+    Returns the file contents stripped of leading/trailing whitespace,
+    or an empty string if the file is absent or unreadable.
+    """
+    try:
+        spec = find_spec(module_name)
+        if spec and spec.origin:
+            notes_file = Path(spec.origin).parent / "OPHIX_RELEASE_NOTES.md"
+            if notes_file.exists():
+                return notes_file.read_text(encoding="utf-8").strip()
+    except Exception:
+        pass
+    return ""
+
+
 class Command(BaseCommand):
-    help = (
-        "Check all installed Ophix plugins against the configured pip index "
-        "and report whether newer versions are available."
-    )
+    help = _("Check installed Ophix plugins against the configured pip index and report available updates.")
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -101,19 +123,19 @@ class Command(BaseCommand):
             type=int,
             default=30,
             metavar="SECONDS",
-            help="Per-package pip query timeout in seconds (default: 30).",
+            help=_("Per-package pip query timeout in seconds (default: 30)."),
         )
         parser.add_argument(
             "--quiet",
             action="store_true",
-            help="Suppress table output. Results are still written to the database.",
+            help=_("Suppress table output. Results are still written to the database."),
         )
 
     def handle(self, *args, **options):
         timeout = options["timeout"]
         quiet = options["quiet"]
 
-        # --- Collect (plugin_name, pip_package, installed_version) rows -----
+        # --- Collect (plugin_name, pip_name, module_name, installed) rows ----
         rows = []
 
         # ophix-server-base itself
@@ -124,67 +146,93 @@ class Command(BaseCommand):
         except Exception:
             pip_name = "ophix-server-base"
             installed = _get_plugin_version("ophix", ep=None)
-        rows.append(("ophix-server-base", pip_name, installed))
+        rows.append(("ophix-server-base", pip_name, "ophix", installed))
 
         for ep in sorted(entry_points(group=ENTRY_POINT_GROUP), key=lambda e: e.name):
             pip_name = ep.dist.metadata["Name"] if ep.dist else ep.name
             installed = _get_plugin_version(ep.value, ep)
-            rows.append((ep.name, pip_name, installed))
+            rows.append((ep.name, pip_name, ep.value, installed))
 
-        # --- Query pip for latest versions (one at a time) -------------------
+        # --- Query pip + read release notes (one package at a time) ----------
         results = []
         total = len(rows)
-        for i, (plugin_name, pip_name, installed) in enumerate(rows, 1):
-            self.stderr.write(f"  Checking {pip_name} ({i}/{total})...\r", ending="")
+        for i, (plugin_name, pip_name, module_name, installed) in enumerate(rows, 1):
+            self.stderr.write(
+                str(_("  Checking %(name)s (%(i)d/%(total)d)...\r")) % {
+                    "name": pip_name, "i": i, "total": total,
+                },
+                ending="",
+            )
             self.stderr.flush()
+
             installed_fmt = _format_ophix_version(installed)
-            latest_raw = _get_latest_version(pip_name, timeout)
-            latest_fmt = _format_ophix_version(latest_raw) if latest_raw else None
+            latest_raw    = _get_latest_version(pip_name, timeout)
+            latest_fmt    = _format_ophix_version(latest_raw) if latest_raw else None
+            notes         = _read_release_notes(module_name)
+
             if latest_fmt is None:
                 status = _STATUS_UNAVAILABLE
             else:
-                status = _compare(installed, latest_raw)  # compare on raw for Version()
-            results.append((plugin_name, pip_name, installed_fmt, latest_fmt or "—", status))
+                status = _compare(installed, latest_raw)
+
+            results.append((plugin_name, pip_name, installed_fmt, latest_fmt or "—", status, notes))
 
         self.stderr.write(" " * 60 + "\r", ending="")  # clear progress line
 
         # --- Upsert PackageUpdateRecord rows ---------------------------------
         from ophix.core.models import PackageUpdateRecord
         now = timezone.now()
-        for plugin_name, pip_name, installed, latest, status in results:
+        for plugin_name, pip_name, installed, latest, status, notes in results:
             PackageUpdateRecord.objects.update_or_create(
                 package_name=pip_name,
                 defaults={
                     "installed_version": installed,
-                    "latest_version": latest if latest != "—" else "",  # latest is already formatted
+                    "latest_version": latest if latest != "—" else "",
                     "update_available": status == _STATUS_UPDATE,
                     "last_checked_at": now,
+                    "notice": notes,
                 },
             )
 
         if quiet:
             return
 
+        # --- Translate status tokens for display -----------------------------
+        _status_labels = {
+            _STATUS_OK:          str(_("OK")),
+            _STATUS_UPDATE:      str(_("Update available")),
+            _STATUS_UNAVAILABLE: str(_("unavailable")),
+            _STATUS_UNKNOWN:     str(_("unknown")),
+        }
+
         # --- Format and print table ------------------------------------------
-        w_plugin    = max(len("Plugin"),    max(len(r[0]) for r in results))
-        w_package   = max(len("Package"),   max(len(r[1]) for r in results))
-        w_installed = max(len("Installed"), max(len(r[2]) for r in results))
-        w_latest    = max(len("Latest"),    max(len(r[3]) for r in results))
-        w_status    = max(len("Status"),    max(len(r[4]) for r in results))
+        col_plugin    = str(_("Plugin"))
+        col_package   = str(_("Package"))
+        col_installed = str(_("Installed"))
+        col_latest    = str(_("Latest"))
+        col_status    = str(_("Status"))
+
+        display = [
+            (r[0], r[1], r[2], r[3], _status_labels.get(r[4], r[4]), r[4])
+            for r in results
+        ]
+
+        w_plugin    = max(len(col_plugin),    max(len(r[0]) for r in display))
+        w_package   = max(len(col_package),   max(len(r[1]) for r in display))
+        w_installed = max(len(col_installed), max(len(r[2]) for r in display))
+        w_latest    = max(len(col_latest),    max(len(r[3]) for r in display))
+        w_status    = max(len(col_status),    max(len(r[4]) for r in display))
 
         header = (
-            f"{'Plugin':<{w_plugin}}  "
-            f"{'Package':<{w_package}}  "
-            f"{'Installed':<{w_installed}}  "
-            f"{'Latest':<{w_latest}}  "
-            f"{'Status':<{w_status}}"
+            f"{col_plugin:<{w_plugin}}  "
+            f"{col_package:<{w_package}}  "
+            f"{col_installed:<{w_installed}}  "
+            f"{col_latest:<{w_latest}}  "
+            f"{col_status:<{w_status}}"
         )
         divider = "  ".join([
-            "-" * w_plugin,
-            "-" * w_package,
-            "-" * w_installed,
-            "-" * w_latest,
-            "-" * w_status,
+            "-" * w_plugin, "-" * w_package,
+            "-" * w_installed, "-" * w_latest, "-" * w_status,
         ])
 
         self.stdout.write(header)
@@ -192,35 +240,34 @@ class Command(BaseCommand):
 
         updates_available = 0
         unavailable = 0
-        for plugin_name, pip_name, installed, latest, status in results:
-            if status == _STATUS_UPDATE:
+        for plugin_name, pip_name, installed, latest, label, raw_status in display:
+            if raw_status == _STATUS_UPDATE:
                 updates_available += 1
-                styled_status = self.style.WARNING(status)
-            elif status == _STATUS_UNAVAILABLE:
+                styled = self.style.WARNING(label)
+            elif raw_status == _STATUS_UNAVAILABLE:
                 unavailable += 1
-                styled_status = self.style.NOTICE(status)
-            elif status == _STATUS_OK:
-                styled_status = self.style.SUCCESS(status)
+                styled = self.style.NOTICE(label)
+            elif raw_status == _STATUS_OK:
+                styled = self.style.SUCCESS(label)
             else:
-                styled_status = status
+                styled = label
 
             self.stdout.write(
                 f"{plugin_name:<{w_plugin}}  "
                 f"{pip_name:<{w_package}}  "
                 f"{installed:<{w_installed}}  "
                 f"{latest:<{w_latest}}  "
-                + styled_status
+                + styled
             )
 
         self.stdout.write("")
         if updates_available:
             self.stdout.write(self.style.WARNING(
-                f"{updates_available} update(s) available."
+                str(_("%(count)d update(s) available.")) % {"count": updates_available}
             ))
         else:
-            self.stdout.write(self.style.SUCCESS("All packages are up to date."))
+            self.stdout.write(self.style.SUCCESS(str(_("All packages are up to date."))))
         if unavailable:
             self.stdout.write(self.style.NOTICE(
-                f"{unavailable} package(s) could not be checked "
-                f"(not found in configured index or index unreachable)."
+                str(_("%(count)d package(s) could not be checked (not found in configured index or index unreachable).")) % {"count": unavailable}
             ))
