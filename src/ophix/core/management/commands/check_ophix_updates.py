@@ -203,9 +203,9 @@ class Command(BaseCommand):
         # --- Prune stale rows ------------------------------------------------
         if prune:
             known = {pip_name for _, pip_name, _, _, _, _ in results}
-            deleted, _ = PackageUpdateRecord.objects.exclude(
+            deleted = PackageUpdateRecord.objects.exclude(
                 package_name__in=known
-            ).delete()
+            ).delete()[0]
             if deleted and not quiet:
                 self.stdout.write(self.style.WARNING(
                     str(_("Removed %(count)d stale package record(s).")) % {"count": deleted}
