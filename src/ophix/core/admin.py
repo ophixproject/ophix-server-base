@@ -189,7 +189,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
         "up_to_date",
         "first_recorded_at",
         "last_checked_at",
-        "notice",
+        "notice_rendered",
     )
     fieldsets = (
         (None, {"fields": (
@@ -200,8 +200,15 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
             "first_recorded_at",
             "last_checked_at",
         )}),
-        (_("Release Notes"), {"fields": ("notice",)}),
+        (_("Release Notes"), {"fields": ("notice_rendered",)}),
     )
+
+    @admin.display(description=_("Release Notes"))
+    def notice_rendered(self, obj):
+        if not obj.notice:
+            return "—"
+        import markdown
+        return mark_safe(markdown.markdown(obj.notice, extensions=["fenced_code"]))
 
     @admin.display(description=_("Up To Date"))
     def up_to_date(self, obj):
