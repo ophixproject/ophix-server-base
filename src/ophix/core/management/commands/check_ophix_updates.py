@@ -130,10 +130,16 @@ class Command(BaseCommand):
             action="store_true",
             help=_("Suppress table output. Results are still written to the database."),
         )
+        parser.add_argument(
+            "--prune",
+            action="store_true",
+            help=_("Remove PackageUpdateRecord rows for packages no longer installed."),
+        )
 
     def handle(self, *args, **options):
         timeout = options["timeout"]
         quiet = options["quiet"]
+        prune = options["prune"]
 
         # --- Collect (plugin_name, pip_name, module_name, installed) rows ----
         rows = []
@@ -193,6 +199,17 @@ class Command(BaseCommand):
                     "notice": notes,
                 },
             )
+
+        # --- Prune stale rows ------------------------------------------------
+        if prune:
+            known = {pip_name for _, pip_name, _, _, _, _ in results}
+            deleted, _ = PackageUpdateRecord.objects.exclude(
+                package_name__in=known
+            ).delete()
+            if deleted and not quiet:
+                self.stdout.write(self.style.WARNING(
+                    str(_("Removed %(count)d stale package record(s).")) % {"count": deleted}
+                ))
 
         if quiet:
             return
