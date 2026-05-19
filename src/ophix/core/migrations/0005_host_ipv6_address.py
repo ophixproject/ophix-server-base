@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("core", "0004_package_update_record"),
+        ("ophix_core", "0004_package_update_record"),
     ]
 
     operations = [
