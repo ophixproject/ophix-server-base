@@ -44,7 +44,12 @@ def generate_api_token() -> str:
 
 class Host(models.Model):
     name = models.CharField(_("name"), max_length=100, unique=True)
-    ipv4_address = models.GenericIPAddressField(_("IPv4 address"), protocol="IPv4", unique=True)
+    ipv4_address = models.GenericIPAddressField(
+        _("IPv4 address"), protocol="IPv4", unique=True, null=True, blank=True,
+    )
+    ipv6_address = models.GenericIPAddressField(
+        _("IPv6 address"), protocol="IPv6", unique=True, null=True, blank=True,
+    )
     description = models.TextField(_("description"), blank=True, null=True)
     enabled = models.BooleanField(_("enabled"), default=True)
 
@@ -53,8 +58,14 @@ class Host(models.Model):
         verbose_name = _("Host")
         verbose_name_plural = _("Hosts")
 
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if not self.ipv4_address and not self.ipv6_address:
+            raise ValidationError(_("At least one of IPv4 address or IPv6 address is required."))
+
     def __str__(self) -> str:
-        return f"{self.name} ({self.ipv4_address})"
+        addr = self.ipv4_address or self.ipv6_address
+        return f"{self.name} ({addr})"
 
 
 # ---------------------------------------------------------------------------

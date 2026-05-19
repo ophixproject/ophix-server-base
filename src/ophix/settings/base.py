@@ -361,6 +361,7 @@ SHOW_AUTH_MODELS = get_bool_env("SHOW_AUTH_MODELS", default=False)
 SHOW_CLIENT_ARTIFACT_MODEL = get_bool_env("SHOW_CLIENT_ARTIFACT_MODEL", default=False)
 SHOW_ACCESS_LOGS = get_bool_env("SHOW_ACCESS_LOGS", default=True)
 SHOW_PLUGIN_VERSION_MODEL = get_bool_env("SHOW_PLUGIN_VERSION_MODEL", default=False)
+SHOW_IPV6_ADDRESS = get_bool_env("SHOW_IPV6_ADDRESS", default=True)
 
 # ---------------------------------------------------------------------------
 # Ophix base API settings

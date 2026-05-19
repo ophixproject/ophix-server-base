@@ -43,15 +43,23 @@ hide_models("django.contrib.auth", ["User", "Group"], getattr(settings, "SHOW_AU
 @admin.register(Host)
 class HostAdmin(admin.ModelAdmin):
     list_display = (
-        'name',          # identity
-        'ipv4_address',  # context
-        'enabled',       # state (consistent position)
-        'description',   # human context
+        'name',
+        'ipv4_address',
+        'enabled',
+        'description',
     )
     list_editable = ('enabled',)
     search_fields = ('name', 'ipv4_address', 'description')
     list_filter = ('enabled',)
     actions = None
+
+    def __init__(self, model, admin_site):
+        super().__init__(model, admin_site)
+        if getattr(settings, 'SHOW_IPV6_ADDRESS', True):
+            self.list_display = (
+                'name', 'ipv4_address', 'ipv6_address', 'enabled', 'description',
+            )
+            self.search_fields = ('name', 'ipv4_address', 'ipv6_address', 'description')
 
     _registered_inlines = []
     _registered_columns = []

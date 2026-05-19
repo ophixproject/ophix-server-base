@@ -71,12 +71,14 @@ class ClientTokenAuthentication(BaseAuthentication):
             else request.META.get("REMOTE_ADDR")
         )
 
-        if remote_ip != client.host.ipv4_address:
+        host = client.host
+        registered_ips = {a for a in (host.ipv4_address, host.ipv6_address) if a}
+        if remote_ip not in registered_ips:
             logger.info(
-                "Access blocked for client %s: IP mismatch (expected %s, got %s)",
+                "Access blocked for client %s: IP mismatch (got %s, registered %s)",
                 client,
-                client.host.ipv4_address,
                 remote_ip,
+                ", ".join(registered_ips),
             )
             raise exceptions.AuthenticationFailed(self._msg("Access blocked"))
 
