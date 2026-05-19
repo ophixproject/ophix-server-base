@@ -104,3 +104,29 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
         transparent
     );
 }
+
+/* Rendered markdown release notes in PackageUpdateRecord detail view */
+.ophix-release-notes h2 {
+    font-size: 0.85em;
+    font-weight: bold;
+    color: var(--admin-interface-generic-link-color, #447e9b);
+    border-bottom: 1px solid var(--admin-interface-generic-link-color, #447e9b);
+    padding-bottom: 0.2em;
+    margin: 1.2em 0 0.4em;
+    background: none;
+    box-shadow: none;
+    letter-spacing: 0.02em;
+}
+
+.ophix-release-notes h2:first-child {
+    margin-top: 0;
+}
+
+.ophix-release-notes ul {
+    margin: 0.25em 0 0.5em 1.5em;
+    padding: 0;
+}
+
+.ophix-release-notes li {
+    margin-bottom: 0.2em;
+}

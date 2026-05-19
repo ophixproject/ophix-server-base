@@ -208,7 +208,8 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
         if not obj.notice:
             return "—"
         import markdown
-        return mark_safe(markdown.markdown(obj.notice, extensions=["fenced_code"]))
+        html = markdown.markdown(obj.notice, extensions=["fenced_code"])
+        return mark_safe(f'<div class="ophix-release-notes">{html}</div>')
 
     @admin.display(description=_("Up To Date"))
     def up_to_date(self, obj):
