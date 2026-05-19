@@ -1,5 +1,13 @@
 # ophix-server-base Release Notes
 
+## 2026.05.19.10
+
+- Added `ipv6_address` field to `Host` model (nullable, unique). `ipv4_address`
+  is now also nullable — at least one address is required (enforced in `clean()`).
+  Auth checks the incoming IP against whichever addresses are registered.
+- Added `SHOW_IPV6_ADDRESS` setting (default `True`). Set to `False` on
+  IPv4-only networks to hide the column and keep the Hosts list uncluttered.
+
 ## 2026.05.19.09
 
 - Release notes rendered with scoped CSS (`.ophix-release-notes`): version
