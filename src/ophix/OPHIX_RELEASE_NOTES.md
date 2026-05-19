@@ -1,5 +1,13 @@
 # ophix-server-base Release Notes
 
+## 2026.05.19.04
+
+- `PackageUpdateRecord` detail view is now read-only; release notes from each
+  package's `OPHIX_RELEASE_NOTES.md` are displayed in the notice field.
+- Package Update Records admin: renamed "Update Available" column to "Up To Date"
+  with inverted logic; replaced Django's default tick/cross icons with
+  theme-aware ✓ and ⬆ indicators.
+
 ## 2026.05.19.03
 
 - Added `check_ophix_updates` management command — checks all installed Ophix
