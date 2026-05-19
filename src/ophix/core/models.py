@@ -288,8 +288,8 @@ class PackageUpdateRecord(models.Model):
 
     class Meta:
         ordering = ("package_name",)
-        verbose_name = _("Package Update Record")
-        verbose_name_plural = _("Package Update Records")
+        verbose_name = _("Plugin Version")
+        verbose_name_plural = _("Plugin Versions")
 
     def __str__(self) -> str:
         return self.package_name
