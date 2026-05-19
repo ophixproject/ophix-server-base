@@ -299,7 +299,7 @@ class PackageUpdateRecord(models.Model):
 
     class Meta:
         ordering = ("package_name",)
-        verbose_name = _("Plugin Version")
+        verbose_name = _("Plugin")
         verbose_name_plural = _("Plugin Versions")
 
     def __str__(self) -> str:
