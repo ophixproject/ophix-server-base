@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.05.21.04
 
 - Fixed `ophix-manage` auto-chdir: previous fix used `sys.executable` which
   resolves symlinks on Linux and could point outside the venv entirely.
