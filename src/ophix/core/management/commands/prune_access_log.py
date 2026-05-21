@@ -50,6 +50,11 @@ class Command(BaseCommand):
             action="store_true",
             help="Show how many records would be deleted without deleting them.",
         )
+        parser.add_argument(
+            "--quiet",
+            action="store_true",
+            help="Suppress all output. Useful when running from cron.",
+        )
 
     def handle(self, *args, **options):
         from django.conf import settings
@@ -58,6 +63,7 @@ class Command(BaseCommand):
         days      = options["days"]
         prune_all = options["prune_all"]
         dry_run   = options["dry_run"]
+        quiet     = options["quiet"]
 
         if prune_all:
             qs = AccessLog.objects.all()
@@ -78,10 +84,12 @@ class Command(BaseCommand):
             return
 
         if count == 0:
-            self.stdout.write(f"No access log records {qualifier} found.")
+            if not quiet:
+                self.stdout.write(f"No access log records {qualifier} found.")
             return
 
         qs.delete()
-        self.stdout.write(
-            self.style.SUCCESS(f"Deleted {count} access log record(s) {qualifier}.")
-        )
+        if not quiet:
+            self.stdout.write(
+                self.style.SUCCESS(f"Deleted {count} access log record(s) {qualifier}.")
+            )

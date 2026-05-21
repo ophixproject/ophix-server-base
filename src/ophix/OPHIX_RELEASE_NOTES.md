@@ -1,5 +1,11 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `prune_access_log` now accepts `--quiet` to suppress all output, making it
+  safe to run from cron without generating noise in the mail spool. `--dry-run`
+  output is always shown regardless of `--quiet`.
+
 ## 2026.05.21.05
 
 - Added `archive_access_logs` command — exports `AccessLog` records to a file
