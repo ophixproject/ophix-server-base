@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.05.21.03
 
 - Added `apply_updates` management command — convenience wrapper that runs
   `migrate`, `collectstatic --noinput`, and `generate_deploy_config --append`
