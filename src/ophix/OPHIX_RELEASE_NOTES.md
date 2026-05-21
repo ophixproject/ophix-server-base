@@ -1,5 +1,12 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- Added `apply_updates` management command — convenience wrapper that runs
+  `migrate`, `collectstatic --noinput`, and `generate_deploy_config --append`
+  in sequence after a `pip install --upgrade`. Prints a `systemctl restart`
+  reminder with the correct service name at the end.
+
 ## 2026.05.21.02
 
 - `ophix-manage` now automatically changes to the server root directory on
