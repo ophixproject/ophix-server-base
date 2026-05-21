@@ -32,7 +32,7 @@ from packaging.version import Version, InvalidVersion
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext as _
 
 from ophix.core.management.commands.list_ophix_plugins import (
     _get_plugin_version,
