@@ -41,7 +41,8 @@ class Command(BaseCommand):
         slug = _slugify(server_name) if server_name else None
 
         self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS("Updates applied. Restart the service to complete the upgrade:"))
+        self.stdout.write(self.style.SUCCESS("Updates applied."))
+        self.stdout.write("Review .env for any new variables added above, then restart the service:")
         if slug:
             self.stdout.write(self.style.WARNING(f"    sudo systemctl restart {slug}"))
         else:
