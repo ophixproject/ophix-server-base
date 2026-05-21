@@ -1,5 +1,10 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `apply_updates` completion message now prompts to review `.env` for new
+  variables before restarting the service.
+
 ## 2026.05.21.03
 
 - Added `apply_updates` management command — convenience wrapper that runs
