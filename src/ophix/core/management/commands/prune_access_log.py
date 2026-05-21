@@ -32,9 +32,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--days",
             type=int,
-            default=90,
+            default=None,
             metavar="N",
-            help="Delete records older than this many days (default: 90).",
+            help="Delete records older than this many days (default: PRUNE_ACCESS_LOG_DAYS setting, or 90).",
         )
         parser.add_argument(
             "--dry-run",
@@ -43,9 +43,12 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        from django.conf import settings
         from ophix.core.models import AccessLog
 
         days = options["days"]
+        if days is None:
+            days = getattr(settings, "PRUNE_ACCESS_LOG_DAYS", 90)
         dry_run = options["dry_run"]
 
         cutoff = timezone.now() - timedelta(days=days)
