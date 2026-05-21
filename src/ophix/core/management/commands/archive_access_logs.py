@@ -69,7 +69,17 @@ class Command(BaseCommand):
             metavar="N",
             help=(
                 "Only export records older than N days. If omitted, falls back to the "
-                "PRUNE_ACCESS_LOG_DAYS setting. If that is also unset, all records are exported."
+                "PRUNE_ACCESS_LOG_DAYS setting, then to 90 days. Use --all to export "
+                "every record regardless of age."
+            ),
+        )
+        parser.add_argument(
+            "--all",
+            action="store_true",
+            dest="export_all",
+            help=(
+                "Export all records regardless of age. Use for incident snapshots or "
+                "full compliance dumps. Overrides --days and PRUNE_ACCESS_LOG_DAYS."
             ),
         )
         parser.add_argument(
@@ -96,26 +106,28 @@ class Command(BaseCommand):
         days        = options["days"]
         append      = options["append"]
         dry_run     = options["dry_run"]
+        export_all  = options["export_all"]
 
-        if days is None:
-            days = getattr(settings, "PRUNE_ACCESS_LOG_DAYS", None)
+        if not export_all:
+            if days is None:
+                days = getattr(settings, "PRUNE_ACCESS_LOG_DAYS", 90)
 
         qs = AccessLog.objects.select_related("client", "host").order_by("timestamp")
-        if days is not None:
+        if not export_all and days is not None:
             cutoff = timezone.now() - timedelta(days=days)
             qs = qs.filter(timestamp__lt=cutoff)
 
         count = qs.count()
 
         if dry_run:
-            qualifier = f"older than {days} days" if days is not None else "total"
+            qualifier = "total" if export_all else f"older than {days} days"
             self.stdout.write(
                 f"Dry run: {count} record(s) {qualifier} would be exported to {output_path}."
             )
             return
 
         if count == 0:
-            qualifier = f"older than {days} days" if days is not None else ""
+            qualifier = "" if export_all else f"older than {days} days "
             self.stdout.write(f"No access log records {qualifier}found — nothing to export.")
             return
 
