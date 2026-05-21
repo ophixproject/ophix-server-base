@@ -20,13 +20,12 @@ def _chdir_to_server_root():
     """Change to the server root so find_dotenv(usecwd=True) finds .env.
 
     When ophix-manage is invoked from an arbitrary directory the dotenv
-    search misses the .env that lives alongside the venv.  The venv is
-    always a direct child of the server root, so sys.executable is always
-    at <server_root>/<venv>/bin/python — three levels up is the server root.
-    Only chdir when a .env actually exists there; leaves dev environments
-    (where the layout differs) untouched.
+    search misses the .env that lives alongside the venv.  sys.prefix is
+    always the venv directory itself (no symlink ambiguity), so its parent
+    is reliably the server root.  Only chdir when a .env actually exists
+    there; leaves dev environments (where the layout differs) untouched.
     """
-    server_root = Path(sys.executable).resolve().parent.parent.parent
+    server_root = Path(sys.prefix).parent
     if (server_root / ".env").exists():
         os.chdir(server_root)
 
