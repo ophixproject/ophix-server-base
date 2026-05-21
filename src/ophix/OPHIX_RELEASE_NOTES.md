@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.05.21.02
 
 - `ophix-manage` now automatically changes to the server root directory on
   startup so that `find_dotenv` always locates `.env` regardless of the
