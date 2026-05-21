@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `prune_access_log` now reads its default retention period from the
+  `PRUNE_ACCESS_LOG_DAYS` setting (configurable in `.env`). Falls back to
+  90 days if not set. `--days` on the command line always takes precedence.
 - `check_ophix_updates --quiet` now also suppresses the per-package progress
   lines written to stderr, not just the table output.
 
