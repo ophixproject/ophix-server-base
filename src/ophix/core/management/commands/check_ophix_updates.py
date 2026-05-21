@@ -163,13 +163,14 @@ class Command(BaseCommand):
         results = []
         total = len(rows)
         for i, (plugin_name, pip_name, module_name, installed) in enumerate(rows, 1):
-            self.stderr.write(
-                str(_("  Checking %(name)s (%(i)d/%(total)d)...\r")) % {
-                    "name": pip_name, "i": i, "total": total,
-                },
-                ending="",
-            )
-            self.stderr.flush()
+            if not quiet:
+                self.stderr.write(
+                    str(_("  Checking %(name)s (%(i)d/%(total)d)...\r")) % {
+                        "name": pip_name, "i": i, "total": total,
+                    },
+                    ending="",
+                )
+                self.stderr.flush()
 
             installed_fmt = _format_ophix_version(installed)
             latest_raw    = _get_latest_version(pip_name, timeout)
@@ -183,7 +184,8 @@ class Command(BaseCommand):
 
             results.append((plugin_name, pip_name, installed_fmt, latest_fmt or "—", status, notes))
 
-        self.stderr.write(" " * 60 + "\r", ending="")  # clear progress line
+        if not quiet:
+            self.stderr.write(" " * 60 + "\r", ending="")  # clear progress line
 
         # --- Upsert PackageUpdateRecord rows ---------------------------------
         from ophix.core.models import PackageUpdateRecord
