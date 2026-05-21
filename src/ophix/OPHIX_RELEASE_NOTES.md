@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.05.21.05
 
 - Added `archive_access_logs` command — exports `AccessLog` records to a file
   for long-term retention or compliance. Writes a JSON array by default;
