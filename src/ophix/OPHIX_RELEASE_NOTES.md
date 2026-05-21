@@ -1,5 +1,15 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `ophix-manage` now automatically changes to the server root directory on
+  startup so that `find_dotenv` always locates `.env` regardless of the
+  working directory the command was invoked from. Fixes DB connection errors
+  when running `ophix-manage` commands from cron or an arbitrary path.
+- Fixed `check_ophix_updates --help` crash on Python 3.12: command `help`
+  strings were using `gettext_lazy` which `re.sub` refuses to accept as a
+  string in 3.12. Switched to `gettext` (eager evaluation).
+
 ## 2026.05.21.01
 
 - Bug fix, remove incorrectly wrapped test in check_ophix_update management command
