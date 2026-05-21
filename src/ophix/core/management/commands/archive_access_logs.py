@@ -67,7 +67,10 @@ class Command(BaseCommand):
             type=int,
             default=None,
             metavar="N",
-            help="Only export records older than N days. Omit to export all records.",
+            help=(
+                "Only export records older than N days. If omitted, falls back to the "
+                "PRUNE_ACCESS_LOG_DAYS setting. If that is also unset, all records are exported."
+            ),
         )
         parser.add_argument(
             "--append",
@@ -87,10 +90,15 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         from ophix.core.models import AccessLog
 
+        from django.conf import settings
+
         output_path = Path(options["output_file"])
         days        = options["days"]
         append      = options["append"]
         dry_run     = options["dry_run"]
+
+        if days is None:
+            days = getattr(settings, "PRUNE_ACCESS_LOG_DAYS", None)
 
         qs = AccessLog.objects.select_related("client", "host").order_by("timestamp")
         if days is not None:

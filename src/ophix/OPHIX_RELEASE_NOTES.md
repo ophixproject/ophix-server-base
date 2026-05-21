@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Added `archive_access_logs` command — exports `AccessLog` records to a file
+  for long-term retention or compliance. Writes a JSON array by default;
+  `--append` writes newline-delimited JSON (NDJSON) suitable for incremental
+  cron runs. `--days N` restricts export to records older than N days,
+  matching the `prune_access_log` window for an archive-then-prune workflow.
 - `prune_access_log` now reads its default retention period from the
   `PRUNE_ACCESS_LOG_DAYS` setting (configurable in `.env`). Falls back to
   90 days if not set. `--days` on the command line always takes precedence.
