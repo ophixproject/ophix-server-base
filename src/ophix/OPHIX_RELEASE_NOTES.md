@@ -1,5 +1,9 @@
 # ophix-server-base Release Notes
 
+## 2026.05.21.01
+
+- Bug fix, remove incorrectly wrapped test in check_ophix_update management command
+
 ## 2026.05.19.13
 
 - Added migration 0007: `PackageUpdateRecord` singular `verbose_name` changed
