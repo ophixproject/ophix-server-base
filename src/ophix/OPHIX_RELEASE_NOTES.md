@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.05.21.06
 
 - `archive_access_logs` now accepts `--quiet` to suppress all output. Useful
   when running the archive-then-prune cron pattern alongside `prune_access_log
