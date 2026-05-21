@@ -1,5 +1,10 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `check_ophix_updates --quiet` now also suppresses the per-package progress
+  lines written to stderr, not just the table output.
+
 ## 2026.05.21.04
 
 - Fixed `ophix-manage` auto-chdir: previous fix used `sys.executable` which
