@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Fixed `ophix-manage` auto-chdir: previous fix used `sys.executable` which
+  resolves symlinks on Linux and could point outside the venv entirely.
+  Switched to `sys.prefix` which is always the venv directory with no
+  symlink ambiguity, making the `.env` lookup reliable on all platforms.
 - `apply_updates` completion message now prompts to review `.env` for new
   variables before restarting the service.
 
