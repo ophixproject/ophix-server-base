@@ -96,6 +96,11 @@ class Command(BaseCommand):
             action="store_true",
             help="Show how many records would be exported without writing anything.",
         )
+        parser.add_argument(
+            "--quiet",
+            action="store_true",
+            help="Suppress all output. Useful when running from cron alongside prune_access_log.",
+        )
 
     def handle(self, *args, **options):
         from ophix.core.models import AccessLog
@@ -107,6 +112,7 @@ class Command(BaseCommand):
         append      = options["append"]
         dry_run     = options["dry_run"]
         export_all  = options["export_all"]
+        quiet       = options["quiet"]
 
         if not export_all:
             if days is None:
@@ -127,11 +133,12 @@ class Command(BaseCommand):
             return
 
         if count == 0:
-            qualifier = "" if export_all else f"older than {days} days "
-            self.stdout.write(f"No access log records {qualifier}found — nothing to export.")
+            if not quiet:
+                qualifier = "" if export_all else f"older than {days} days "
+                self.stdout.write(f"No access log records {qualifier}found — nothing to export.")
             return
 
-        if not dry_run and not output_path.parent.exists():
+        if not output_path.parent.exists():
             raise CommandError(f"Output directory does not exist: {output_path.parent}")
 
         if append:
@@ -143,9 +150,10 @@ class Command(BaseCommand):
             with output_path.open("w", encoding="utf-8") as f:
                 json.dump(records, f, indent=2, default=str)
 
-        mode = "appended (NDJSON)" if append else "written (JSON array)"
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Exported {count} record(s) to {output_path} [{mode}]."
+        if not quiet:
+            mode = "appended (NDJSON)" if append else "written (JSON array)"
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Exported {count} record(s) to {output_path} [{mode}]."
+                )
             )
-        )

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `archive_access_logs` now accepts `--quiet` to suppress all output. Useful
+  when running the archive-then-prune cron pattern alongside `prune_access_log
+  --quiet`. `--dry-run` output is always shown regardless of `--quiet`.
 - `prune_access_log` now accepts `--quiet` to suppress all output, making it
   safe to run from cron without generating noise in the mail spool. `--dry-run`
   output is always shown regardless of `--quiet`.
