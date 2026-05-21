@@ -1,5 +1,12 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `run_install` now writes `SERVICE_NAME` to `.env` so that `apply_updates`
+  can print the correct `systemctl restart` command even when the install slug
+  differs from `SERVER_NAME`. Existing installs can add `SERVICE_NAME=<slug>`
+  to `.env` manually to get the same behaviour.
+
 ## 2026.05.21.06
 
 - `archive_access_logs` now accepts `--quiet` to suppress all output. Useful

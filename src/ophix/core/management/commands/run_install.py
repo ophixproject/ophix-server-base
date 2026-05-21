@@ -532,6 +532,15 @@ class Command(BaseCommand):
             pass
         self.stdout.write(self.style.SUCCESS(f"  Written: {uninstall_sh}\n\n"))
 
+        # Write SERVICE_NAME to .env so apply_updates can print the correct
+        # systemctl restart command even when the slug differs from SERVER_NAME.
+        try:
+            from dotenv import set_key as _set_key
+            _set_key(str(Path.cwd() / ".env"), "SERVICE_NAME", slug, quote_mode="never")
+            self.stdout.write(self.style.SUCCESS(f"  SERVICE_NAME={slug} set in .env\n\n"))
+        except Exception:
+            pass
+
         # ------------------------------------------------------------------ #
         # 6. Plugin install hooks (run before migrate — keys must be in .env first)
         # ------------------------------------------------------------------ #
