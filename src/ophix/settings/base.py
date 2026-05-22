@@ -381,6 +381,11 @@ MINIMUM_TOKEN_ROTATE_TIME = get_int_env("MINIMUM_TOKEN_ROTATE_TIME", default=360
 # Allow clients to delete artifacts they own. Disabled by default.
 ENABLE_ARTIFACT_DELETE = get_bool_env("ENABLE_ARTIFACT_DELETE", default=False)
 
+# When True, all token rotation requests are rejected with 503.
+# Set during a migration change window: freeze tokens on the source server
+# before exporting, import to the target, then clear this on the target.
+PREVENT_TOKEN_ROTATION = get_bool_env("PREVENT_TOKEN_ROTATION", default=False)
+
 # ---------------------------------------------------------------------------
 # Audit logging
 # ---------------------------------------------------------------------------
