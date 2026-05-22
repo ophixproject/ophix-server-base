@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.05.22.05
 
 - Fixed `apply_updates` always printing `taskserver` (or the SERVER_NAME slug)
   instead of the actual service name: `SERVICE_NAME` was written to `.env` by
