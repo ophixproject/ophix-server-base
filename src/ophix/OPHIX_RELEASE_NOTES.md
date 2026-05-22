@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.05.22.08
 
 - `generate_ophix_config` renamed to `generate_config` — `_ophix_` infix removed
   for consistency with all other management commands. Update any cron jobs or scripts
