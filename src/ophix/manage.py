@@ -30,6 +30,43 @@ def _chdir_to_server_root():
         os.chdir(server_root)
 
 
+_HIDDEN_COMMANDS = frozenset([
+    # Schema development tools — not for production servers
+    "makemigrations",
+    "squashmigrations",
+    "showmigrations",
+    "sqlmigrate",
+    "sqlflush",
+    "inspectdb",
+    # Interactive shells — security risk on production
+    "shell",
+    "dbshell",
+    "diffsettings",
+    # Destructive
+    "flush",
+    # Development servers — replaced by gunicorn/nginx
+    "runserver",
+    "testserver",
+    # Test runner — not needed on a deployed server
+    "test",
+    # Project scaffolding — irrelevant post-install
+    "startapp",
+    "startproject",
+    # Translation compilation — dev workflow only
+    "compilemessages",
+])
+
+
+def _patch_hidden_commands():
+    from django.core import management as _mgmt
+    _orig = _mgmt.get_commands
+
+    def _filtered():
+        return {k: v for k, v in _orig().items() if k not in _HIDDEN_COMMANDS}
+
+    _mgmt.get_commands = _filtered
+
+
 def main():
     _chdir_to_server_root()
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ophix.settings")
@@ -41,6 +78,7 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
+    _patch_hidden_commands()
     execute_from_command_line(sys.argv)
 
 
