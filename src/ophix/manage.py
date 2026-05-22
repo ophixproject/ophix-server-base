@@ -54,6 +54,13 @@ _HIDDEN_COMMANDS = frozenset([
     "startproject",
     # Translation compilation — dev workflow only
     "compilemessages",
+    "makemessages",
+    # Migration tooling — dev workflow only
+    "optimizemigration",
+    # Cache table setup — Ophix doesn't use database caching
+    "createcachetable",
+    # Email test — Ophix doesn't use email
+    "sendtestemail",
 ])
 
 
