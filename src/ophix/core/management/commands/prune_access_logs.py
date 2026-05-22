@@ -1,5 +1,5 @@
 """
-ophix-manage prune_access_log
+ophix-manage prune_access_logs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Delete AccessLog records older than N days.
 
@@ -9,17 +9,17 @@ from growing unbounded. Operates in a single DELETE query.
 Examples
 --------
 Delete records older than 90 days (default):
-    ophix-manage prune_access_log
+    ophix-manage prune_access_logs
 
 Delete records older than 30 days:
-    ophix-manage prune_access_log --days 30
+    ophix-manage prune_access_logs --days 30
 
 Delete all records:
-    ophix-manage prune_access_log --all
+    ophix-manage prune_access_logs --all
 
 Preview how many records would be removed without deleting:
-    ophix-manage prune_access_log --dry-run
-    ophix-manage prune_access_log --days 30 --dry-run
+    ophix-manage prune_access_logs --dry-run
+    ophix-manage prune_access_logs --days 30 --dry-run
 """
 
 from datetime import timedelta

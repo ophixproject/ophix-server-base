@@ -64,24 +64,24 @@ These can be set in `.env`. For most deployments the defaults are appropriate.
 
 ## Pruning old records
 
-Access log records accumulate indefinitely unless pruned. Use the `prune_access_log` management command to delete old records:
+Access log records accumulate indefinitely unless pruned. Use the `prune_access_logs` management command to delete old records:
 
 ```bash
 # Delete records older than 90 days (default)
-ophix-manage prune_access_log
+ophix-manage prune_access_logs
 
 # Delete records older than 30 days
-ophix-manage prune_access_log --days 30
+ophix-manage prune_access_logs --days 30
 
 # Preview how many records would be removed
-ophix-manage prune_access_log --dry-run
-ophix-manage prune_access_log --days 30 --dry-run
+ophix-manage prune_access_logs --dry-run
+ophix-manage prune_access_logs --days 30 --dry-run
 ```
 
 Run this on a schedule — a daily or weekly cron job is typical:
 
 ```cron
-0 3 * * 0   ophixuser  /path/to/venv/bin/ophix-manage prune_access_log --days 90
+0 3 * * 0   ophixuser  /path/to/venv/bin/ophix-manage prune_access_logs --days 90
 ```
 
 Always run `--dry-run` first on a production server before adjusting the retention period to confirm the expected number of records will be removed.

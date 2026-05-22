@@ -5,6 +5,8 @@
 - Management commands renamed — `ophix_` infix removed as redundant within
   `ophix-manage` context: `check_ophix_updates` → `check_updates`,
   `list_ophix_plugins` → `list_plugins`, `apply_ophix_updates` → `apply_updates`.
+- `prune_access_log` renamed to `prune_access_logs` for consistency with
+  `archive_access_logs` and `prune_task_logs`.
 
 ## 2026.05.22.01
 
@@ -20,9 +22,9 @@
 ## 2026.05.21.06
 
 - `archive_access_logs` now accepts `--quiet` to suppress all output. Useful
-  when running the archive-then-prune cron pattern alongside `prune_access_log
+  when running the archive-then-prune cron pattern alongside `prune_access_logs
   --quiet`. `--dry-run` output is always shown regardless of `--quiet`.
-- `prune_access_log` now accepts `--quiet` to suppress all output, making it
+- `prune_access_logs` now accepts `--quiet` to suppress all output, making it
   safe to run from cron without generating noise in the mail spool. `--dry-run`
   output is always shown regardless of `--quiet`.
 
@@ -33,9 +35,9 @@
   `--append` writes newline-delimited JSON (NDJSON) suitable for incremental
   cron runs. Defaults to 90 days (or `PRUNE_ACCESS_LOG_DAYS`); use `--all`
   to export every record (e.g. incident snapshot).
-- `prune_access_log` now accepts `--all` to explicitly delete every record,
+- `prune_access_logs` now accepts `--all` to explicitly delete every record,
   making the intent clearer than `--days 0`.
-- `prune_access_log` now reads its default retention period from the
+- `prune_access_logs` now reads its default retention period from the
   `PRUNE_ACCESS_LOG_DAYS` setting (configurable in `.env`). Falls back to
   90 days if not set. `--days` on the command line always takes precedence.
 - `check_ophix_updates --quiet` now also suppresses the per-package progress

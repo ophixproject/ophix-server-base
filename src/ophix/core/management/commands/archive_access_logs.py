@@ -7,10 +7,10 @@ By default writes a JSON array.  Use --append for incremental cron runs —
 that mode writes newline-delimited JSON (NDJSON) so records can be appended
 to the same file indefinitely without reading it first.
 
-Combine with prune_access_log to archive-then-purge:
+Combine with prune_access_logs to archive-then-purge:
 
     ophix-manage archive_access_logs --output-file archive.ndjson --days 90 --append
-    ophix-manage prune_access_log --days 90
+    ophix-manage prune_access_logs --days 90
 
 Examples
 --------
@@ -99,7 +99,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--quiet",
             action="store_true",
-            help="Suppress all output. Useful when running from cron alongside prune_access_log.",
+            help="Suppress all output. Useful when running from cron alongside prune_access_logs.",
         )
 
     def handle(self, *args, **options):

@@ -387,7 +387,7 @@ AUDIT_BATCH_SIZE = get_int_env("AUDIT_BATCH_SIZE", default=50)
 # Maximum seconds to wait before flushing a partial batch.
 AUDIT_FLUSH_INTERVAL = get_int_env("AUDIT_FLUSH_INTERVAL", default=5)
 
-# Retention period for access log records (used by prune_access_log).
+# Retention period for access log records (used by prune_access_logs).
 PRUNE_ACCESS_LOG_DAYS = get_int_env("PRUNE_ACCESS_LOG_DAYS", default=90)
 
 # ---------------------------------------------------------------------------
