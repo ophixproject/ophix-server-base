@@ -1,5 +1,5 @@
 """
-ophix-manage check_ophix_updates
+ophix-manage check_updates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Check all installed Ophix plugins against the configured pip index and
 report whether newer versions are available.
@@ -16,9 +16,9 @@ package's installed directory, if present, and stored in the notice field.
 
 Examples
 --------
-    ophix-manage check_ophix_updates
-    ophix-manage check_ophix_updates --timeout 60
-    ophix-manage check_ophix_updates --quiet   # cron-friendly, DB only
+    ophix-manage check_updates
+    ophix-manage check_updates --timeout 60
+    ophix-manage check_updates --quiet   # cron-friendly, DB only
 """
 
 import re
@@ -34,7 +34,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
-from ophix.core.management.commands.list_ophix_plugins import (
+from ophix.core.management.commands.list_plugins import (
     _get_plugin_version,
     ENTRY_POINT_GROUP,
 )

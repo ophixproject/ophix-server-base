@@ -312,14 +312,14 @@ def _auto_install_docs(stdout, style):
 
         if default_apps:
             call_command(
-                "ophix_docs_update",
+                "update_docs",
                 include_app_docs=",".join(default_apps),
                 verbosity=0,
             )
 
         for lang_code, app_names in lang_apps.items():
             call_command(
-                "ophix_docs_update",
+                "update_docs",
                 include_app_docs=",".join(app_names),
                 language=lang_code,
                 verbosity=0,

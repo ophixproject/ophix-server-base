@@ -1,5 +1,11 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- Management commands renamed — `ophix_` infix removed as redundant within
+  `ophix-manage` context: `check_ophix_updates` → `check_updates`,
+  `list_ophix_plugins` → `list_plugins`, `apply_ophix_updates` → `apply_updates`.
+
 ## 2026.05.22.01
 
 - `generate_deploy_config` renamed to `generate_ophix_config` for consistent

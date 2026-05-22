@@ -1,5 +1,5 @@
 """
-ophix-manage apply_ophix_updates
+ophix-manage apply_updates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Convenience command that runs the standard post-upgrade sequence in order:
 

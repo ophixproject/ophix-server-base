@@ -1,5 +1,5 @@
 """
-ophix-manage list_ophix_plugins
+ophix-manage list_plugins
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 List all installed Ophix plugins discovered via the ``ophix.plugins``
 entry point group.
@@ -7,10 +7,10 @@ entry point group.
 Examples
 --------
 List plugin names only:
-    ophix-manage list_ophix_plugins
+    ophix-manage list_plugins
 
 List name, pip package, module, and version:
-    ophix-manage list_ophix_plugins --details
+    ophix-manage list_plugins --details
 """
 
 import importlib

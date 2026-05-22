@@ -255,7 +255,7 @@ class AccessLog(models.Model):
 
 class PackageUpdateRecord(models.Model):
     """
-    Snapshot of an installed Ophix package as of the last check_ophix_updates run.
+    Snapshot of an installed Ophix package as of the last check_updates run.
 
     Rows are upserted by the management command — never created via the admin.
     The ``notice`` field stores release notes read from each package's
@@ -284,7 +284,7 @@ class PackageUpdateRecord(models.Model):
     first_recorded_at = models.DateTimeField(
         _("first recorded"),
         auto_now_add=True,
-        help_text=_("When this package was first seen by check_ophix_updates."),
+        help_text=_("When this package was first seen by check_updates."),
     )
     last_checked_at = models.DateTimeField(
         _("last checked"),
