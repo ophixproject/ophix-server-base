@@ -1,5 +1,12 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- Fixed `apply_updates` always printing `taskserver` (or the SERVER_NAME slug)
+  instead of the actual service name: `SERVICE_NAME` was written to `.env` by
+  `run_install` but never loaded into Django settings. Added
+  `SERVICE_NAME = os.getenv("SERVICE_NAME", "")` to `settings/base.py`.
+
 ## 2026.05.22.04
 
 - Added migration 0008: `PackageUpdateRecord.first_recorded_at` help text updated

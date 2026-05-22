@@ -68,6 +68,10 @@ ALLOWED_HOSTS = get_list_env("ALLOWED_HOSTS", default=["*"])
 # Machine-readable version string — auto-populated by generate_ophix_config.
 SERVER_VERSION = os.getenv("SERVER_VERSION", "")
 
+# Systemd service name — written to .env by run_install when the install slug
+# differs from SERVER_NAME. Read by apply_updates for the restart reminder.
+SERVICE_NAME = os.getenv("SERVICE_NAME", "")
+
 # ---------------------------------------------------------------------------
 # Applications
 # Plugins append to this list via ophix.settings.plugins.
