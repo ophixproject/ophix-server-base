@@ -105,6 +105,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "ophix.core.middleware.ReadOnlyModeMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -381,10 +382,11 @@ MINIMUM_TOKEN_ROTATE_TIME = get_int_env("MINIMUM_TOKEN_ROTATE_TIME", default=360
 # Allow clients to delete artifacts they own. Disabled by default.
 ENABLE_ARTIFACT_DELETE = get_bool_env("ENABLE_ARTIFACT_DELETE", default=False)
 
-# When True, all token rotation requests are rejected with 503.
-# Set during a migration change window: freeze tokens on the source server
-# before exporting, import to the target, then clear this on the target.
-PREVENT_TOKEN_ROTATION = get_bool_env("PREVENT_TOKEN_ROTATION", default=False)
+# When True, all API write requests (POST/PUT/PATCH/DELETE to /api/) are
+# rejected with HTTP 503. Reads, admin, and access logging are unaffected.
+# Use during a migration change window — set on the source server before
+# exporting, leave False on the target, then update DNS.
+SERVER_READ_ONLY_MODE = get_bool_env("SERVER_READ_ONLY_MODE", default=False)
 
 # ---------------------------------------------------------------------------
 # Audit logging

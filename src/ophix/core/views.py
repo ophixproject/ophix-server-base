@@ -210,12 +210,6 @@ class ClientViewSet(viewsets.ViewSet):
     def rotate_token(self, request):
         _log_client_headers(request)
 
-        if getattr(settings, "PREVENT_TOKEN_ROTATION", False):
-            return Response(
-                {"error": err_response("Token rotation is currently disabled", "Service unavailable")},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
-
         client = self._client(request)
         new_token = request.data.get("new_token")
 

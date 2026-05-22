@@ -2,11 +2,13 @@
 
 ## Unreleased
 
-- Added `PREVENT_TOKEN_ROTATION` setting (default `False`). When `True`, all
-  token rotation requests are rejected with HTTP 503. Use during a migration
-  change window: freeze tokens on the source server before exporting, import to
-  the target with this unset, then update DNS. Clients receive 503 and retry
-  on their next scheduled rotation cycle.
+- Added `SERVER_READ_ONLY_MODE` setting (default `False`). When `True`, all
+  API write requests (POST/PUT/PATCH/DELETE to `/api/`) are rejected with
+  HTTP 503 — blocking registrations, token rotations, and artifact updates.
+  Reads, admin access, and internal logging are unaffected. Use during a
+  migration change window: set on the source server before exporting, leave
+  unset on the target, then update DNS. Clients treat 503 as transient and
+  retry on their next cycle.
 
 - Added `export_hosts` / `import_hosts` commands — transfer Host records between
   servers. Idempotent (matched by name), cron-safe. Both support `--dry-run`,
