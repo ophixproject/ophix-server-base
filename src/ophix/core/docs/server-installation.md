@@ -142,10 +142,10 @@ ophix-manage collectstatic --noinput
 sudo systemctl restart credserver
 ```
 
-**If the upgrade adds new `.env` settings**, use `generate_ophix_config --append` to add them without touching existing values:
+**If the upgrade adds new `.env` settings**, use `generate_config --append` to add them without touching existing values:
 
 ```bash
-ophix-manage generate_ophix_config --append
+ophix-manage generate_config --append
 # Review any new keys added to .env and set non-default values if needed
 ophix-manage migrate
 ophix-manage collectstatic --noinput
@@ -204,8 +204,8 @@ The guided installer is recommended for all new deployments. If you prefer to ma
 
 | Command | Purpose |
 | --- | --- |
-| `generate_ophix_config --all` | Generate `.env.sample`, nginx config, and systemd service file |
-| `generate_ophix_config --append` | Add new plugin env keys to an existing `.env` without modifying existing values |
+| `generate_config --all` | Generate `.env.sample`, nginx config, and systemd service file |
+| `generate_config --append` | Add new plugin env keys to an existing `.env` without modifying existing values |
 | `configure_database` | Interactive database credentials setup with live connection test |
 | `configure_install` | Create `INSTALL_DIR` subdirectory structure |
 | `migrate` | Apply database migrations |
@@ -213,7 +213,7 @@ The guided installer is recommended for all new deployments. If you prefer to ma
 | `createsuperuser` | Create an admin user interactively |
 | `run_uninstall <slug>` | Regenerate the sudo uninstall script |
 
-Full legacy sequence: `generate_ophix_config --all` → `configure_database` → `configure_install` → place TLS files → deploy nginx and systemd files → `migrate` → `collectstatic` → `createsuperuser` → `systemctl start`.
+Full legacy sequence: `generate_config --all` → `configure_database` → `configure_install` → place TLS files → deploy nginx and systemd files → `migrate` → `collectstatic` → `createsuperuser` → `systemctl start`.
 
 ---
 
@@ -230,7 +230,7 @@ Full legacy sequence: `generate_ophix_config --all` → `configure_database` →
 
 ```bash
 pip install ophix-<plugin>
-ophix-manage generate_ophix_config --append
+ophix-manage generate_config --append
 # Edit .env to set any new values if required
 ophix-manage migrate
 ophix-manage collectstatic --noinput
@@ -252,14 +252,14 @@ You do not need to pre-create Client records. Registration is handled by the cli
 
 ## Server settings reference
 
-All settings are controlled via `.env`. Run `ophix-manage generate_ophix_config --env` to generate an annotated sample with all variables.
+All settings are controlled via `.env`. Run `ophix-manage generate_config --env` to generate an annotated sample with all variables.
 
 ### Identity and security
 
 | Variable | Default | Description |
 | --- | --- | --- |
 | `SERVER_NAME` | _(domain default)_ | Short name for this server instance. The domain plugin supplies a default (`credserver`, `confserver`, `certserver`, etc.). Override to customise for a specific deployment. |
-| `SERVER_VERSION` | _(blank)_ | Version string auto-populated from the installed domain plugin. Updated automatically by `generate_ophix_config --append` after an upgrade. |
+| `SERVER_VERSION` | _(blank)_ | Version string auto-populated from the installed domain plugin. Updated automatically by `generate_config --append` after an upgrade. |
 | `DJANGO_SECRET_KEY` | _(auto)_ | Auto-generated on first run and saved to `.env`. Do not set manually. |
 | `DEBUG` | `False` | Enable Django debug mode. **Never `True` in production.** |
 | `ALLOWED_HOSTS` | `*` | Comma-separated hostnames/IPs this server responds to. Tighten before production. |
@@ -346,12 +346,12 @@ See [Access Auditing](access-auditing) for the full audit log documentation.
 
 ### Authentication plugins
 
-SSO and LDAP are optional plugins, not part of `ophix-server-base`. Install the plugin and re-run `generate_ophix_config --append` to add the relevant settings block to `.env`.
+SSO and LDAP are optional plugins, not part of `ophix-server-base`. Install the plugin and re-run `generate_config --append` to add the relevant settings block to `.env`.
 
 ```bash
 pip install ophix-auth-oidc    # OpenID Connect / Azure AD
 pip install ophix-auth-ldap    # Active Directory / LDAP
-ophix-manage generate_ophix_config --append
+ophix-manage generate_config --append
 ```
 
 Each plugin activates when its trigger variable is set in `.env`: `OIDC_RP_CLIENT_ID` for OIDC, `LDAP_SERVER_URI` for LDAP. Both can be active simultaneously.

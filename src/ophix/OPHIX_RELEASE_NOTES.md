@@ -1,5 +1,11 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `generate_ophix_config` renamed to `generate_config` — `_ophix_` infix removed
+  for consistency with all other management commands. Update any cron jobs or scripts
+  that reference the old name.
+
 ## 2026.05.22.06
 
 - Added `SERVER_READ_ONLY_MODE` setting (default `False`). When `True`, all
@@ -53,8 +59,8 @@
 
 ## 2026.05.22.01
 
-- `generate_deploy_config` renamed to `generate_ophix_config` for consistent
-  Ophix namespacing. Update any cron jobs or scripts that reference the old name.
+- `generate_deploy_config` renamed to `generate_ophix_config` (further renamed
+  to `generate_config` in a later release).
 - `apply_updates` renamed to `apply_ophix_updates` for consistent namespacing.
 - `init_deploy` removed — fully superseded by `configure_install` + `run_install`.
 - `run_install` now writes `SERVICE_NAME` to `.env` so that `apply_ophix_updates`
@@ -98,7 +104,7 @@
 ## 2026.05.21.03
 
 - Added `apply_updates` management command — convenience wrapper that runs
-  `migrate`, `collectstatic --noinput`, and `generate_ophix_config --append`
+  `migrate`, `collectstatic --noinput`, and `generate_config --append`
   in sequence after a `pip install --upgrade`. Prints a `systemctl restart`
   reminder with the correct service name at the end.
 

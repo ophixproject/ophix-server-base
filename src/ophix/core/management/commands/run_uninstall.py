@@ -20,7 +20,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-from ophix.core.management.commands.generate_ophix_config import _slugify
+from ophix.core.management.commands.generate_config import _slugify
 from ophix.core.management.commands.run_install import (
     _SUDO_UNINSTALL_TEMPLATE,
     _render_inline,
