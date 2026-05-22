@@ -14,6 +14,9 @@ Import from file:
 
 Preview without writing:
     ophix-manage import_hosts --input-file hosts.json --dry-run
+
+Force import, bypassing IP conflict checks:
+    ophix-manage import_hosts --input-file hosts.json --force
 """
 
 import ipaddress
@@ -60,6 +63,16 @@ class Command(BaseCommand):
             action="store_true",
             help="Suppress per-record output. Summary line is always shown.",
         )
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help=(
+                "Bypass IP conflict checks. Use when reorganising the fleet and "
+                "IPs have moved between hosts. The database unique constraint is "
+                "still enforced — if a conflict cannot be resolved, the record is "
+                "skipped with an error."
+            ),
+        )
 
     def handle(self, *args, **options):
         from ophix.core.models import Host
@@ -67,6 +80,7 @@ class Command(BaseCommand):
         input_path = Path(options["input_file"])
         dry_run    = options["dry_run"]
         quiet      = options["quiet"]
+        force      = options["force"]
 
         if not input_path.exists():
             raise CommandError(f"Input file not found: {input_path}")
@@ -106,17 +120,18 @@ class Command(BaseCommand):
             enabled     = bool(rec.get("enabled", True))
 
             # Check for IP conflicts with a different host.
-            conflict = None
-            for field, val in (("ipv4_address", ipv4), ("ipv6_address", ipv6)):
-                if val:
-                    other = Host.objects.filter(**{field: val}).exclude(name=name).first()
-                    if other:
-                        conflict = f"{field} {val!r} already assigned to '{other.name}'"
-                        break
-            if conflict:
-                self.stderr.write(f"  {name}: {conflict} — skipped.")
-                skipped += 1
-                continue
+            if not force:
+                conflict = None
+                for field, val in (("ipv4_address", ipv4), ("ipv6_address", ipv6)):
+                    if val:
+                        other = Host.objects.filter(**{field: val}).exclude(name=name).first()
+                        if other:
+                            conflict = f"{field} {val!r} already assigned to '{other.name}'"
+                            break
+                if conflict:
+                    self.stderr.write(f"  {name}: {conflict} — skipped. Use --force to override.")
+                    skipped += 1
+                    continue
 
             # Create or update.
             try:
@@ -138,25 +153,35 @@ class Command(BaseCommand):
                     if not quiet:
                         self.stdout.write(f"  {name}: updating {', '.join(changed)}.")
                     if not dry_run:
-                        for f, v in changed.items():
-                            setattr(host, f, v)
-                        host.full_clean()
-                        host.save()
+                        try:
+                            for f, v in changed.items():
+                                setattr(host, f, v)
+                            host.full_clean()
+                            host.save()
+                        except Exception as exc:
+                            self.stderr.write(f"  {name}: save failed — {exc}")
+                            skipped += 1
+                            continue
                     updated += 1
 
             except Host.DoesNotExist:
                 if not quiet:
                     self.stdout.write(f"  {name}: creating.")
                 if not dry_run:
-                    host = Host(
-                        name=name,
-                        ipv4_address=ipv4,
-                        ipv6_address=ipv6,
-                        description=description,
-                        enabled=enabled,
-                    )
-                    host.full_clean()
-                    host.save()
+                    try:
+                        host = Host(
+                            name=name,
+                            ipv4_address=ipv4,
+                            ipv6_address=ipv6,
+                            description=description,
+                            enabled=enabled,
+                        )
+                        host.full_clean()
+                        host.save()
+                    except Exception as exc:
+                        self.stderr.write(f"  {name}: save failed — {exc}")
+                        skipped += 1
+                        continue
                 created += 1
 
         parts = []
