@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.05.22.06
 
 - Added `SERVER_READ_ONLY_MODE` setting (default `False`). When `True`, all
   API write requests (POST/PUT/PATCH/DELETE to `/api/`) are rejected with
