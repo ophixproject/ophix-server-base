@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.05.22.04
 
 - Added migration 0008: `PackageUpdateRecord.first_recorded_at` help text updated
   to reference `check_updates` (was `check_ophix_updates`).
