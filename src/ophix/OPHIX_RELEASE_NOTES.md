@@ -1,5 +1,10 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- Added migration 0008: `PackageUpdateRecord.first_recorded_at` help text updated
+  to reference `check_updates` (was `check_ophix_updates`).
+
 ## 2026.05.22.03
 
 - Fixed crash when running any management command after the hidden-command patch
