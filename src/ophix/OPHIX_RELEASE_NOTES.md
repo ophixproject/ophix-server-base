@@ -1,5 +1,13 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- Added `export_hosts` command — exports all Host records to a JSON file.
+- Added `import_hosts` command — imports Host records from a JSON file produced
+  by `export_hosts`. Idempotent: matched by name, updates only changed fields,
+  skips identical records. Safe to run from cron for cross-server host sync.
+  Both commands support `--dry-run` and `--quiet`.
+
 ## 2026.05.22.05
 
 - Fixed `apply_updates` always printing `taskserver` (or the SERVER_NAME slug)
