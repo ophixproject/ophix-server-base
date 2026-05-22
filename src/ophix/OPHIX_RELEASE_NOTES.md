@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.05.22.01
 
 - `generate_deploy_config` renamed to `generate_ophix_config` for consistent
   Ophix namespacing. Update any cron jobs or scripts that reference the old name.
