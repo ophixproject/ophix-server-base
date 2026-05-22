@@ -1,5 +1,5 @@
 """
-ophix.core.management.commands.generate_deploy_config
+ophix.core.management.commands.generate_ophix_config
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Generate deployment configuration files for an Ophix server.
 
@@ -19,18 +19,18 @@ needing to know about them.
 
 Usage::
 
-    ophix-manage generate_deploy_config --all \\
+    ophix-manage generate_ophix_config --all \\
         --server-hostname credserver.example.com \\
         --service-user ophix
 
-    ophix-manage generate_deploy_config --nginx --systemd \\
+    ophix-manage generate_ophix_config --nginx --systemd \\
         --server-hostname credserver.example.com \\
         --service-user ophix --output-dir /tmp
 
-    ophix-manage generate_deploy_config --env
+    ophix-manage generate_ophix_config --env
 
     # After adding a new plugin to an existing install:
-    ophix-manage generate_deploy_config --append
+    ophix-manage generate_ophix_config --append
 """
 
 import argparse
@@ -61,10 +61,10 @@ Where <slug> is a short name for this server instance (e.g. credserver, confserv
 
 MANUAL BOOTSTRAP (advanced)
 ============================
-Use generate_deploy_config if you prefer to manage each step yourself.
+Use generate_ophix_config if you prefer to manage each step yourself.
 
 1. Generate deployment files
-   ophix-manage generate_deploy_config --all \\
+   ophix-manage generate_ophix_config --all \\
        --server-hostname your.server.hostname \\
        --service-user ophix
 
@@ -115,7 +115,7 @@ ADDING A PLUGIN LATER
 After installing a new ophix plugin into an existing deployment:
 
    pip install ophix-<plugin>
-   ophix-manage generate_deploy_config --append
+   ophix-manage generate_ophix_config --append
 
 --append reads your existing .env, discovers all installed plugin fragments,
 and appends any variables not already present.  Your existing values are
@@ -463,7 +463,7 @@ class Command(BaseCommand):
             from jinja2 import Environment  # noqa: F401
         except ImportError:
             raise CommandError(
-                "Jinja2 is required for generate_deploy_config but is not installed. "
+                "Jinja2 is required for generate_ophix_config but is not installed. "
                 "Run: pip install Jinja2"
             )
 
@@ -610,7 +610,7 @@ class Command(BaseCommand):
         if not env_file_path:
             raise CommandError(
                 "No .env file found in the current directory or its parents. "
-                "Run generate_deploy_config --env first to create one."
+                "Run generate_ophix_config --env first to create one."
             )
 
         env_file = Path(env_file_path)
@@ -682,7 +682,7 @@ class Command(BaseCommand):
             if new_keys:
                 header = (
                     f"\n# {'=' * 70}\n"
-                    f"# {label} (appended by generate_deploy_config --append)\n"
+                    f"# {label} (appended by generate_ophix_config --append)\n"
                     f"# {'=' * 70}\n\n"
                 )
                 additions.append(header + filtered.lstrip("\n"))

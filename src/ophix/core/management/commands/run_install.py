@@ -38,7 +38,7 @@ from pathlib import Path
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 
-from ophix.core.management.commands.generate_deploy_config import (
+from ophix.core.management.commands.generate_ophix_config import (
     _discover_domain_version,
     _render_template,
     _slugify,

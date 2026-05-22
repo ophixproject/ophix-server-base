@@ -44,7 +44,7 @@ if not SECRET_KEY:
     # On a fresh install with no .env yet, we generate in memory only —
     # the operator copies .env.sample → .env and the key is written on
     # first real startup.  Without this guard, running any management
-    # command (e.g. generate_deploy_config) before .env exists would
+    # command (e.g. generate_ophix_config) before .env exists would
     # silently create a .env containing only DJANGO_SECRET_KEY, which
     # confuses the bootstrap workflow.
     env_file = find_dotenv(usecwd=True)
@@ -65,7 +65,7 @@ ALLOWED_HOSTS = get_list_env("ALLOWED_HOSTS", default=["*"])
 # Override in .env to customise for a specific deployment.
 # Falls back to "Ophix Server" in the context processor if no domain is installed.
 
-# Machine-readable version string — auto-populated by generate_deploy_config.
+# Machine-readable version string — auto-populated by generate_ophix_config.
 SERVER_VERSION = os.getenv("SERVER_VERSION", "")
 
 # ---------------------------------------------------------------------------

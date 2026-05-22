@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-- `run_install` now writes `SERVICE_NAME` to `.env` so that `apply_updates`
+- `generate_deploy_config` renamed to `generate_ophix_config` for consistent
+  Ophix namespacing. Update any cron jobs or scripts that reference the old name.
+- `apply_updates` renamed to `apply_ophix_updates` for consistent namespacing.
+- `init_deploy` removed — fully superseded by `configure_install` + `run_install`.
+- `run_install` now writes `SERVICE_NAME` to `.env` so that `apply_ophix_updates`
   can print the correct `systemctl restart` command even when the install slug
   differs from `SERVER_NAME`. Existing installs can add `SERVICE_NAME=<slug>`
   to `.env` manually to get the same behaviour.
@@ -43,7 +47,7 @@
 ## 2026.05.21.03
 
 - Added `apply_updates` management command — convenience wrapper that runs
-  `migrate`, `collectstatic --noinput`, and `generate_deploy_config --append`
+  `migrate`, `collectstatic --noinput`, and `generate_ophix_config --append`
   in sequence after a `pip install --upgrade`. Prints a `systemctl restart`
   reminder with the correct service name at the end.
 
