@@ -59,12 +59,32 @@ _HIDDEN_COMMANDS = frozenset([
 
 def _patch_hidden_commands():
     from django.core import management as _mgmt
-    _orig = _mgmt.get_commands
 
-    def _filtered():
-        return {k: v for k, v in _orig().items() if k not in _HIDDEN_COMMANDS}
+    _orig_get       = _mgmt.get_commands
+    _orig_fetch     = _mgmt.ManagementUtility.fetch_command
+    _orig_help_text = _mgmt.ManagementUtility.main_help_text
 
-    _mgmt.get_commands = _filtered
+    def _filtered_fetch(self, subcommand):
+        if subcommand in _HIDDEN_COMMANDS:
+            self.stderr.write(
+                "Unknown command: %r\nType '%s help' for usage.\n"
+                % (subcommand, self.prog_name)
+            )
+            sys.exit(1)
+        return _orig_fetch(self, subcommand)
+
+    def _filtered_help_text(self, commands_only=False):
+        # Temporarily narrow get_commands so hidden entries don't appear in --help.
+        _mgmt.get_commands = lambda: {
+            k: v for k, v in _orig_get().items() if k not in _HIDDEN_COMMANDS
+        }
+        try:
+            return _orig_help_text(self, commands_only=commands_only)
+        finally:
+            _mgmt.get_commands = _orig_get
+
+    _mgmt.ManagementUtility.fetch_command   = _filtered_fetch
+    _mgmt.ManagementUtility.main_help_text  = _filtered_help_text
 
 
 def main():

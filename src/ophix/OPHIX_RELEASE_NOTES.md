@@ -1,5 +1,14 @@
 # ophix-server-base Release Notes
 
+## 2026.05.22.03
+
+- Fixed crash when running any management command after the hidden-command patch
+  was applied: `get_commands` was replaced globally, breaking Django's internal
+  system check that looks up `makemigrations` before dispatch. The patch now
+  targets `ManagementUtility.fetch_command` (blocks hidden commands at execution)
+  and `ManagementUtility.main_help_text` (filters --help display) instead of
+  replacing `get_commands`, leaving Django internals unaffected.
+
 ## 2026.05.22.02
 
 - Management commands renamed — `ophix_` infix removed as redundant within
