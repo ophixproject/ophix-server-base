@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.05.22.02
 
 - Management commands renamed — `ophix_` infix removed as redundant within
   `ophix-manage` context: `check_ophix_updates` → `check_updates`,
