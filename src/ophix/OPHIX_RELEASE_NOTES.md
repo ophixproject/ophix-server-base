@@ -2,11 +2,17 @@
 
 ## Unreleased
 
-- Added `export_hosts` command — exports all Host records to a JSON file.
-- Added `import_hosts` command — imports Host records from a JSON file produced
-  by `export_hosts`. Idempotent: matched by name, updates only changed fields,
-  skips identical records. Safe to run from cron for cross-server host sync.
-  Both commands support `--dry-run` and `--quiet`.
+- Added `export_hosts` / `import_hosts` commands — transfer Host records between
+  servers. Idempotent (matched by name), cron-safe. Both support `--dry-run`,
+  `--quiet`; `import_hosts` supports `--force` to bypass IP conflict checks.
+- Added `export_clients` / `import_clients` commands — backup and restore Client
+  records including tokens, enabling fleet clients to reconnect to a rebuilt
+  server without re-registering. `export_clients` accepts `--passphrase` to
+  encrypt tokens using a PBKDF2-derived Fernet key (salt stored in file);
+  `import_clients` requires the same passphrase if the file is encrypted and
+  validates the key before touching the database. Both support `--dry-run`,
+  `--quiet`; `import_clients` supports `--force` to bypass token conflict checks.
+  Run `import_hosts` before `import_clients` when doing a full server restore.
 
 ## 2026.05.22.05
 
