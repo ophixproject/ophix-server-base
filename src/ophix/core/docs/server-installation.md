@@ -35,14 +35,13 @@ source venv/bin/activate
 
 ## 2. Install packages
 
-MariaDB support is built into `ophix-server-base` — no extra required. Install the base package and your domain plugin:
+MariaDB support is built into `ophix-server-base` — no extra required. Install the domain plugin (`ophix-server-base` is pulled in automatically as a dependency):
 
 ```bash
-pip install ophix-server-base
 pip install ophix-creds        # or ophix-confs, ophix-certs, etc.
 ```
 
-**Other database engines** require a driver plugin in addition to the base package:
+**Other database engines** require a driver plugin in addition to the domain plugin:
 
 ```bash
 pip install ophix-dbengine-postgres     # PostgreSQL
@@ -59,6 +58,7 @@ pip install ophix-theme-imago      # Imago branding theme
 pip install ophix-codemirror       # code editor widgets (used by ophix-confs)
 pip install ophix-auth-oidc        # OpenID Connect / Azure AD SSO
 pip install ophix-auth-ldap        # Active Directory / LDAP authentication
+pip install venv-cmds              # lists venv commands and checks for updates
 ```
 
 ---
