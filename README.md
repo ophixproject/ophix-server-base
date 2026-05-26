@@ -1,11 +1,10 @@
 # ophix-server-base
 
-Base Django project package for **Ophix Project Servers** (OPS).
+Shared Django base package for every [Ophix](https://ophix.io) fleet management server.
 
-Provides the shared infrastructure that every OPS server is built on:
-Host/Client models, token + IP authentication, standard API endpoints
-(register, CA cert download, client self-management), settings module
-with plugin auto-discovery, and URL assembly.
+Provides the common infrastructure all OPS servers are built on: Host/Client models,
+token + IP authentication, standard API endpoints (register, CA cert download,
+client self-management), plugin auto-discovery, and settings assembly.
 
 ---
 
@@ -18,7 +17,7 @@ pip install ophix-server-base
 Install one domain plugin and any other optional plugins alongside it:
 
 ```bash
-pip install ophix-server-base ophix-creds ophix-docs ophix-theme-tools ophix-codemirror ophix-theme-midnight
+pip install ophix-server-base ophix-creds ophix-docs ophix-codemirror ophix-theme-midnight
 ```
 
 ---
@@ -87,10 +86,16 @@ ophix-manage collectstatic --noinput                   # update static files
 sudo systemctl restart credserver                      # restart service
 ```
 
+Or use the convenience command that runs all three steps in order:
+
+```bash
+ophix-manage apply_updates
+```
+
 If the upgrade added new `.env` settings, pull them in first:
 
 ```bash
-ophix-manage generate_deploy_config --append
+ophix-manage generate_config --append
 ```
 
 Do not re-run `configure_install` for routine upgrades — it rewrites `.env` from
@@ -109,6 +114,7 @@ scratch.
 | `INSTALL_DIR` | *(prompted)* | Root for runtime data: logs, media, ssl, static |
 | `ALLOWED_HOSTS` | *(hostname)* | Comma-separated hostnames this server accepts |
 | `DEBUG` | `False` | Enable only during development — never in production |
+| `SERVER_READ_ONLY_MODE` | `False` | Reject all API write requests. Use during migration change windows: set on the source server before exporting, leave unset on the target, then update DNS. |
 | `DB_ENGINE` | `mariadb` | `mariadb` \| `mysql` \| `postgres` \| `sqlserver` \| `oracle` \| `cockroachdb` |
 | `DB_HOST` | `localhost` | Database host |
 | `DB_PORT` | `3306` | Database port |
@@ -132,11 +138,11 @@ Domain plugins add their own variables (e.g. `CRED_ENCRYPTION_KEY` from [ophix-c
 If `ophix-docs` is installed, documentation for all installed packages is loaded
 automatically at the end of `run_install`. No further action is needed for a fresh install.
 
-To load or refresh docs manually after upgrading packages, run `ophix_docs_list_sources`
+To load or refresh docs manually after upgrading packages, run `list_docs_sources`
 to see which app module names to include, then:
 
 ```bash
-ophix-manage ophix_docs_update --include-app-docs ophix.core,ophix_creds,ophix_docs,ophix_theme_tools
+ophix-manage update_docs --include-app-docs ophix.core,ophix_creds,ophix_docs
 ```
 
 Substitute the module list for your server type — see
@@ -163,7 +169,7 @@ See [Guided installation](#guided-installation) above for the full three-step wa
 
 These commands underpin `configure_install` / `run_install` and remain available for scripted or customised deployments.
 
-**`generate_deploy_config`** — generates deployment files from templates:
+**`generate_config`** — generates deployment files from templates:
 
 | Flag | Output |
 | --- | --- |
@@ -174,12 +180,12 @@ These commands underpin `configure_install` / `run_install` and remain available
 | `--append` | Appends any missing plugin variables to the existing `.env`. Use after installing a new plugin. Never modifies existing values. |
 
 ```bash
-ophix-manage generate_deploy_config --all \
+ophix-manage generate_config --all \
     --server-hostname credserver.example.com \
     --service-user ophix
 
 # After installing a new plugin into an existing deployment:
-ophix-manage generate_deploy_config --append
+ophix-manage generate_config --append
 ```
 
 **`configure_database`** — interactive prompt to configure and live-test the database connection, then write the result to `.env`. Supports MariaDB, MySQL, PostgreSQL. Optional TLS and mutual TLS.
@@ -188,32 +194,54 @@ ophix-manage generate_deploy_config --append
 ophix-manage configure_database
 ```
 
-**`init_deploy`** — creates the `INSTALL_DIR` subdirectory structure (`logs/`, `ssl/`, `static/`, `media/`, `run/`). Prints the equivalent shell commands for any steps that require root.
-
-```bash
-ophix-manage init_deploy
-ophix-manage init_deploy --install-dir /var/lib/credserver
-ophix-manage init_deploy --dry-run
-```
-
 ---
 
 ### Operations
 
-**`list_ophix_plugins`** — lists all installed Ophix plugins discovered via the `ophix.plugins` entry point group, plus `ophix-server-base` itself.
+**`list_plugins`** — lists all installed Ophix plugins discovered via the `ophix.plugins` entry point group, plus `ophix-server-base` itself.
 
 ```bash
-ophix-manage list_ophix_plugins             # names only
-ophix-manage list_ophix_plugins --details   # name, package, module, version
+ophix-manage list_plugins             # names only
+ophix-manage list_plugins --details   # name, package, module, version
 ```
 
-**`prune_access_log`** — deletes `AccessLog` records older than N days. Intended to be run periodically via cron.
+**`check_updates`** — checks all installed Ophix plugins against the configured pip index and reports whether newer versions are available. Results are stored in `PackageUpdateRecord` and shown in the admin UI.
 
 ```bash
-ophix-manage prune_access_log               # default: 90 days
-ophix-manage prune_access_log --days 30
-ophix-manage prune_access_log --days 30 --dry-run
+ophix-manage check_updates
+ophix-manage check_updates --quiet   # suppress output; suitable for cron
 ```
+
+**`apply_updates`** — convenience wrapper that runs `migrate`, `collectstatic --noinput`, and `generate_config --append` in sequence, then prints a reminder to restart the service. Run this after `pip install --upgrade`.
+
+```bash
+ophix-manage apply_updates
+```
+
+**`prune_access_logs`** — deletes `AccessLog` records older than N days. Intended to be run periodically via cron.
+
+```bash
+ophix-manage prune_access_logs               # default: 90 days
+ophix-manage prune_access_logs --days 30
+ophix-manage prune_access_logs --days 30 --dry-run
+```
+
+**`archive_access_logs`** — exports `AccessLog` records to a file for long-term retention or compliance. Use `--append` for incremental cron runs (writes newline-delimited JSON). Combine with `prune_access_logs` to archive-then-purge:
+
+```bash
+ophix-manage archive_access_logs --output-file archive.ndjson --days 90 --append
+ophix-manage prune_access_logs --days 90
+```
+
+---
+
+### Host and client backup
+
+**`export_hosts`** / **`import_hosts`** — transfer Host records between servers. Idempotent (matched by name). Both support `--dry-run` and `--quiet`; `import_hosts` supports `--force` to bypass IP conflict checks.
+
+**`export_clients`** / **`import_clients`** — backup and restore Client records including tokens, enabling fleet clients to reconnect to a rebuilt server without re-registering. `export_clients` accepts `--passphrase` to encrypt tokens at rest; `import_clients` requires the same passphrase when the file is encrypted. Both support `--dry-run` and `--quiet`; `import_clients` supports `--force`.
+
+Run `import_hosts` before `import_clients` when doing a full server restore.
 
 ---
 
