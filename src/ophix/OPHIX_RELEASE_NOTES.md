@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.05.26.01
 
 - Updated copyright footer link in `base_site.html` from ophixproject.com to ophix.io
 
