@@ -14,11 +14,15 @@ client self-management), plugin auto-discovery, and settings assembly.
 pip install ophix-server-base
 ```
 
-Install one domain plugin and any other optional plugins alongside it:
+Install one domain plugin alongside it, with recommended extras:
 
 ```bash
-pip install ophix-server-base ophix-creds ophix-docs ophix-codemirror ophix-theme-midnight
+pip install ophix-creds ophix-docs venv-cmds
 ```
+
+- `ophix-docs` — inline documentation in the admin UI
+- `venv-cmds` — lists available venv commands and checks for package updates
+- A theme pack (e.g. `ophix-theme-midnight`) can be added for custom branding; the built-in Ophix theme is active on fresh installs by default
 
 ---
 
