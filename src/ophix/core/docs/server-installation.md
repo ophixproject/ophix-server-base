@@ -54,7 +54,7 @@ pip install ophix-dbengine-cockroachdb  # CockroachDB
 
 ```bash
 pip install ophix-docs             # inline markdown documentation in admin
-pip install ophix-theme-imago      # Imago branding theme
+pip install ophix-theme-midnight   # custom branding theme (optional)
 pip install ophix-codemirror       # code editor widgets (used by ophix-confs)
 pip install ophix-auth-oidc        # OpenID Connect / Azure AD SSO
 pip install ophix-auth-ldap        # Active Directory / LDAP authentication
