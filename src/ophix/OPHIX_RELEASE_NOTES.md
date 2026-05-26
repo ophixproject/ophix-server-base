@@ -1,5 +1,9 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- Updated copyright footer link in `base_site.html` from ophixproject.com to ophix.io
+
 ## 2026.05.22.08
 
 - `generate_ophix_config` renamed to `generate_config` — `_ophix_` infix removed
