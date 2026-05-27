@@ -17,6 +17,7 @@ refer to it directly.
 import logging
 
 from django.conf import settings
+from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
 from rest_framework import exceptions
 
@@ -81,6 +82,29 @@ class ClientTokenAuthentication(BaseAuthentication):
                 ", ".join(registered_ips),
             )
             raise exceptions.AuthenticationFailed(self._msg("Access blocked"))
+
+        # Token lockout: if TOKEN_LOCKOUT_DAYS is set and >= TOKEN_REQUIRE_DAYS,
+        # deny access entirely once the token age reaches the lockout threshold.
+        # Requires operator to unlock the client via the token-policy dashboard.
+        lockout_days = getattr(settings, "TOKEN_LOCKOUT_DAYS", 0)
+        if lockout_days > 0:
+            require_days = getattr(settings, "TOKEN_REQUIRE_DAYS", 0)
+            if lockout_days < require_days:
+                logger.warning(
+                    "TOKEN_LOCKOUT_DAYS (%d) is less than TOKEN_REQUIRE_DAYS (%d) — lockout not enforced",
+                    lockout_days,
+                    require_days,
+                )
+            elif client.last_token_rotation is not None:
+                age = (timezone.now() - client.last_token_rotation).days
+                if age >= lockout_days:
+                    logger.info(
+                        "Access blocked for client %s: token age %d days exceeds lockout threshold %d",
+                        client,
+                        age,
+                        lockout_days,
+                    )
+                    raise exceptions.AuthenticationFailed(self._msg("Access blocked"))
 
         return (client, None)
 
