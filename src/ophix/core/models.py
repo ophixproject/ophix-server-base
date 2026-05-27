@@ -114,6 +114,10 @@ class Client(models.Model):
         blank=True,
         default=None,
     )
+    rotation_required = models.BooleanField(
+        _("rotation required"),
+        default=False,
+    )
 
     class Meta:
         ordering = ("name",)
