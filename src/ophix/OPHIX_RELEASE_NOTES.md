@@ -1,5 +1,9 @@
 # ophix-server-base Release Notes
 
+## 2026.05.27.01
+
+- Release Notes fieldset in the Package Update Record detail view is now collapsed by default.
+
 ## 2026.05.26.01
 
 - Updated copyright footer link in `base_site.html` from ophixproject.com to ophix.io
