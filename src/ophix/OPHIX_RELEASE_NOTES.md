@@ -1,5 +1,10 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `check_updates` now uses `pip list --outdated` instead of one `pip index versions` subprocess
+  per package. A single pip call replaces N subprocesses, making the command significantly faster.
+
 ## 2026.05.28.01
 
 - Token lockout enforcement in `ClientTokenAuthentication`: when `TOKEN_LOCKOUT_DAYS` is set
