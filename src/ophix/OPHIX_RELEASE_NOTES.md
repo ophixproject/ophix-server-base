@@ -1,5 +1,13 @@
 # ophix-server-base Release Notes
 
+## 2026.05.28.01
+
+- Token lockout enforcement in `ClientTokenAuthentication`: when `TOKEN_LOCKOUT_DAYS` is set
+  and a client's token age meets or exceeds it, API access is denied until an operator unlocks
+  the client via the token-policy dashboard. Set `TOKEN_LOCKOUT_DAYS=0` to disable (default).
+  A value below `TOKEN_REQUIRE_DAYS` is invalid and is ignored with a log warning. Clients
+  that have never rotated are not subject to lockout.
+
 ## 2026.05.27.01
 
 - Release Notes fieldset in the Package Update Record detail view is now collapsed by default.
