@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.05.28.02
 
 - `check_updates` now uses `pip list --outdated` instead of one `pip index versions` subprocess
   per package. A single pip call replaces N subprocesses, making the command significantly faster.
