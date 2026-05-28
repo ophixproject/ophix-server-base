@@ -4,7 +4,7 @@ ophix-manage check_updates
 Check all installed Ophix plugins against the configured pip index and
 report whether newer versions are available.
 
-Uses ``pip index versions`` under the hood, so every pip source configured
+Uses ``pip list --outdated`` under the hood, so every pip source configured
 for this environment (local mirror, private index, PyPI, etc.) is respected
 automatically.  No extra network configuration is needed.
 
@@ -21,14 +21,12 @@ Examples
     ophix-manage check_updates --quiet   # cron-friendly, DB only
 """
 
-import re
+import json
 import subprocess
 import sys
 from importlib.metadata import entry_points, metadata as dist_metadata
 from importlib.util import find_spec
 from pathlib import Path
-
-from packaging.version import Version, InvalidVersion
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -39,36 +37,24 @@ from ophix.core.management.commands.list_plugins import (
     ENTRY_POINT_GROUP,
 )
 
-# Internal status tokens — plain strings used for logic and comparison.
-# Translated labels are applied only at display time.
-_STATUS_OK          = "ok"
-_STATUS_UPDATE      = "update"
-_STATUS_UNAVAILABLE = "unavailable"
-_STATUS_UNKNOWN     = "unknown"
+_STATUS_OK     = "ok"
+_STATUS_UPDATE = "update"
 
 
-def _get_latest_version(pip_name: str, timeout: int) -> str | None:
-    """
-    Ask pip for the available versions of *pip_name* and return the newest.
-
-    Returns None if the index cannot be reached or the package is not listed.
-    """
+def _get_outdated_map(timeout: int) -> dict:
+    """Return {package_name_lower: latest_version} for all outdated packages."""
+    result = subprocess.run(
+        [sys.executable, "-m", "pip", "list", "--outdated", "--format=json"],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+    if result.returncode != 0:
+        return {}
     try:
-        result = subprocess.run(
-            [sys.executable, "-m", "pip", "index", "versions", pip_name],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-        match = re.search(r"Available versions:\s*(.+)", result.stdout)
-        if match:
-            versions = [v.strip() for v in match.group(1).split(",") if v.strip()]
-            return versions[0] if versions else None
-    except subprocess.TimeoutExpired:
-        pass
+        return {p["name"].lower(): p["latest_version"] for p in json.loads(result.stdout)}
     except Exception:
-        pass
-    return None
+        return {}
 
 
 def _format_ophix_version(version: str) -> str:
@@ -86,15 +72,6 @@ def _format_ophix_version(version: str) -> str:
         except ValueError:
             pass
     return version
-
-
-def _compare(installed: str, latest: str) -> str:
-    try:
-        if Version(latest) > Version(installed):
-            return _STATUS_UPDATE
-        return _STATUS_OK
-    except InvalidVersion:
-        return _STATUS_UNKNOWN if installed != latest else _STATUS_OK
 
 
 def _read_release_notes(module_name: str) -> str:
@@ -123,7 +100,7 @@ class Command(BaseCommand):
             type=int,
             default=30,
             metavar="SECONDS",
-            help=_("Per-package pip query timeout in seconds (default: 30)."),
+            help=_("Pip query timeout in seconds (default: 30)."),
         )
         parser.add_argument(
             "--quiet",
@@ -159,33 +136,28 @@ class Command(BaseCommand):
             installed = _get_plugin_version(ep.value, ep)
             rows.append((ep.name, pip_name, ep.value, installed))
 
-        # --- Query pip + read release notes (one package at a time) ----------
-        results = []
-        total = len(rows)
-        for i, (plugin_name, pip_name, module_name, installed) in enumerate(rows, 1):
-            if not quiet:
-                self.stderr.write(
-                    str(_("  Checking %(name)s (%(i)d/%(total)d)...\r")) % {
-                        "name": pip_name, "i": i, "total": total,
-                    },
-                    ending="",
-                )
-                self.stderr.flush()
+        # --- Single pip call, then match against plugin list -----------------
+        if not quiet:
+            self.stderr.write(_("  Querying index...\r"), ending="")
+            self.stderr.flush()
 
-            installed_fmt = _format_ophix_version(installed)
-            latest_raw    = _get_latest_version(pip_name, timeout)
-            latest_fmt    = _format_ophix_version(latest_raw) if latest_raw else None
-            notes         = _read_release_notes(module_name)
-
-            if latest_fmt is None:
-                status = _STATUS_UNAVAILABLE
-            else:
-                status = _compare(installed, latest_raw)
-
-            results.append((plugin_name, pip_name, installed_fmt, latest_fmt or "—", status, notes))
+        outdated_map = _get_outdated_map(timeout)
 
         if not quiet:
-            self.stderr.write(" " * 60 + "\r", ending="")  # clear progress line
+            self.stderr.write("                   \r", ending="")
+
+        results = []
+        for plugin_name, pip_name, module_name, installed in rows:
+            installed_fmt = _format_ophix_version(installed)
+            latest_raw    = outdated_map.get(pip_name.lower())
+            if latest_raw:
+                latest_fmt = _format_ophix_version(latest_raw)
+                status     = _STATUS_UPDATE
+            else:
+                latest_fmt = installed_fmt
+                status     = _STATUS_OK
+            notes = _read_release_notes(module_name)
+            results.append((plugin_name, pip_name, installed_fmt, latest_fmt, status, notes))
 
         # --- Upsert PackageUpdateRecord rows ---------------------------------
         from ophix.core.models import PackageUpdateRecord
@@ -195,7 +167,7 @@ class Command(BaseCommand):
                 package_name=pip_name,
                 defaults={
                     "installed_version": installed,
-                    "latest_version": latest if latest != "—" else "",
+                    "latest_version": latest,
                     "update_available": status == _STATUS_UPDATE,
                     "last_checked_at": now,
                     "notice": notes,
@@ -218,10 +190,8 @@ class Command(BaseCommand):
 
         # --- Translate status tokens for display -----------------------------
         _status_labels = {
-            _STATUS_OK:          str(_("OK")),
-            _STATUS_UPDATE:      str(_("Update available")),
-            _STATUS_UNAVAILABLE: str(_("unavailable")),
-            _STATUS_UNKNOWN:     str(_("unknown")),
+            _STATUS_OK:     str(_("OK")),
+            _STATUS_UPDATE: str(_("Update available")),
         }
 
         # --- Format and print table ------------------------------------------
@@ -258,18 +228,12 @@ class Command(BaseCommand):
         self.stdout.write(divider)
 
         updates_available = 0
-        unavailable = 0
         for plugin_name, pip_name, installed, latest, label, raw_status in display:
             if raw_status == _STATUS_UPDATE:
                 updates_available += 1
                 styled = self.style.WARNING(label)
-            elif raw_status == _STATUS_UNAVAILABLE:
-                unavailable += 1
-                styled = self.style.NOTICE(label)
-            elif raw_status == _STATUS_OK:
-                styled = self.style.SUCCESS(label)
             else:
-                styled = label
+                styled = self.style.SUCCESS(label)
 
             self.stdout.write(
                 f"{plugin_name:<{w_plugin}}  "
@@ -286,7 +250,3 @@ class Command(BaseCommand):
             ))
         else:
             self.stdout.write(self.style.SUCCESS(str(_("All packages are up to date."))))
-        if unavailable:
-            self.stdout.write(self.style.NOTICE(
-                str(_("%(count)d package(s) could not be checked (not found in configured index or index unreachable).")) % {"count": unavailable}
-            ))
