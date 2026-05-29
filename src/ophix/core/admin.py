@@ -42,6 +42,7 @@ hide_models("django.contrib.auth", ["User", "Group"], getattr(settings, "SHOW_AU
 
 @admin.register(Host)
 class HostAdmin(admin.ModelAdmin):
+    menu_order = 200
     list_display = ('name', 'ipv4_address', 'enabled', 'description')
     list_editable = ('enabled',)
     search_fields = ('name', 'ipv4_address', 'description')
@@ -92,6 +93,7 @@ class HostAdmin(admin.ModelAdmin):
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
+    menu_order = 100
     list_display = (
         'name',
         'host',
@@ -141,6 +143,7 @@ class ClientAdmin(admin.ModelAdmin):
 
 @admin.register(AccessLog)
 class AccessLogAdmin(admin.ModelAdmin):
+    menu_order = 500
     list_display = (
         "timestamp",
         "client",
@@ -183,6 +186,7 @@ hide_models("ophix.core", ["AccessLog"], getattr(settings, "SHOW_ACCESS_LOGS", F
 
 @admin.register(PackageUpdateRecord)
 class PackageUpdateRecordAdmin(admin.ModelAdmin):
+    menu_order = 600
     list_display = (
         "package_name",
         "installed_version",
