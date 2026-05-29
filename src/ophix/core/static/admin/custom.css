@@ -112,12 +112,10 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
 }
 
 /* Keep "Up To Date" column stable whether showing ✓ or "⬆ Update available" */
-th.column-up_to_date {
-    min-width: 130px;
-}
-
+th.column-up_to_date,
 td.field-up_to_date {
     white-space: nowrap;
+    min-width: 160px;
 }
 
 /* Rendered markdown release notes in PackageUpdateRecord detail view */
