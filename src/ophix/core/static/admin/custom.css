@@ -111,11 +111,24 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
     width: 610px;
 }
 
-/* Keep "Up To Date" column stable whether showing ✓ or "⬆ Update available" */
-th.column-up_to_date,
-td.field-up_to_date {
+/* Plugin versions list: fixed percentage widths prevent reflow when
+   "⬆ Update available" appears or disappears across rows. */
+.model-packageupdaterecord #result_list {
+    table-layout: fixed;
+}
+
+.model-packageupdaterecord #result_list th.column-package_name       { width: 26%; }
+.model-packageupdaterecord #result_list th.column-installed_version   { width: 13%; }
+.model-packageupdaterecord #result_list th.column-latest_version      { width: 13%; }
+.model-packageupdaterecord #result_list th.column-up_to_date          { width: 14%; }
+.model-packageupdaterecord #result_list th.column-last_checked_at     { width: 17%; }
+.model-packageupdaterecord #result_list th.column-first_recorded_at   { width: 17%; }
+
+.model-packageupdaterecord #result_list td,
+.model-packageupdaterecord #result_list th {
     white-space: nowrap;
-    min-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Rendered markdown release notes in PackageUpdateRecord detail view */
