@@ -1,5 +1,10 @@
 # ophix-server-base Release Notes
 
+## 2026.05.30.01
+
+- `apply_updates` now accepts `--include-docs`: auto-discovers all installed
+  modules with a `docs/` directory and runs `update_docs` for them in one step.
+
 ## 2026.05.28.02
 
 - `check_updates` now uses `pip list --outdated` instead of one `pip index versions` subprocess
