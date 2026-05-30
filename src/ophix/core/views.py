@@ -236,6 +236,7 @@ class ClientViewSet(viewsets.ViewSet):
         client.api_token = new_token
         client.last_token_rotation = timezone.now()
         client.rotation_required = False
-        client.save(update_fields=["api_token", "last_token_rotation", "rotation_required"])
+        client.lockout_override = False
+        client.save(update_fields=["api_token", "last_token_rotation", "rotation_required", "lockout_override"])
 
         return Response({"status": "ok"}, status=status.HTTP_200_OK)

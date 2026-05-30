@@ -1,5 +1,9 @@
 # ophix-server-base Release Notes
 
+## 2026.05.30.05
+
+- Added `lockout_override` field to `Client` model (migration 0010). Set by the token-policy Unlock action to grant a locked-out client a single authentication bypass without falsifying `last_token_rotation`. Cleared automatically on successful token rotation. Lockout check in `ClientTokenAuthentication` now respects this flag.
+
 ## 2026.05.30.04
 
 - Admin sidebar section renamed from "Clients & Hosts" to "Hosts & Clients"; Hosts now appears above Clients (general before specific).

@@ -95,6 +95,8 @@ class ClientTokenAuthentication(BaseAuthentication):
                     lockout_days,
                     require_days,
                 )
+            elif client.lockout_override:
+                pass  # Operator has granted a one-time bypass; client must rotate its token.
             elif client.last_token_rotation is not None:
                 age = (timezone.now() - client.last_token_rotation).days
                 if age >= lockout_days:

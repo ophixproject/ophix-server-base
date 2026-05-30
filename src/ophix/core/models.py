@@ -118,6 +118,15 @@ class Client(models.Model):
         _("rotation required"),
         default=False,
     )
+    lockout_override = models.BooleanField(
+        _("lockout override"),
+        default=False,
+        help_text=_(
+            "Set by the token-policy Unlock action. Allows a locked-out client to "
+            "authenticate once so it can rotate its token. Cleared automatically on "
+            "successful token rotation."
+        ),
+    )
 
     class Meta:
         ordering = ("name",)
