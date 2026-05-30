@@ -86,6 +86,10 @@ class ClientTokenAuthentication(BaseAuthentication):
         # Token lockout: if TOKEN_LOCKOUT_DAYS is set and >= TOKEN_REQUIRE_DAYS,
         # deny access entirely once the token age reaches the lockout threshold.
         # Requires operator to unlock the client via the token-policy dashboard.
+        #
+        # When lockout_override is set the client is allowed through only to
+        # /api/client/self/ endpoints (info, update, rotate-token). It cannot
+        # access domain artifact endpoints until it completes a real token rotation.
         lockout_days = getattr(settings, "TOKEN_LOCKOUT_DAYS", 0)
         if lockout_days > 0:
             require_days = getattr(settings, "TOKEN_REQUIRE_DAYS", 0)
@@ -95,18 +99,19 @@ class ClientTokenAuthentication(BaseAuthentication):
                     lockout_days,
                     require_days,
                 )
-            elif client.lockout_override:
-                pass  # Operator has granted a one-time bypass; client must rotate its token.
             elif client.last_token_rotation is not None:
                 age = (timezone.now() - client.last_token_rotation).days
                 if age >= lockout_days:
-                    logger.info(
-                        "Access blocked for client %s: token age %d days exceeds lockout threshold %d",
-                        client,
-                        age,
-                        lockout_days,
-                    )
-                    raise exceptions.AuthenticationFailed(self._msg("Access blocked"))
+                    if client.lockout_override and request.path.startswith("/api/client/self/"):
+                        pass  # Narrow bypass: only self-management endpoints allowed.
+                    else:
+                        logger.info(
+                            "Access blocked for client %s: token age %d days exceeds lockout threshold %d",
+                            client,
+                            age,
+                            lockout_days,
+                        )
+                        raise exceptions.AuthenticationFailed(self._msg("Access blocked"))
 
         return (client, None)
 
