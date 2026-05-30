@@ -1,5 +1,12 @@
 # ophix-server-base Release Notes
 
+## 2026.05.30.02
+
+- Added inline documentation page "Server Backup and Migration" covering
+  `export_hosts`, `import_hosts`, `export_clients`, and `import_clients`,
+  including restore dependency order, encryption details, and migration vs.
+  disaster recovery workflows.
+
 ## 2026.05.30.01
 
 - `apply_updates` now accepts `--include-docs`: auto-discovers all installed
