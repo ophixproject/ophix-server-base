@@ -1,5 +1,9 @@
 # ophix-server-base Release Notes
 
+## 2026.05.30.04
+
+- Admin sidebar section renamed from "Clients & Hosts" to "Hosts & Clients"; Hosts now appears above Clients (general before specific).
+
 ## 2026.05.30.03
 
 - `configure_install` and `configure_database` now handle Ctrl+C gracefully — prints "Cancelled." instead of a stack trace.
