@@ -215,8 +215,8 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
             "up_to_date",
             "first_recorded_at",
             "last_checked_at",
+            "notice_rendered",
         )}),
-        (_("Release Notes"), {"fields": ("notice_rendered",)}),
     )
 
     @admin.display(description=_("Release Notes"))
@@ -263,13 +263,26 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
                 text = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', text)
                 return text
 
-            parts = ['<div class="ophix-release-notes">']
+            ver_count = len(sections)
+            ver_label = f'{ver_count} version{"s" if ver_count != 1 else ""}'
+
+            parts = [
+                f'<div class="ophix-release-notes">'
+                f'<div class="rn-outer-header" role="button">'
+                f'<button class="rn-toggle" type="button">▼</button>'
+                f'<span class="rn-outer-title">Release Notes</span>'
+                f'<span class="rn-count">{ver_label}</span>'
+                f'</div>'
+                f'<div class="rn-outer-body">'
+            ]
 
             for i, section in enumerate(sections):
                 heading = section['heading']
                 display = 'v' + heading if re.match(r'^\d{4}', heading) else heading
                 toggle = '▼' if i == 0 else '▶'
                 hidden = '' if i == 0 else ' style="display:none"'
+                item_count = len(section['items'])
+                item_label = f'{item_count} change{"s" if item_count != 1 else ""}'
 
                 items_html = []
                 last_cat = None
@@ -283,16 +296,30 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
                 parts.append(
                     f'<div class="rn-version-row">'
                     f'<div class="rn-version-header" role="button">'
+                    f'<div class="rn-version-left">'
                     f'<button class="rn-toggle" type="button">{toggle}</button>'
                     f'<span class="rn-version-name">{escape(display)}</span>'
+                    f'</div>'
+                    f'<span class="rn-count">{item_label}</span>'
                     f'</div>'
                     f'<div class="rn-version-items"{hidden}>{"".join(items_html)}</div>'
                     f'</div>'
                 )
 
-            parts.append('</div>')
+            parts.append('</div></div>')
             parts.append(
                 '<script>(function(){'
+                # Outer collapse
+                'var outerHdr=document.querySelector(".rn-outer-header");'
+                'if(outerHdr){'
+                'outerHdr.addEventListener("click",function(){'
+                'var btn=outerHdr.querySelector(".rn-toggle");'
+                'var body=outerHdr.nextElementSibling;'
+                'var open=body.style.display!=="none";'
+                'body.style.display=open?"none":"";'
+                'btn.textContent=open?"▶":"▼";'
+                '});}'
+                # Version collapses
                 'document.querySelectorAll(".rn-version-header").forEach(function(hdr){'
                 'hdr.addEventListener("click",function(){'
                 'var btn=hdr.querySelector(".rn-toggle");'

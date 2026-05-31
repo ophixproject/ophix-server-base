@@ -132,25 +132,24 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
 }
 
 /* Release notes rendered in PackageUpdateRecord detail view — mirrors docs TOC structure */
+
+/* Hide the "Release Notes:" field label — content is self-labelling */
+.model-packageupdaterecord .field-notice_rendered label {
+    display: none;
+}
+
+/* Make the readonly value span full width with no left indent */
+.model-packageupdaterecord .field-notice_rendered div.readonly {
+    padding-left: 0;
+    width: 100%;
+}
+
 .ophix-release-notes {
-    max-width: 720px;
+    width: 100%;
     margin-top: 0.25em;
 }
 
-.rn-version-row {
-    margin-bottom: 1.5em;
-}
-
-/* Version heading — styled like docs TOC section header */
-.rn-version-header {
-    display: flex;
-    align-items: center;
-    padding: 0.5em 0;
-    border-bottom: 2px solid var(--admin-interface-module-background-color);
-    cursor: pointer;
-    user-select: none;
-}
-
+/* Shared toggle button style */
 .rn-toggle {
     background: none;
     border: none;
@@ -161,12 +160,66 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
     flex-shrink: 0;
 }
 
-[data-theme="dark"] .rn-version-header {
+[data-theme="dark"] .rn-toggle {
+    color: var(--admin-interface-generic-link-color);
+}
+
+/* Shared count badge */
+.rn-count {
+    font-size: 0.78em;
+    color: var(--admin-interface-muted-color);
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+/* Outer "Release Notes" collapsible header — like docs TOC section header */
+.rn-outer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5em 0;
+    border-bottom: 2px solid var(--admin-interface-module-background-color);
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0.75em;
+}
+
+[data-theme="dark"] .rn-outer-header {
     border-bottom-color: var(--admin-interface-generic-link-color);
 }
 
-[data-theme="dark"] .rn-toggle {
+.rn-outer-title {
+    flex: 1;
+    font-size: 0.85em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--admin-interface-module-background-color);
+}
+
+[data-theme="dark"] .rn-outer-title {
     color: var(--admin-interface-generic-link-color);
+}
+
+/* Version rows */
+.rn-version-row {
+    margin-bottom: 0.75em;
+}
+
+/* Version heading — like a page row with left toggle */
+.rn-version-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4em 0;
+    border-bottom: 1px solid var(--darkened-bg, #eee);
+    cursor: pointer;
+    user-select: none;
+}
+
+.rn-version-left {
+    display: flex;
+    align-items: center;
 }
 
 .rn-version-name {
@@ -181,7 +234,7 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
     color: var(--admin-interface-generic-link-color);
 }
 
-/* Items container — plain list, no background tint */
+/* Items container */
 .rn-version-items {
     padding: 0.4em 0 0.2em 0;
 }
@@ -189,7 +242,7 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
 /* Sub-category label (### Added, ### Fixed) */
 .rn-category {
     display: block;
-    padding: 0.5em 0 0.15em 0;
+    padding: 0.4em 0 0.15em 0.5em;
     font-size: 0.75em;
     font-weight: bold;
     text-transform: uppercase;
@@ -197,7 +250,7 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
     color: var(--admin-interface-muted-color);
 }
 
-/* Bullet list items — plain body text, not link-styled */
+/* Bullet list items — plain body text */
 .rn-item {
     display: block;
     padding: 0.25em 0.5em 0.25em 1.25em;
