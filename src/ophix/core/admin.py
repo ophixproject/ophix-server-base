@@ -223,81 +223,90 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
     def notice_rendered(self, obj):
         if not obj.notice:
             return "—"
-        import re
-        from django.utils.html import escape
 
-        lines = obj.notice.splitlines()
-        sections = []
-        current_section = None
-        current_category = None
+        import markdown as _markdown
 
-        for line in lines:
-            stripped = line.strip()
-            if stripped.startswith('## '):
-                heading = stripped[3:].strip()
-                current_section = {'heading': heading, 'items': []}
-                current_category = None
-                sections.append(current_section)
-            elif stripped.startswith('### ') and current_section is not None:
-                current_category = stripped[4:].strip()
-            elif (stripped.startswith('- ') or stripped.startswith('* ')) and current_section is not None:
-                current_section['items'].append({
-                    'text': stripped[2:].strip(),
-                    'category': current_category,
-                })
-
-        if not sections:
-            import markdown
-            html = markdown.markdown(obj.notice, extensions=["fenced_code"])
+        def _markdown_fallback(text):
+            html = _markdown.markdown(text, extensions=["fenced_code"])
             return mark_safe(f'<div class="ophix-release-notes">{html}</div>')
 
-        def render_inline(text):
-            text = escape(text)
-            text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
-            text = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', text)
-            return text
+        try:
+            import re
+            from django.utils.html import escape
 
-        parts = ['<div class="ophix-release-notes">']
+            lines = obj.notice.splitlines()
+            sections = []
+            current_section = None
+            current_category = None
 
-        for i, section in enumerate(sections):
-            heading = section['heading']
-            display = 'v' + heading if re.match(r'^\d{4}', heading) else heading
-            toggle = '▼' if i == 0 else '▶'
-            hidden = '' if i == 0 else ' style="display:none"'
+            for line in lines:
+                stripped = line.strip()
+                if stripped.startswith('## '):
+                    heading = stripped[3:].strip()
+                    current_section = {'heading': heading, 'items': []}
+                    current_category = None
+                    sections.append(current_section)
+                elif stripped.startswith('### ') and current_section is not None:
+                    current_category = stripped[4:].strip()
+                elif (stripped.startswith('- ') or stripped.startswith('* ')) and current_section is not None:
+                    current_section['items'].append({
+                        'text': stripped[2:].strip(),
+                        'category': current_category,
+                    })
 
-            items_html = []
-            last_cat = None
-            for item in section['items']:
-                cat = item['category']
-                if cat and cat != last_cat:
-                    items_html.append(f'<span class="rn-category">{escape(cat)}</span>')
-                    last_cat = cat
-                items_html.append(f'<span class="rn-item">{render_inline(item["text"])}</span>')
+            if not sections:
+                return _markdown_fallback(obj.notice)
 
+            def render_inline(text):
+                text = escape(text)
+                text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
+                text = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', text)
+                return text
+
+            parts = ['<div class="ophix-release-notes">']
+
+            for i, section in enumerate(sections):
+                heading = section['heading']
+                display = 'v' + heading if re.match(r'^\d{4}', heading) else heading
+                toggle = '▼' if i == 0 else '▶'
+                hidden = '' if i == 0 else ' style="display:none"'
+
+                items_html = []
+                last_cat = None
+                for item in section['items']:
+                    cat = item['category']
+                    if cat and cat != last_cat:
+                        items_html.append(f'<span class="rn-category">{escape(cat)}</span>')
+                        last_cat = cat
+                    items_html.append(f'<span class="rn-item">{render_inline(item["text"])}</span>')
+
+                parts.append(
+                    f'<div class="rn-version-row">'
+                    f'<div class="rn-version-header" role="button">'
+                    f'<button class="rn-toggle" type="button">{toggle}</button>'
+                    f'<span class="rn-version-name">{escape(display)}</span>'
+                    f'</div>'
+                    f'<div class="rn-version-items"{hidden}>{"".join(items_html)}</div>'
+                    f'</div>'
+                )
+
+            parts.append('</div>')
             parts.append(
-                f'<div class="rn-version-row">'
-                f'<div class="rn-version-header" role="button">'
-                f'<button class="rn-toggle" type="button">{toggle}</button>'
-                f'<span class="rn-version-name">{escape(display)}</span>'
-                f'</div>'
-                f'<div class="rn-version-items"{hidden}>{"".join(items_html)}</div>'
-                f'</div>'
+                '<script>(function(){'
+                'document.querySelectorAll(".rn-version-header").forEach(function(hdr){'
+                'hdr.addEventListener("click",function(){'
+                'var btn=hdr.querySelector(".rn-toggle");'
+                'var body=hdr.nextElementSibling;'
+                'var open=body.style.display!=="none";'
+                'body.style.display=open?"none":"";'
+                'btn.textContent=open?"▶":"▼";'
+                '});});})();</script>'
             )
 
-        parts.append('</div>')
-        parts.append(
-            '<script>(function(){'
-            'document.querySelectorAll(".rn-version-header").forEach(function(hdr){'
-            'hdr.addEventListener("click",function(){'
-            'var btn=hdr.querySelector(".rn-toggle");'
-            'var body=hdr.nextElementSibling;'
-            'var open=body.style.display!=="none";'
-            'body.style.display=open?"none":"";'
-            'btn.textContent=open?"▶":"▼";'
-            '});});})();</script>'
-        )
+            return mark_safe(''.join(parts))
 
-        return mark_safe(''.join(parts))
+        except Exception:
+            return _markdown_fallback(obj.notice)
 
     @admin.display(description=_("Up To Date"))
     def up_to_date(self, obj):
