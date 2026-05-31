@@ -1,5 +1,12 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- Plugin loader now supports `CONTEXT_PROCESSORS_APPEND` — a list of dotted-path
+  context processor strings that a plugin contributes to the DjangoTemplates backend.
+  Used by `ophix-admin-settings` to inject `server_settings` into every admin template
+  context. Multiple plugins may each contribute processors; they accumulate safely.
+
 ## 2026.05.30.05
 
 - Added `lockout_override` field to `Client` model (migration 0010). Set by the token-policy Unlock action to grant a locked-out client a **restricted** authentication bypass: only `/api/client/self/` endpoints (info, update, rotate-token) are accessible while the override is active. Domain artifact endpoints remain blocked until a real token rotation completes. Cleared automatically on successful token rotation.

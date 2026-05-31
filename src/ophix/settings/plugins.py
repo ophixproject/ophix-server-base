@@ -112,6 +112,22 @@ def _load_plugin_settings(module_name: str, target: dict) -> None:
                         module_name,
                         target_class,
                     )
+        elif key == "CONTEXT_PROCESSORS_APPEND" and isinstance(value, list):
+            # Plugins declare context processors to append to the DjangoTemplates backend.
+            # Multiple plugins may each contribute processors — they accumulate.
+            templates = target.get("TEMPLATES", [])
+            for template_config in templates:
+                if template_config.get("BACKEND") == "django.template.backends.django.DjangoTemplates":
+                    options = template_config.setdefault("OPTIONS", {})
+                    processors = options.setdefault("context_processors", [])
+                    for processor in value:
+                        if processor not in processors:
+                            processors.append(processor)
+                            logger.debug(
+                                "Plugin %s added context processor: %s",
+                                module_name,
+                                processor,
+                            )
         elif key not in target:
             target[key] = value
             logger.debug("Plugin %s contributed setting %s", module_name, key)
