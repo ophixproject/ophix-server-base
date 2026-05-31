@@ -216,7 +216,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
             "first_recorded_at",
             "last_checked_at",
         )}),
-        (_("Release Notes"), {"fields": ("notice_rendered",), "classes": ("collapse",)}),
+        (_("Release Notes"), {"fields": ("notice_rendered",)}),
     )
 
     @admin.display(description=_("Release Notes"))

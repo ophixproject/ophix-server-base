@@ -138,34 +138,31 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
 }
 
 .rn-version-row {
-    margin-bottom: 0.1em;
+    margin-bottom: 1.5em;
 }
 
+/* Version heading — styled like docs TOC section header */
 .rn-version-header {
     display: flex;
     align-items: center;
-    border-left: 3px solid transparent;
+    padding: 0.5em 0;
+    border-bottom: 2px solid var(--admin-interface-module-background-color);
     cursor: pointer;
     user-select: none;
-}
-
-.rn-version-header:hover {
-    border-left-color: var(--admin-interface-generic-link-color);
-    background: color-mix(in srgb, var(--admin-interface-generic-link-color) 8%, transparent);
 }
 
 .rn-toggle {
     background: none;
     border: none;
-    font-size: 0.7em;
+    font-size: 0.85em;
     cursor: pointer;
-    padding: 0 0.3em 0 0.75em;
+    padding: 0 0.5em 0 0;
     color: var(--admin-interface-module-background-color);
     flex-shrink: 0;
-    line-height: 1;
-    align-self: stretch;
-    display: flex;
-    align-items: center;
+}
+
+[data-theme="dark"] .rn-version-header {
+    border-bottom-color: var(--admin-interface-generic-link-color);
 }
 
 [data-theme="dark"] .rn-toggle {
@@ -173,21 +170,26 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
 }
 
 .rn-version-name {
-    display: block;
-    flex: 1;
-    padding: 0.6em 0.75em 0.6em 0.4em;
+    font-size: 0.85em;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    color: var(--admin-interface-module-background-color);
     font-family: monospace;
-    color: var(--body-fg);
 }
 
+[data-theme="dark"] .rn-version-name {
+    color: var(--admin-interface-generic-link-color);
+}
+
+/* Items container — plain list, no background tint */
 .rn-version-items {
-    padding: 0.2em 0 0.4em 0;
-    background: color-mix(in srgb, var(--admin-interface-module-background-color) 4%, transparent);
+    padding: 0.4em 0 0.2em 0;
 }
 
+/* Sub-category label (### Added, ### Fixed) */
 .rn-category {
     display: block;
-    padding: 0.4em 0.75em 0.15em 2.8em;
+    padding: 0.5em 0 0.15em 0;
     font-size: 0.75em;
     font-weight: bold;
     text-transform: uppercase;
@@ -195,17 +197,21 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
     color: var(--admin-interface-muted-color);
 }
 
+/* Bullet list items — plain body text, not link-styled */
 .rn-item {
     display: block;
-    padding: 0.3em 0.75em 0.3em 2.8em;
-    font-size: 0.875em;
-    color: var(--admin-interface-generic-link-color);
-    opacity: 0.85;
+    padding: 0.25em 0.5em 0.25em 1.25em;
+    font-size: 0.9em;
+    color: var(--body-fg);
+    position: relative;
     line-height: 1.5;
 }
 
-.rn-item:hover {
-    opacity: 1;
+.rn-item::before {
+    content: "•";
+    position: absolute;
+    left: 0.25em;
+    color: var(--admin-interface-muted-color);
 }
 
 .rn-item code {
