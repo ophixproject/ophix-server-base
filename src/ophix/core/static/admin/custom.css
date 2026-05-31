@@ -131,107 +131,87 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
     text-overflow: ellipsis;
 }
 
-/* Rendered markdown release notes in PackageUpdateRecord detail view */
+/* Release notes rendered in PackageUpdateRecord detail view — mirrors docs TOC structure */
 .ophix-release-notes {
     max-width: 720px;
-    font-size: 0.95em;
-    line-height: 1.6;
     margin-top: 0.25em;
 }
 
-/* Version headings (## YYYY.MM.DD.NN) — styled like docs TOC section headers */
-.ophix-release-notes h2 {
-    font-size: 0.85em;
-    font-weight: bold;
-    letter-spacing: 0.04em;
-    color: var(--admin-interface-module-background-color);
-    border-bottom: 2px solid var(--admin-interface-module-background-color);
-    padding: 0.5em 0;
-    margin: 1.5em 0 0;
+.rn-version-row {
+    margin-bottom: 0.1em;
+}
+
+.rn-version-header {
+    display: flex;
+    align-items: center;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    user-select: none;
+}
+
+.rn-version-header:hover {
+    border-left-color: var(--admin-interface-generic-link-color);
+    background: color-mix(in srgb, var(--admin-interface-generic-link-color) 8%, transparent);
+}
+
+.rn-toggle {
     background: none;
-    box-shadow: none;
-    font-family: monospace;
-    text-transform: none;
+    border: none;
+    font-size: 0.7em;
+    cursor: pointer;
+    padding: 0 0.3em 0 0.75em;
+    color: var(--admin-interface-module-background-color);
+    flex-shrink: 0;
+    line-height: 1;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
 }
 
-.ophix-release-notes h2:first-child {
-    margin-top: 0;
-}
-
-/* Prepend 'v' to version number headings */
-.ophix-release-notes h2::before {
-    content: "v";
-}
-
-[data-theme="dark"] .ophix-release-notes h2 {
+[data-theme="dark"] .rn-toggle {
     color: var(--admin-interface-generic-link-color);
-    border-bottom-color: var(--admin-interface-generic-link-color);
 }
 
-/* Change category sub-headings (### Added, ### Fixed, ### Changed) */
-.ophix-release-notes h3 {
-    font-size: 0.78em;
+.rn-version-name {
+    display: block;
+    flex: 1;
+    padding: 0.6em 0.75em 0.6em 0.4em;
+    font-family: monospace;
+    color: var(--body-fg);
+}
+
+.rn-version-items {
+    padding: 0.2em 0 0.4em 0;
+    background: color-mix(in srgb, var(--admin-interface-module-background-color) 4%, transparent);
+}
+
+.rn-category {
+    display: block;
+    padding: 0.4em 0.75em 0.15em 2.8em;
+    font-size: 0.75em;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--admin-interface-muted-color);
-    margin: 0.9em 0 0.3em;
-    background: none;
-    box-shadow: none;
 }
 
-/* Lists — clean rows like docs TOC page rows */
-.ophix-release-notes ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.ophix-release-notes li {
-    border-bottom: 1px solid var(--darkened-bg, #eee);
-    padding: 0.4em 0.5em 0.4em 1.1em;
-    position: relative;
-    margin: 0;
-    color: var(--body-fg);
-}
-
-.ophix-release-notes li:last-child {
-    border-bottom: none;
-}
-
-.ophix-release-notes li::before {
-    content: "•";
-    position: absolute;
-    left: 0.25em;
+.rn-item {
+    display: block;
+    padding: 0.3em 0.75em 0.3em 2.8em;
+    font-size: 0.875em;
     color: var(--admin-interface-generic-link-color);
-    opacity: 0.5;
+    opacity: 0.85;
+    line-height: 1.5;
 }
 
-/* Inline code */
-.ophix-release-notes code {
+.rn-item:hover {
+    opacity: 1;
+}
+
+.rn-item code {
     font-family: monospace;
     font-size: 0.9em;
     background: color-mix(in srgb, var(--admin-interface-module-background-color) 8%, transparent);
     padding: 0.1em 0.35em;
     border-radius: 3px;
-}
-
-/* Code blocks */
-.ophix-release-notes pre {
-    background: var(--darkened-bg, #f8f8f8);
-    border-radius: 4px;
-    padding: 0.75em 1em;
-    overflow-x: auto;
-    margin: 0.5em 0;
-}
-
-.ophix-release-notes pre code {
-    background: none;
-    padding: 0;
-    font-size: 0.875em;
-}
-
-/* Paragraphs */
-.ophix-release-notes p {
-    margin: 0.5em 0;
 }
