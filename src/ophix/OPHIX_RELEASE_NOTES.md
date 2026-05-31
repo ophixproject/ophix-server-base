@@ -6,6 +6,9 @@
   context processor strings that a plugin contributes to the DjangoTemplates backend.
   Used by `ophix-admin-settings` to inject `server_settings` into every admin template
   context. Multiple plugins may each contribute processors; they accumulate safely.
+- Fixed `AttributeError` in `manage.py` when a hidden command (e.g. `makemigrations`)
+  was attempted: `_filtered_fetch` used `self.stderr` which does not exist on
+  `ManagementUtility`. Changed to `sys.stderr.write`.
 
 ## 2026.05.30.05
 

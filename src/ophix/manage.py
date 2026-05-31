@@ -73,7 +73,7 @@ def _patch_hidden_commands():
 
     def _filtered_fetch(self, subcommand):
         if subcommand in _HIDDEN_COMMANDS:
-            self.stderr.write(
+            sys.stderr.write(
                 "Unknown command: %r\nType '%s help' for usage.\n"
                 % (subcommand, self.prog_name)
             )
