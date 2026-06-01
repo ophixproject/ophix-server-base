@@ -310,8 +310,31 @@ class PackageUpdateRecord(models.Model):
         help_text=_("Package release notes read from OPHIX_RELEASE_NOTES.md at last check."),
     )
 
+    CATEGORY_CHOICES = [
+        ("core",     _("Core")),
+        ("module",   _("Module")),
+        ("addon",    _("Add-on")),
+        ("auth",     _("Authentication")),
+        ("dbengine", _("Database Engine")),
+        ("theme",    _("Theme")),
+        ("language", _("Language Pack")),
+    ]
+
+    category = models.CharField(
+        _("category"),
+        max_length=20,
+        blank=True,
+        choices=CATEGORY_CHOICES,
+        help_text=_("Plugin category declared by the package (core, module, addon, etc.)."),
+    )
+    sort_order = models.IntegerField(
+        _("sort order"),
+        default=999,
+        help_text=_("Display order within the plugin list. Declared by the package."),
+    )
+
     class Meta:
-        ordering = ("package_name",)
+        ordering = ("sort_order", "package_name")
         verbose_name = _("Plugin")
         verbose_name_plural = _("Plugin Versions")
 

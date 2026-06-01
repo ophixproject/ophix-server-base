@@ -189,15 +189,16 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
     menu_order = 600
     list_display = (
         "package_name",
+        "category_display",
         "installed_version",
         "latest_version",
         "up_to_date",
         "last_checked_at",
         "first_recorded_at",
     )
-    list_filter = ("update_available",)
+    list_filter = ("category", "update_available",)
     search_fields = ("package_name",)
-    ordering = ("package_name",)
+    ordering = ("sort_order", "package_name")
     readonly_fields = (
         "package_name",
         "installed_version",
@@ -218,6 +219,10 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
             "notice_rendered",
         )}),
     )
+
+    @admin.display(description=_("Category"), ordering="sort_order")
+    def category_display(self, obj):
+        return obj.get_category_display() if obj.category else "—"
 
     @admin.display(description=_("Release Notes"))
     def notice_rendered(self, obj):

@@ -75,11 +75,7 @@ def _format_ophix_version(version: str) -> str:
 
 
 def _read_release_notes(module_name: str) -> str:
-    """Read OPHIX_RELEASE_NOTES.md from the package's installed directory.
-
-    Returns the file contents stripped of leading/trailing whitespace,
-    or an empty string if the file is absent or unreadable.
-    """
+    """Read OPHIX_RELEASE_NOTES.md from the package's installed directory."""
     try:
         spec = find_spec(module_name)
         if spec and spec.origin:
@@ -89,6 +85,22 @@ def _read_release_notes(module_name: str) -> str:
     except Exception:
         pass
     return ""
+
+
+def _read_plugin_meta(module_name: str) -> tuple:
+    """Return (plugin_category, plugin_sort) declared in a module's __init__.py.
+
+    Falls back to ("", 999) if the module cannot be imported or the attributes
+    are absent — unknown packages sort last.
+    """
+    try:
+        import importlib
+        mod = importlib.import_module(module_name)
+        category = getattr(mod, "plugin_category", "")
+        sort_order = getattr(mod, "plugin_sort", 999)
+        return (str(category), int(sort_order))
+    except Exception:
+        return ("", 999)
 
 
 class Command(BaseCommand):
@@ -157,12 +169,13 @@ class Command(BaseCommand):
                 latest_fmt = installed_fmt
                 status     = _STATUS_OK
             notes = _read_release_notes(module_name)
-            results.append((plugin_name, pip_name, installed_fmt, latest_fmt, status, notes))
+            category, sort_order = _read_plugin_meta(module_name)
+            results.append((plugin_name, pip_name, installed_fmt, latest_fmt, status, notes, category, sort_order))
 
         # --- Upsert PackageUpdateRecord rows ---------------------------------
         from ophix.core.models import PackageUpdateRecord
         now = timezone.now()
-        for plugin_name, pip_name, installed, latest, status, notes in results:
+        for plugin_name, pip_name, installed, latest, status, notes, category, sort_order in results:
             PackageUpdateRecord.objects.update_or_create(
                 package_name=pip_name,
                 defaults={
@@ -171,12 +184,14 @@ class Command(BaseCommand):
                     "update_available": status == _STATUS_UPDATE,
                     "last_checked_at": now,
                     "notice": notes,
+                    "category": category,
+                    "sort_order": sort_order,
                 },
             )
 
         # --- Prune stale rows ------------------------------------------------
         if prune:
-            known = {pip_name for _, pip_name, _, _, _, _ in results}
+            known = {pip_name for _, pip_name, _, _, _, _, _, _ in results}
             deleted = PackageUpdateRecord.objects.exclude(
                 package_name__in=known
             ).delete()[0]
@@ -202,7 +217,7 @@ class Command(BaseCommand):
         col_status    = str(_("Status"))
 
         display = [
-            (r[0], r[1], r[2], r[3], _status_labels.get(r[4], r[4]), r[4])
+            (r[0], r[1], r[2], r[3], _status_labels.get(r[4], r[4]), r[4], r[6], r[7])
             for r in results
         ]
 
@@ -228,7 +243,7 @@ class Command(BaseCommand):
         self.stdout.write(divider)
 
         updates_available = 0
-        for plugin_name, pip_name, installed, latest, label, raw_status in display:
+        for plugin_name, pip_name, installed, latest, label, raw_status, _cat, _sort in display:
             if raw_status == _STATUS_UPDATE:
                 updates_available += 1
                 styled = self.style.WARNING(label)
