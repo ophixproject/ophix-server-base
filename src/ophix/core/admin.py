@@ -189,7 +189,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
     menu_order = 600
     list_display = (
         "package_name",
-        "category_display",
+        "category",
         "installed_version",
         "latest_version",
         "up_to_date",
@@ -219,10 +219,6 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
             "notice_rendered",
         )}),
     )
-
-    @admin.display(description=_("Category"), ordering="sort_order")
-    def category_display(self, obj):
-        return obj.get_category_display() if obj.category else "—"
 
     @admin.display(description=_("Release Notes"))
     def notice_rendered(self, obj):
