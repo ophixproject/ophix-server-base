@@ -222,9 +222,6 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
         )}),
     )
 
-    def get_queryset(self, request):
-        return super().get_queryset(request).order_by("sort_order", "package_name")
-
     @admin.display(description=_("Release Notes"))
     def notice_rendered(self, obj):
         if not obj.notice:
