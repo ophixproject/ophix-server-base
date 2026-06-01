@@ -6,7 +6,7 @@ class OphixCoreConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "ophix.core"
     label = "ophix_core"
-    verbose_name = _("Hosts & Clients")
+    verbose_name = _("Core")
     admin_order = 100
 
     def ready(self):
