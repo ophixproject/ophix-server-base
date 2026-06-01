@@ -1,3 +1,26 @@
+/* Homepage / dashboard replacement */
+.ophix-welcome {
+    padding: 3em 1em;
+    text-align: center;
+    color: var(--body-quiet-color);
+}
+
+.ophix-welcome-title {
+    font-size: 2em;
+    font-weight: 300;
+    color: var(--admin-interface-module-background-color);
+    margin-bottom: 0.4em;
+}
+
+[data-theme="dark"] .ophix-welcome-title {
+    color: var(--admin-interface-generic-link-color);
+}
+
+.ophix-welcome-subtitle {
+    font-size: 1em;
+    color: var(--admin-interface-muted-color);
+}
+
 /* Footer fixed at bottom, full width */
 #footer {
     position: fixed;

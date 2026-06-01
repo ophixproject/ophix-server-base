@@ -1,0 +1,23 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Home" %} | {% if server_settings.title %}{{ server_settings.title }}{% else %}{% trans "Ophix" %}{% endif %}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="ophix-homepage">
+    {% block homepage_content %}
+    <div class="ophix-welcome">
+        <h1 class="ophix-welcome-title">
+            {% if server_settings.title %}{{ server_settings.title }}{% else %}{% trans "Ophix" %}{% endif %}
+        </h1>
+        <p class="ophix-welcome-subtitle">{% trans "Select an item from the navigation menu to get started." %}</p>
+    </div>
+    {% endblock homepage_content %}
+</div>
+{% endblock %}
