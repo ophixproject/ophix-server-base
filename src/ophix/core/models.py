@@ -288,7 +288,6 @@ class PackageUpdateRecord(models.Model):
         _("latest version"),
         max_length=100,
         blank=True,
-        help_text=_("Blank when the package could not be found in the configured index."),
     )
     update_available = models.BooleanField(
         _("update available"),
@@ -325,7 +324,6 @@ class PackageUpdateRecord(models.Model):
         max_length=20,
         blank=True,
         choices=CATEGORY_CHOICES,
-        help_text=_("Plugin category declared by the package (core, module, addon, etc.)."),
     )
     sort_order = models.IntegerField(
         _("sort order"),
