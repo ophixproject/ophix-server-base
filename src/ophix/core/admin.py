@@ -201,6 +201,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
     ordering = ("sort_order", "package_name")
     readonly_fields = (
         "package_name",
+        "category",
         "installed_version",
         "latest_version",
         "up_to_date",
@@ -211,6 +212,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {"fields": (
             "package_name",
+            "category",
             "installed_version",
             "latest_version",
             "up_to_date",
