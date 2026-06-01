@@ -314,9 +314,9 @@ class PackageUpdateRecord(models.Model):
         ("module",   _("Module")),
         ("addon",    _("Add-on")),
         ("auth",     _("Authentication")),
-        ("dbengine", _("Database Engine")),
+        ("dbengine", _("Database")),
         ("theme",    _("Theme")),
-        ("language", _("Language Pack")),
+        ("language", _("Language")),
     ]
 
     category = models.CharField(
