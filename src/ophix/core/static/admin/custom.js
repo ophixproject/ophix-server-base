@@ -8,6 +8,33 @@
  * Only fires on data checkboxes inside <td> cells.  Row-selection checkboxes
  * (action-select / action-toggle) are explicitly excluded.
  */
+/* ophix admin — normalise inline "Add another X" → "Add X" globally
+ *
+ * Django generates this text in JavaScript from inline_formset_data, so it
+ * cannot be changed via template override. Strip "another " from every
+ * add-row link text after the page loads and again whenever Django's inline
+ * JS adds new rows (which re-renders the link via MutationObserver).
+ */
+document.addEventListener('DOMContentLoaded', function () {
+    function normaliseAddLinks(root) {
+        (root || document).querySelectorAll('tr.add-row a').forEach(function (a) {
+            a.textContent = a.textContent.replace(/^Add another /, 'Add ');
+        });
+    }
+
+    normaliseAddLinks();
+
+    // Re-run when Django's inline JS dynamically adds/updates rows
+    var observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+            m.addedNodes.forEach(function (node) {
+                if (node.nodeType === 1) normaliseAddLinks(node);
+            });
+        });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+});
+
 document.addEventListener('DOMContentLoaded', function () {
     var form = document.getElementById('changelist-form');
     if (!form) return;
