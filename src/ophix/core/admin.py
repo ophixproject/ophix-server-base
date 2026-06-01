@@ -347,7 +347,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
             )
         return format_html(
             '<span style="color:var(--admin-interface-warning-color,#E67E22);'
-            'font-weight:bold">⬆ {}</span>',
+            'font-weight:bold">✗ {}</span>',
             _("Update available"),
         )
 
