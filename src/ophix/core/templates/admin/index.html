@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n %}
 
-{% block title %}{% trans "Home" %} | {% if server_settings.title %}{{ server_settings.title }}{% else %}{% trans "Ophix" %}{% endif %}{% endblock %}
+{% block title %}{% if server_settings.title %}{{ server_settings.title }} | {% endif %}{% trans "Home" %}{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumbs">
