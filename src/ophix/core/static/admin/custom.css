@@ -140,12 +140,13 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
     table-layout: fixed;
 }
 
-.model-packageupdaterecord #result_list th.column-package_name       { width: 26%; }
-.model-packageupdaterecord #result_list th.column-installed_version   { width: 13%; }
-.model-packageupdaterecord #result_list th.column-latest_version      { width: 13%; }
-.model-packageupdaterecord #result_list th.column-up_to_date          { width: 14%; }
-.model-packageupdaterecord #result_list th.column-last_checked_at     { width: 17%; }
-.model-packageupdaterecord #result_list th.column-first_recorded_at   { width: 17%; }
+.model-packageupdaterecord #result_list th.column-package_name       { width: 22%; }
+.model-packageupdaterecord #result_list th.column-category            { width:  9%; }
+.model-packageupdaterecord #result_list th.column-installed_version   { width: 12%; }
+.model-packageupdaterecord #result_list th.column-latest_version      { width: 12%; }
+.model-packageupdaterecord #result_list th.column-up_to_date          { width: 13%; }
+.model-packageupdaterecord #result_list th.column-last_checked_at     { width: 16%; }
+.model-packageupdaterecord #result_list th.column-first_recorded_at   { width: 16%; }
 
 .model-packageupdaterecord #result_list td,
 .model-packageupdaterecord #result_list th {
