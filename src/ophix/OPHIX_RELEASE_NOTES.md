@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.06.02.01
 
 - `DeleteRedirectToChangelistMixin` added to `ophix.core.admin`. Apply to any read-only admin that still permits deletion to redirect post-delete to the changelist rather than admin:index (which shows the custom home page). Applied to `AccessLogAdmin`.
 - Fixed stale `django-admin-interface` reference in `env.sample.j2` — corrected to `ophix-admin-interface`.
