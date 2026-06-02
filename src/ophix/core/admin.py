@@ -292,21 +292,20 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
             ver_count = len(sections)
             ver_label = f'{ver_count} version{"s" if ver_count != 1 else ""}'
 
+            pkg_key = escape(obj.package_name)
             parts = [
-                f'<div class="ophix-release-notes">'
+                f'<div class="ophix-release-notes" data-pkg="{pkg_key}">'
                 f'<div class="rn-outer-header" role="button">'
-                f'<button class="rn-toggle" type="button">▼</button>'
+                f'<button class="rn-toggle" type="button">▶</button>'
                 f'<span class="rn-outer-title">Release Notes</span>'
                 f'<span class="rn-count">{ver_label}</span>'
                 f'</div>'
-                f'<div class="rn-outer-body">'
+                f'<div class="rn-outer-body" style="display:none">'
             ]
 
-            for i, section in enumerate(sections):
+            for section in sections:
                 heading = section['heading']
                 display = 'v' + heading if re.match(r'^\d{4}', heading) else heading
-                toggle = '▼' if i == 0 else '▶'
-                hidden = '' if i == 0 else ' style="display:none"'
                 item_count = len(section['items'])
                 item_label = f'{item_count} change{"s" if item_count != 1 else ""}'
 
@@ -320,40 +319,57 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
                     items_html.append(f'<span class="rn-item">{render_inline(item["text"])}</span>')
 
                 parts.append(
-                    f'<div class="rn-version-row">'
+                    f'<div class="rn-version-row" data-ver="{escape(heading)}">'
                     f'<div class="rn-version-header" role="button">'
                     f'<div class="rn-version-left">'
-                    f'<button class="rn-toggle" type="button">{toggle}</button>'
+                    f'<button class="rn-toggle" type="button">▶</button>'
                     f'<span class="rn-version-name">{escape(display)}</span>'
                     f'</div>'
                     f'<span class="rn-count">{item_label}</span>'
                     f'</div>'
-                    f'<div class="rn-version-items"{hidden}>{"".join(items_html)}</div>'
+                    f'<div class="rn-version-items" style="display:none">{"".join(items_html)}</div>'
                     f'</div>'
                 )
 
             parts.append('</div></div>')
             parts.append(
                 '<script>(function(){'
-                # Outer collapse
-                'var outerHdr=document.querySelector(".rn-outer-header");'
-                'if(outerHdr){'
-                'outerHdr.addEventListener("click",function(){'
-                'var btn=outerHdr.querySelector(".rn-toggle");'
-                'var body=outerHdr.nextElementSibling;'
-                'var open=body.style.display!=="none";'
-                'body.style.display=open?"none":"";'
-                'btn.textContent=open?"▶":"▼";'
-                '});}'
-                # Version collapses
-                'document.querySelectorAll(".rn-version-header").forEach(function(hdr){'
+                'var el=document.querySelector(".ophix-release-notes[data-pkg]");'
+                'if(!el)return;'
+                'var sk="ophix_rn_"+el.dataset.pkg;'
+                'function load(){try{return JSON.parse(localStorage.getItem(sk)||"{}")}catch(e){return{}}}'
+                'function save(s){try{localStorage.setItem(sk,JSON.stringify(s))}catch(e){}}'
+                'var state=load();'
+                # Restore outer state
+                'var outerBody=el.querySelector(".rn-outer-body");'
+                'var outerBtn=el.querySelector(".rn-outer-header .rn-toggle");'
+                'if(state.outer){outerBody.style.display="";outerBtn.textContent="▼";}'
+                # Restore version states
+                'el.querySelectorAll(".rn-version-row").forEach(function(row){'
+                'var ver=row.dataset.ver;'
+                'var body=row.querySelector(".rn-version-items");'
+                'var btn=row.querySelector(".rn-toggle");'
+                'if(state[ver]){body.style.display="";btn.textContent="▼";}});'
+                # Outer toggle
+                'el.querySelector(".rn-outer-header").addEventListener("click",function(){'
+                'var s=load();'
+                'var isOpen=outerBody.style.display!=="none";'
+                'outerBody.style.display=isOpen?"none":"";'
+                'outerBtn.textContent=isOpen?"▶":"▼";'
+                's.outer=!isOpen;save(s);});'
+                # Version toggles
+                'el.querySelectorAll(".rn-version-header").forEach(function(hdr){'
                 'hdr.addEventListener("click",function(){'
-                'var btn=hdr.querySelector(".rn-toggle");'
+                'var row=hdr.parentElement;'
+                'var ver=row.dataset.ver;'
                 'var body=hdr.nextElementSibling;'
-                'var open=body.style.display!=="none";'
-                'body.style.display=open?"none":"";'
-                'btn.textContent=open?"▶":"▼";'
-                '});});})();</script>'
+                'var btn=hdr.querySelector(".rn-toggle");'
+                'var s=load();'
+                'var isOpen=body.style.display!=="none";'
+                'body.style.display=isOpen?"none":"";'
+                'btn.textContent=isOpen?"▶":"▼";'
+                's[ver]=!isOpen;save(s);});});'
+                '})();</script>'
             )
 
             return mark_safe(''.join(parts))
