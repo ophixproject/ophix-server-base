@@ -1,10 +1,33 @@
 from django.contrib import admin
 from django.conf import settings
+from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from importlib import import_module
 from .models import Host, Client, AccessLog, PackageUpdateRecord
 from django.utils.translation import gettext_lazy as _
+
+
+class DeleteRedirectToChangelistMixin:
+    """
+    After a successful delete, redirect to the model's changelist rather than
+    admin:index. Django's default falls back to admin:index when
+    has_change_permission is False — which hits the custom home page.
+    Preserved filters (active sort/filter state) are maintained.
+    """
+    def response_delete(self, request, obj_display, obj_id):
+        opts = self.model._meta
+        changelist_url = reverse(
+            f"admin:{opts.app_label}_{opts.model_name}_changelist",
+            current_app=self.admin_site.name,
+        )
+        post_url = add_preserved_filters(
+            {"preserved_filters": self.get_preserved_filters(request), "opts": opts},
+            changelist_url,
+        )
+        return HttpResponseRedirect(post_url)
 
 
 def hide_models(app_label, model_names, toggle: bool):
@@ -142,7 +165,7 @@ class ClientAdmin(admin.ModelAdmin):
 # ============================================================
 
 @admin.register(AccessLog)
-class AccessLogAdmin(admin.ModelAdmin):
+class AccessLogAdmin(DeleteRedirectToChangelistMixin, admin.ModelAdmin):
     menu_order = 500
     list_display = (
         "timestamp",

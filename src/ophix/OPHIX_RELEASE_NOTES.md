@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `DeleteRedirectToChangelistMixin` added to `ophix.core.admin`. Apply to any read-only admin that still permits deletion to redirect post-delete to the changelist rather than admin:index (which shows the custom home page). Applied to `AccessLogAdmin`.
+- Fixed stale `django-admin-interface` reference in `env.sample.j2` — corrected to `ophix-admin-interface`.
 - Plugin loader now supports `CONTEXT_PROCESSORS_APPEND` — a list of dotted-path
   context processor strings that a plugin contributes to the DjangoTemplates backend.
   Used by `ophix-admin-settings` to inject `server_settings` into every admin template
