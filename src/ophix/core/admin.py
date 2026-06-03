@@ -73,6 +73,7 @@ class HostAdmin(admin.ModelAdmin):
     actions = None
 
     _registered_inlines = []
+    _registered_meta_columns = []
     _registered_columns = []
 
     @classmethod
@@ -80,11 +81,14 @@ class HostAdmin(admin.ModelAdmin):
         cls._registered_inlines.append(inline_class)
 
     @classmethod
-    def register_column(cls, fn):
-        """Register a list_display column contributed by a domain plugin.
-        fn must be a callable taking (self, obj) — it is attached as a method."""
+    def register_column(cls, fn, before_domain=False):
+        """Register a list_display column contributed by a plugin.
+        before_domain=True places it before domain artifact columns (e.g. token status)."""
         setattr(cls, fn.__name__, fn)
-        cls._registered_columns.append(fn.__name__)
+        if before_domain:
+            cls._registered_meta_columns.append(fn.__name__)
+        else:
+            cls._registered_columns.append(fn.__name__)
 
     def get_inlines(self, request, obj=None):
         return self._registered_inlines
@@ -94,7 +98,7 @@ class HostAdmin(admin.ModelAdmin):
         if getattr(settings, 'SHOW_IPV6_ADDRESS', True):
             cols.append('ipv6_address')
         cols += ['enabled', 'description']
-        return cols + self._registered_columns
+        return cols + self._registered_meta_columns + self._registered_columns
 
     def get_search_fields(self, request):
         fields = ['name', 'ipv4_address', 'description']
@@ -133,6 +137,7 @@ class ClientAdmin(admin.ModelAdmin):
     actions = None
 
     _registered_inlines = []
+    _registered_meta_columns = []
     _registered_columns = []
 
     @classmethod
@@ -140,17 +145,20 @@ class ClientAdmin(admin.ModelAdmin):
         cls._registered_inlines.append(inline_class)
 
     @classmethod
-    def register_column(cls, fn):
-        """Register a list_display column contributed by a domain plugin.
-        fn must be a callable taking (self, obj) — it is attached as a method."""
+    def register_column(cls, fn, before_domain=False):
+        """Register a list_display column contributed by a plugin.
+        before_domain=True places it before domain artifact columns (e.g. token status)."""
         setattr(cls, fn.__name__, fn)
-        cls._registered_columns.append(fn.__name__)
+        if before_domain:
+            cls._registered_meta_columns.append(fn.__name__)
+        else:
+            cls._registered_columns.append(fn.__name__)
 
     def get_inlines(self, request, obj=None):
         return self._registered_inlines
 
     def get_list_display(self, request):
-        return list(self.list_display) + self._registered_columns
+        return list(self.list_display) + self._registered_meta_columns + self._registered_columns
 
     def get_fieldsets(self, request, obj=None):
         return [
