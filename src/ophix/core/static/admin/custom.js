@@ -1,3 +1,62 @@
+/* ophix admin — persist changelist filter state across page loads
+ *
+ * Saves active filter/search/ordering params to localStorage (keyed by
+ * pathname) so they survive navigation away and back.  Page number is never
+ * persisted.  A "Reset filters" link in object-tools lets the operator clear
+ * saved state and return to the unfiltered view.
+ */
+document.addEventListener('DOMContentLoaded', function () {
+    if (!document.getElementById('changelist')) return;
+
+    var PREFIX      = 'ophix-filter:';
+    var RESET_FLAG  = 'ophix-filter-reset:';
+    var pathname    = window.location.pathname;
+    var storageKey  = PREFIX + pathname;
+    var resetKey    = RESET_FLAG + pathname;
+
+    function getFilterString() {
+        var params = new URLSearchParams(window.location.search);
+        params.delete('p');  // never persist page number
+        return params.toString();
+    }
+
+    var filterStr = getFilterString();
+
+    if (filterStr) {
+        // Filters active — save current state
+        localStorage.setItem(storageKey, filterStr);
+    } else if (sessionStorage.getItem(resetKey)) {
+        // User just clicked "Reset filters" — clear saved state, don't redirect
+        sessionStorage.removeItem(resetKey);
+        localStorage.removeItem(storageKey);
+    } else {
+        var saved = localStorage.getItem(storageKey);
+        if (saved) {
+            window.location.replace(pathname + '?' + saved);
+            return;
+        }
+    }
+
+    // Show "Reset filters" in object-tools whenever saved state exists
+    var hasSaved = localStorage.getItem(storageKey);
+    if (hasSaved) {
+        var tools = document.querySelector('.object-tools');
+        if (tools) {
+            var li = document.createElement('li');
+            var a  = document.createElement('a');
+            a.href      = '#';
+            a.textContent = 'Reset filters';
+            a.addEventListener('click', function (e) {
+                e.preventDefault();
+                sessionStorage.setItem(resetKey, '1');
+                window.location.href = pathname;
+            });
+            li.appendChild(a);
+            tools.appendChild(li);
+        }
+    }
+});
+
 /* ophix admin — list-view checkbox auto-save
  *
  * When a list_editable checkbox is toggled in the changelist:
