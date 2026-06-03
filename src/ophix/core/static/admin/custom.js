@@ -2,8 +2,8 @@
  *
  * Saves active filter/search/ordering params to localStorage (keyed by
  * pathname) so they survive navigation away and back.  Page number is never
- * persisted.  A "Reset filters" link in object-tools lets the operator clear
- * saved state and return to the unfiltered view.
+ * persisted.  The existing "Clear all filters" link in the filter sidebar
+ * also clears saved state so it behaves as expected.
  */
 document.addEventListener('DOMContentLoaded', function () {
     if (!document.getElementById('changelist')) return;
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Filters active — save current state
         localStorage.setItem(storageKey, filterStr);
     } else if (sessionStorage.getItem(resetKey)) {
-        // User just clicked "Reset filters" — clear saved state, don't redirect
+        // User just cleared filters — wipe saved state, don't redirect
         sessionStorage.removeItem(resetKey);
         localStorage.removeItem(storageKey);
     } else {
@@ -37,24 +37,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Show "Reset filters" in object-tools whenever saved state exists
-    var hasSaved = localStorage.getItem(storageKey);
-    if (hasSaved) {
-        var tools = document.querySelector('.object-tools');
-        if (tools) {
-            var li = document.createElement('li');
-            var a  = document.createElement('a');
-            a.href      = '#';
-            a.textContent = 'Reset filters';
-            a.addEventListener('click', function (e) {
-                e.preventDefault();
+    // Hook the existing "Clear all filters" link to also clear saved state
+    document.querySelectorAll('#changelist-filter a').forEach(function (link) {
+        var href = link.getAttribute('href');
+        if (href === '?' || href === pathname) {
+            link.addEventListener('click', function () {
                 sessionStorage.setItem(resetKey, '1');
-                window.location.href = pathname;
             });
-            li.appendChild(a);
-            tools.appendChild(li);
         }
-    }
+    });
 });
 
 /* ophix admin — list-view checkbox auto-save
