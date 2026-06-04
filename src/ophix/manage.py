@@ -67,12 +67,15 @@ _HIDDEN_COMMANDS = frozenset([
 def _patch_hidden_commands():
     from django.core import management as _mgmt
 
+    _unlock = {c.strip() for c in os.environ.get('OPHIX_UNLOCK_COMMANDS', '').split(',') if c.strip()}
+    _effective = _HIDDEN_COMMANDS - _unlock
+
     _orig_get       = _mgmt.get_commands
     _orig_fetch     = _mgmt.ManagementUtility.fetch_command
     _orig_help_text = _mgmt.ManagementUtility.main_help_text
 
     def _filtered_fetch(self, subcommand):
-        if subcommand in _HIDDEN_COMMANDS:
+        if subcommand in _effective:
             sys.stderr.write(
                 "Unknown command: %r\nType '%s help' for usage.\n"
                 % (subcommand, self.prog_name)
@@ -83,7 +86,7 @@ def _patch_hidden_commands():
     def _filtered_help_text(self, commands_only=False):
         # Temporarily narrow get_commands so hidden entries don't appear in --help.
         _mgmt.get_commands = lambda: {
-            k: v for k, v in _orig_get().items() if k not in _HIDDEN_COMMANDS
+            k: v for k, v in _orig_get().items() if k not in _effective
         }
         try:
             return _orig_help_text(self, commands_only=commands_only)
