@@ -128,6 +128,12 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
     );
 }
 
+/* Equalise date and time inputs — Django default has date at 10em, time at 8em */
+.vDateField,
+.vTimeField {
+    width: 10em;
+}
+
 /* Match address fields to the width of standard text fields */
 .field-ipv4_address input,
 .field-ipv6_address input {
@@ -170,7 +176,12 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
 
 .ophix-release-notes {
     width: 100%;
+    max-width: 600px;
     margin-top: 0.25em;
+}
+
+.rn-outer-body {
+    font-size: 1rem;
 }
 
 /* Shared toggle button style */
@@ -236,7 +247,7 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
     align-items: center;
     justify-content: space-between;
     padding: 0.4em 0;
-    border-bottom: 1px solid var(--darkened-bg, #eee);
+    border-bottom: 1px solid var(--admin-interface-module-background-color);
     cursor: pointer;
     user-select: none;
 }
