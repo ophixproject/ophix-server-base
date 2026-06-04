@@ -129,8 +129,8 @@ tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
 }
 
 /* Equalise date and time inputs — Django default has date at 10em, time at 8em */
-.vDateField,
-.vTimeField {
+input.vDateField,
+input.vTimeField {
     width: 10em !important;
 }
 
