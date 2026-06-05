@@ -90,8 +90,10 @@ class Command(BaseCommand):
         except json.JSONDecodeError as exc:
             raise CommandError(f"Invalid JSON in {input_path}: {exc}")
 
+        if isinstance(records, dict) and "hosts" in records:
+            records = records["hosts"]
         if not isinstance(records, list):
-            raise CommandError("Expected a JSON array at the top level.")
+            raise CommandError("Unrecognised file format — expected export_hosts output.")
 
         created = updated = unchanged = skipped = 0
 

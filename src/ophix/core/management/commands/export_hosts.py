@@ -22,6 +22,30 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 
 
+def _build_meta(domain: str, command: str) -> dict:
+    import datetime
+    import os
+    import pwd
+    import socket
+    from django.conf import settings
+    try:
+        run_by = pwd.getpwuid(os.getuid()).pw_name
+    except Exception:
+        run_by = os.environ.get("USER") or os.environ.get("LOGNAME")
+    ssh_raw = os.environ.get("SSH_CLIENT", "")
+    return {
+        "created_at":     datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "server_name":    getattr(settings, "SERVER_NAME", None),
+        "server_version": getattr(settings, "SERVER_VERSION", None),
+        "hostname":       socket.gethostname(),
+        "domain":         domain,
+        "command":        command,
+        "run_by":         run_by,
+        "login_user":     os.environ.get("SUDO_USER") or None,
+        "ssh_origin":     ssh_raw.split()[0] if ssh_raw else None,
+    }
+
+
 def _serialize(host):
     return {
         "name":         host.name,
@@ -75,9 +99,13 @@ class Command(BaseCommand):
         if not output_path.parent.exists():
             raise CommandError(f"Output directory does not exist: {output_path.parent}")
 
-        records = [_serialize(h) for h in hosts]
+        payload = {
+            "version": 1,
+            "meta":    _build_meta("hosts", "export_hosts"),
+            "hosts":   [_serialize(h) for h in hosts],
+        }
         with output_path.open("w", encoding="utf-8") as f:
-            json.dump(records, f, indent=2)
+            json.dump(payload, f, indent=2)
 
         if not quiet:
             self.stdout.write(self.style.SUCCESS(f"Exported {count} host(s) to {output_path}."))

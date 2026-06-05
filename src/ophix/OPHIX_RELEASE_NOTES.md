@@ -1,5 +1,11 @@
 # ophix-server-base Release Notes
 
+## 2026.06.05.04
+
+- `export_clients`, `export_hosts`: export file now includes a `meta` block with `created_at`, `server_name`, `server_version`, `hostname`, `domain`, `command`, `run_by`, `login_user`, and `ssh_origin`.
+- `export_hosts`: output format changed from a bare JSON array to a versioned payload dict (`version`, `meta`, `hosts`). `import_hosts` updated accordingly.
+- `export_clients`, `import_clients`: `--passphrase` now accepts no value to prompt securely (export confirms twice); `--passphrase-env ENVVAR` reads the passphrase from an environment variable for automated use. Both options are mutually exclusive.
+
 ## 2026.06.02.01
 
 - `DeleteRedirectToChangelistMixin` added to `ophix.core.admin`. Apply to any read-only admin that still permits deletion to redirect post-delete to the changelist rather than admin:index (which shows the custom home page). Applied to `AccessLogAdmin`.
