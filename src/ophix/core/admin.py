@@ -389,7 +389,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
     def up_to_date(self, obj):
         if not obj.update_available:
             return mark_safe(
-                '<span style="color:var(--admin-interface-generic-link-hover-color);'
+                '<span style="color:var(--admin-interface-success-color,#28A745);'
                 'font-size:1.2em">✓</span>'
             )
         return format_html(
