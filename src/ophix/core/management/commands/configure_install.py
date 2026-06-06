@@ -396,6 +396,10 @@ class Command(BaseCommand):
         admin_title = self._prompt("Admin site title", default_title)
         conf.set("admin", "admin_title", admin_title)
 
+        default_env_name = conf.get("admin", "admin_env_name", fallback="")
+        admin_env_name = self._prompt("Environment name (e.g. Production, Staging, Dev — leave blank to clear)", default_env_name)
+        conf.set("admin", "admin_env_name", admin_env_name)
+
         self.stdout.write("\n")
 
         # ------------------------------------------------------------------ #

@@ -252,20 +252,25 @@ def _activate_theme(theme_name: str, stdout, style):
         stdout.write(style.WARNING(f"  Could not activate theme '{theme_name}': {exc}\n"))
 
 
-def _set_admin_title(title: str, stdout, style):
-    if not title:
+def _update_server_settings(title: str, env_name: str, stdout, style):
+    if not title and env_name is None:
         return
     try:
-        from admin_interface.models import Theme
-        active = Theme.objects.filter(active=True).first()
-        if active:
-            active.title = title
-            active.save()
+        from ophix_admin_settings.models import ServerSettings
+        settings_obj = ServerSettings.load()
+        if title:
+            settings_obj.title = title
             stdout.write(style.SUCCESS(f"  Admin title set: {title!r}\n"))
-        else:
-            stdout.write(style.WARNING("  No active theme found — admin title not set.\n"))
+        if env_name is not None:
+            settings_obj.env_name = env_name
+            settings_obj.env_visible_in_header = bool(env_name)
+            settings_obj.env_visible_in_favicon = False
+            stdout.write(style.SUCCESS(f"  Environment name set: {env_name!r}\n"))
+            if not visible:
+                stdout.write(style.SUCCESS("  Environment badge hidden (no name provided)\n"))
+        settings_obj.save()
     except Exception as exc:
-        stdout.write(style.WARNING(f"  Could not set admin title: {exc}\n"))
+        stdout.write(style.WARNING(f"  Could not update server settings: {exc}\n"))
 
 
 def _auto_install_docs(stdout, style):
@@ -413,6 +418,7 @@ class Command(BaseCommand):
 
         activate_theme  = _get("admin", "activate_theme", "")
         admin_title     = _get("admin", "admin_title", "")
+        admin_env_name  = _get("admin", "admin_env_name", None)
         http_redirect   = conf.getboolean("server", "http_redirect", fallback=True)
 
         slug = _slugify(server_name)
@@ -603,12 +609,11 @@ class Command(BaseCommand):
         # ------------------------------------------------------------------ #
         # 10. Activate theme + set admin labels
         # ------------------------------------------------------------------ #
-        if activate_theme or admin_title:
+        if activate_theme or admin_title or admin_env_name is not None:
             self.stdout.write("Configuring admin UI\n")
             if activate_theme:
                 _activate_theme(activate_theme, self.stdout, self.style)
-            if admin_title:
-                _set_admin_title(admin_title, self.stdout, self.style)
+            _update_server_settings(admin_title, admin_env_name, self.stdout, self.style)
             self.stdout.write("\n")
 
         # ------------------------------------------------------------------ #
