@@ -80,7 +80,7 @@ Client records include API tokens — the secrets that fleet clients use to auth
 **Export with encrypted tokens (recommended):**
 
 ```bash
-ophix-manage export_clients --output-file clients.json --passphrase "your-passphrase"
+ophix-manage export_clients --output-file clients.json --passphrase 'your-passphrase'
 ```
 
 **Export with plaintext tokens:**
@@ -94,8 +94,10 @@ Without `--passphrase`, tokens are written in plaintext. The command prints a wa
 Preview without writing:
 
 ```bash
-ophix-manage export_clients --output-file clients.json --passphrase "your-passphrase" --dry-run
+ophix-manage export_clients --output-file clients.json --passphrase 'your-passphrase' --dry-run
 ```
+
+> **Note:** Always use single quotes around passphrases in bash. Double-quoted strings allow bash to interpret `!` as a history event, which corrupts a passphrase containing an exclamation mark.
 
 | Flag | Description |
 | --- | --- |
@@ -113,7 +115,7 @@ When `--passphrase` is provided, each token is encrypted with a Fernet key deriv
 ## Importing clients
 
 ```bash
-ophix-manage import_clients --input-file clients.json --passphrase "your-passphrase"
+ophix-manage import_clients --input-file clients.json --passphrase 'your-passphrase'
 ```
 
 If the file was exported without `--passphrase`:
@@ -145,13 +147,13 @@ This covers hosts and clients only. Follow this with the domain-specific import 
 ```bash
 # 1. Export from the source server
 ophix-manage export_hosts --output-file hosts.json
-ophix-manage export_clients --output-file clients.json --passphrase "your-passphrase"
+ophix-manage export_clients --output-file clients.json --passphrase 'your-passphrase'
 
 # 2. Transfer hosts.json and clients.json to the target server
 
 # 3. Import on the target server
 ophix-manage import_hosts --input-file hosts.json
-ophix-manage import_clients --input-file clients.json --passphrase "your-passphrase"
+ophix-manage import_clients --input-file clients.json --passphrase 'your-passphrase'
 ```
 
 Fleet clients can reconnect to the restored server without re-registering, because their tokens are preserved.
