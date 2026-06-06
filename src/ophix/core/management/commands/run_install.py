@@ -265,8 +265,9 @@ def _update_server_settings(title: str, env_name: str, stdout, style):
             settings_obj.env_name = env_name
             settings_obj.env_visible_in_header = bool(env_name)
             settings_obj.env_visible_in_favicon = False
-            stdout.write(style.SUCCESS(f"  Environment name set: {env_name!r}\n"))
-            if not visible:
+            if env_name:
+                stdout.write(style.SUCCESS(f"  Environment name set: {env_name!r}\n"))
+            else:
                 stdout.write(style.SUCCESS("  Environment badge hidden (no name provided)\n"))
         settings_obj.save()
     except Exception as exc:
