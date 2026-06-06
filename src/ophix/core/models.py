@@ -23,6 +23,7 @@ ClientArtifactBase
 
 """
 
+import hashlib
 import secrets
 from django.db import models
 from django.utils import timezone
@@ -30,12 +31,22 @@ from django.utils.translation import gettext_lazy as _
 
 
 # ---------------------------------------------------------------------------
-# Token generator
+# Token helpers
 # ---------------------------------------------------------------------------
 
 def generate_api_token() -> str:
-    """Generate a cryptographically secure 64-character hex token."""
+    """Generate a cryptographically secure 64-character hex token (plaintext)."""
     return secrets.token_hex(32)
+
+
+def hash_token(token: str) -> str:
+    """Return the SHA-256 hex digest of a token. Used for at-rest storage."""
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def _default_api_token() -> str:
+    """Generate a random token and return its hash. Plaintext is discarded."""
+    return hash_token(generate_api_token())
 
 
 # ---------------------------------------------------------------------------
@@ -103,10 +114,10 @@ class Client(models.Model):
     )
     enabled = models.BooleanField(_("enabled"), default=True)
     api_token = models.CharField(
-        _("API token"),
+        _("API token (SHA-256 hash)"),
         max_length=64,
         unique=True,
-        default=generate_api_token,
+        default=_default_api_token,
     )
     last_token_rotation = models.DateTimeField(
         _("last token rotation"),

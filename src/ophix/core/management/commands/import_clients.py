@@ -5,40 +5,25 @@ Import Client records from a JSON file produced by export_clients.
 
 Idempotent: clients are matched by host name + client name. Existing clients
 are updated only when a field value differs; identical records are skipped.
-The api_token is always written — this is intentional for migration/recovery
-so that fleet clients can reconnect without re-registering.
+The api_token hash is always written — this is intentional for migration/recovery
+so that fleet clients can reconnect to a restored server without re-registering.
 
 Referenced hosts must already exist on the target server. Run import_hosts
 first if restoring a complete server from scratch.
 
-If the file was exported with --passphrase, provide the same passphrase here.
-The passphrase is validated before any database changes are made.
-
 Examples
 --------
-Import from encrypted file:
-    ophix-manage import_clients --input-file clients.json --passphrase "secret"
-
-Import from plaintext file:
+Import clients:
     ophix-manage import_clients --input-file clients.json
 
 Preview without writing:
-    ophix-manage import_clients --input-file clients.json --passphrase "secret" --dry-run
+    ophix-manage import_clients --input-file clients.json --dry-run
 """
 
-import base64
 import json
-import os
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
-
-
-def _derive_key(passphrase: str, salt: bytes) -> bytes:
-    from cryptography.hazmat.primitives import hashes
-    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=480000)
-    return base64.urlsafe_b64encode(kdf.derive(passphrase.encode()))
 
 
 class Command(BaseCommand):
@@ -50,21 +35,6 @@ class Command(BaseCommand):
             required=True,
             metavar="FILE",
             help="Source file path (JSON produced by export_clients).",
-        )
-        passphrase_group = parser.add_mutually_exclusive_group()
-        passphrase_group.add_argument(
-            "--passphrase",
-            nargs="?",
-            const="",
-            metavar="PASSPHRASE",
-            default=None,
-            help="Passphrase to decrypt tokens (required if file was exported with --passphrase). Omit the value to be prompted securely (input is hidden).",
-        )
-        passphrase_group.add_argument(
-            "--passphrase-env",
-            metavar="ENVVAR",
-            default=None,
-            help="Read the passphrase from the named environment variable (for automated use).",
         )
         parser.add_argument(
             "--dry-run",
@@ -80,10 +50,8 @@ class Command(BaseCommand):
             "--force",
             action="store_true",
             help=(
-                "Bypass token uniqueness checks. Use when a token in the import file "
-                "is already assigned to a differently-named client on this server. "
-                "The database constraint is still enforced — conflicts that cannot be "
-                "resolved are skipped with an error."
+                "Bypass token uniqueness checks. Use when a token hash in the import "
+                "file is already assigned to a differently-named client on this server."
             ),
         )
 
@@ -91,19 +59,6 @@ class Command(BaseCommand):
         from ophix.core.models import Client, Host
 
         input_path = Path(options["input_file"])
-        passphrase     = options["passphrase"]
-        passphrase_env = options["passphrase_env"]
-        if passphrase_env:
-            passphrase = os.environ.get(passphrase_env)
-            if not passphrase:
-                raise CommandError(
-                    f"Environment variable '{passphrase_env}' is not set or empty."
-                )
-        elif passphrase == "":
-            import getpass
-            passphrase = getpass.getpass("Passphrase: ")
-            if not passphrase:
-                raise CommandError("Passphrase cannot be empty.")
         dry_run    = options["dry_run"]
         quiet      = options["quiet"]
         force      = options["force"]
@@ -119,32 +74,12 @@ class Command(BaseCommand):
         if not isinstance(payload, dict) or "clients" not in payload:
             raise CommandError("Unrecognised file format — expected export_clients output.")
 
-        encrypted = payload.get("encrypted", False)
-
-        # Validate passphrase and build Fernet instance before touching the DB.
-        fernet = None
-        if encrypted:
-            if not passphrase:
-                raise CommandError(
-                    "This file contains encrypted tokens. Provide --passphrase to import."
-                )
-            try:
-                from cryptography.fernet import Fernet, InvalidToken
-                salt = base64.urlsafe_b64decode(payload["salt"])
-                fernet = Fernet(_derive_key(passphrase, salt))
-                # Validate key against the first token we can find.
-                for rec in payload["clients"]:
-                    if rec.get("api_token"):
-                        fernet.decrypt(rec["api_token"].encode())
-                        break
-            except InvalidToken:
-                raise CommandError("Incorrect passphrase — could not decrypt tokens.")
-            except Exception as exc:
-                raise CommandError(f"Failed to initialise decryption: {exc}")
-        elif passphrase and not quiet:
-            self.stderr.write(self.style.WARNING(
-                "Warning: file is not encrypted but --passphrase was provided — ignoring."
-            ))
+        if payload.get("token_format") != "hash":
+            raise CommandError(
+                "This file was produced by an older version of export_clients "
+                "and contains plaintext or encrypted tokens. Re-export from the "
+                "source server using the current version before importing."
+            )
 
         records = payload["clients"]
         if not isinstance(records, list):
@@ -161,7 +96,6 @@ class Command(BaseCommand):
                 skipped += 1
                 continue
 
-            # Resolve host.
             try:
                 host = Host.objects.get(name=host_name)
             except Host.DoesNotExist:
@@ -172,26 +106,15 @@ class Command(BaseCommand):
                 skipped += 1
                 continue
 
-            # Decrypt token if needed.
-            raw_token = rec.get("api_token", "")
-            if fernet and raw_token:
-                try:
-                    from cryptography.fernet import InvalidToken
-                    raw_token = fernet.decrypt(raw_token.encode()).decode()
-                except InvalidToken:
-                    self.stderr.write(f"  {host_name}/{name}: token decryption failed — skipped.")
-                    skipped += 1
-                    continue
-
-            if not raw_token:
+            token_hash = rec.get("api_token", "")
+            if not token_hash:
                 self.stderr.write(f"  {host_name}/{name}: missing api_token — skipped.")
                 skipped += 1
                 continue
 
-            # Check for token conflict with a different client.
             if not force:
                 conflict = (
-                    Client.objects.filter(api_token=raw_token)
+                    Client.objects.filter(api_token=token_hash)
                     .exclude(name=name, host=host)
                     .first()
                 )
@@ -204,22 +127,20 @@ class Command(BaseCommand):
                     skipped += 1
                     continue
 
-            # Parse last_token_rotation.
             ltr = None
             if rec.get("last_token_rotation"):
                 from django.utils.dateparse import parse_datetime
                 ltr = parse_datetime(rec["last_token_rotation"])
 
             fields = {
-                "deployment_ref":     rec.get("deployment_ref") or None,
-                "venv_name":          rec.get("venv_name") or None,
-                "venv_path":          rec.get("venv_path") or None,
-                "enabled":            bool(rec.get("enabled", True)),
-                "api_token":          raw_token,
+                "deployment_ref":      rec.get("deployment_ref") or None,
+                "venv_name":           rec.get("venv_name") or None,
+                "venv_path":           rec.get("venv_path") or None,
+                "enabled":             bool(rec.get("enabled", True)),
+                "api_token":           token_hash,
                 "last_token_rotation": ltr,
             }
 
-            # Create or update.
             try:
                 client = Client.objects.get(name=name, host=host)
                 changed = {

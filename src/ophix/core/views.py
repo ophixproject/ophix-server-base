@@ -23,7 +23,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .auth import ClientTokenAuthentication
-from .models import Client, Host, generate_api_token
+from .models import Client, Host, generate_api_token, hash_token
 from .serializers import ClientSerializer
 from .utils import get_client_ip, err_response
 
@@ -143,6 +143,7 @@ class RegisterClientView(APIView):
                 status=status.HTTP_409_CONFLICT,
             )
 
+        raw_token = generate_api_token()
         try:
             client = Client.objects.create(
                 host=host,
@@ -150,7 +151,7 @@ class RegisterClientView(APIView):
                 deployment_ref=deployment_ref,
                 venv_name=venv_name,
                 venv_path=venv_path,
-                api_token=generate_api_token(),
+                api_token=hash_token(raw_token),
             )
         except IntegrityError:
             return Response(
@@ -165,7 +166,7 @@ class RegisterClientView(APIView):
                 "deployment_ref": client.deployment_ref,
                 "venv_name": client.venv_name,
                 "venv_path": client.venv_path,
-                "api_token": client.api_token,
+                "api_token": raw_token,
             },
             status=status.HTTP_200_OK,
         )
@@ -219,7 +220,8 @@ class ClientViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if Client.objects.filter(api_token=new_token).exists():
+        new_hash = hash_token(new_token)
+        if Client.objects.filter(api_token=new_hash).exists():
             return Response(
                 {"error": err_response("Token already in use", "Bad request")},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -233,7 +235,7 @@ class ClientViewSet(viewsets.ViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        client.api_token = new_token
+        client.api_token = new_hash
         client.last_token_rotation = timezone.now()
         client.rotation_required = False
         client.lockout_override = False

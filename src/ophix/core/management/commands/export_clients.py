@@ -3,41 +3,28 @@ ophix-manage export_clients
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Export Client records to a JSON file for backup, recovery, or server migration.
 
-Client tokens are included so that fleet clients can reconnect to a restored
-server without re-registering. Protect the output file accordingly.
+Client tokens are included as SHA-256 hashes (the value stored in the database).
+A hash is not a usable credential — it cannot be used to authenticate as the client.
+Fleet clients reconnect to a restored server using the same plaintext token they
+already hold; the server re-hashes on every request.
 
-Optionally encrypt tokens with a passphrase-derived Fernet key. The salt is
-stored in the file; the passphrase is not. Use the same passphrase with
-import_clients to decrypt on the receiving server.
-
-Without --passphrase, tokens are exported in plaintext. This is a deliberate
-operator choice — the file must be treated as a credential store.
+No passphrase option is provided: there is nothing sensitive to encrypt. The export
+file contains topology (host names, IPs, client names) and token hashes. Protect it
+with filesystem permissions as you would any configuration file.
 
 Examples
 --------
-Export with encrypted tokens (recommended):
-    ophix-manage export_clients --output-file clients.json --passphrase "secret"
-
-Export with plaintext tokens:
+Export all clients:
     ophix-manage export_clients --output-file clients.json
 
 Preview without writing:
     ophix-manage export_clients --output-file clients.json --dry-run
 """
 
-import base64
 import json
-import os
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
-
-
-def _derive_key(passphrase: str, salt: bytes) -> bytes:
-    from cryptography.hazmat.primitives import hashes
-    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=480000)
-    return base64.urlsafe_b64encode(kdf.derive(passphrase.encode()))
 
 
 def _build_meta(domain: str, command: str) -> dict:
@@ -64,10 +51,7 @@ def _build_meta(domain: str, command: str) -> dict:
     }
 
 
-def _serialize(client, fernet=None):
-    token = client.api_token
-    if fernet:
-        token = fernet.encrypt(token.encode()).decode()
+def _serialize(client):
     return {
         "name":               client.name,
         "host":               client.host.name,
@@ -75,7 +59,7 @@ def _serialize(client, fernet=None):
         "venv_name":          client.venv_name,
         "venv_path":          client.venv_path,
         "enabled":            client.enabled,
-        "api_token":          token,
+        "api_token":          client.api_token,
         "last_token_rotation": (
             client.last_token_rotation.isoformat()
             if client.last_token_rotation else None
@@ -93,21 +77,6 @@ class Command(BaseCommand):
             metavar="FILE",
             help="Destination file path.",
         )
-        passphrase_group = parser.add_mutually_exclusive_group()
-        passphrase_group.add_argument(
-            "--passphrase",
-            nargs="?",
-            const="",
-            metavar="PASSPHRASE",
-            default=None,
-            help="Encrypt client tokens using a passphrase-derived Fernet key. Omit the value to be prompted securely (input is hidden).",
-        )
-        passphrase_group.add_argument(
-            "--passphrase-env",
-            metavar="ENVVAR",
-            default=None,
-            help="Read the passphrase from the named environment variable (for automated use).",
-        )
         parser.add_argument(
             "--dry-run",
             action="store_true",
@@ -123,24 +92,6 @@ class Command(BaseCommand):
         from ophix.core.models import Client
 
         output_path = Path(options["output_file"])
-        passphrase     = options["passphrase"]
-        passphrase_env = options["passphrase_env"]
-        if passphrase_env:
-            passphrase = os.environ.get(passphrase_env)
-            if not passphrase:
-                raise CommandError(
-                    f"Environment variable '{passphrase_env}' is not set or empty."
-                )
-        elif passphrase == "":
-            import getpass
-            while True:
-                passphrase = getpass.getpass("Passphrase: ")
-                if not passphrase:
-                    raise CommandError("Passphrase cannot be empty.")
-                confirm = getpass.getpass("Confirm passphrase: ")
-                if passphrase == confirm:
-                    break
-                self.stderr.write("Passphrases do not match — try again.")
         dry_run     = options["dry_run"]
         quiet       = options["quiet"]
 
@@ -159,33 +110,17 @@ class Command(BaseCommand):
         if not output_path.parent.exists():
             raise CommandError(f"Output directory does not exist: {output_path.parent}")
 
-        fernet = None
-        salt_b64 = None
-        if passphrase:
-            from cryptography.fernet import Fernet
-            salt = os.urandom(16)
-            salt_b64 = base64.urlsafe_b64encode(salt).decode()
-            fernet = Fernet(_derive_key(passphrase, salt))
-
-        if not passphrase and not quiet:
-            self.stderr.write(self.style.WARNING(
-                "Warning: exporting client tokens in plaintext. "
-                "Use --passphrase to encrypt. Protect this file as a credential store."
-            ))
-
         payload = {
-            "version":   1,
-            "meta":      _build_meta("clients", "export_clients"),
-            "encrypted": fernet is not None,
-            "salt":      salt_b64,
-            "clients":   [_serialize(c, fernet) for c in clients],
+            "version":      1,
+            "token_format": "hash",
+            "meta":         _build_meta("clients", "export_clients"),
+            "clients":      [_serialize(c) for c in clients],
         }
 
         with output_path.open("w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2)
 
         if not quiet:
-            enc_note = " (tokens encrypted)" if fernet else " (tokens plaintext)"
             self.stdout.write(self.style.SUCCESS(
-                f"Exported {count} client(s) to {output_path}{enc_note}."
+                f"Exported {count} client(s) to {output_path} (tokens as SHA-256 hashes)."
             ))

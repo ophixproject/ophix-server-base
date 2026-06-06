@@ -75,65 +75,41 @@ By default the command checks for IP address conflicts — if an IP in the impor
 
 ## Exporting clients
 
-Client records include API tokens — the secrets that fleet clients use to authenticate. Protect the output file accordingly.
-
-**Export with encrypted tokens (recommended):**
-
-```bash
-ophix-manage export_clients --output-file clients.json --passphrase 'your-passphrase'
-```
-
-**Export with plaintext tokens:**
-
 ```bash
 ophix-manage export_clients --output-file clients.json
 ```
 
-Without `--passphrase`, tokens are written in plaintext. The command prints a warning. This is a deliberate operator choice — the file must then be treated as a credential store.
-
 Preview without writing:
 
 ```bash
-ophix-manage export_clients --output-file clients.json --passphrase 'your-passphrase' --dry-run
+ophix-manage export_clients --output-file clients.json --dry-run
 ```
 
-> **Note:** Always use single quotes around passphrases in bash. Double-quoted strings allow bash to interpret `!` as a history event, which corrupts a passphrase containing an exclamation mark.
+Client tokens are stored as SHA-256 hashes — the server never holds the plaintext after registration. The export file contains these hashes, not usable credentials. Standard filesystem permissions are sufficient to protect the file; no passphrase is required or offered.
 
 | Flag | Description |
 | --- | --- |
 | `--output-file FILE` | _(required)_ Destination path |
-| `--passphrase PASSPHRASE` | Encrypt tokens using a PBKDF2-derived Fernet key |
 | `--dry-run` | Show how many clients would be exported without writing |
 | `--quiet` | Suppress all output |
-
-### How token encryption works
-
-When `--passphrase` is provided, each token is encrypted with a Fernet key derived from the passphrase via PBKDF2-HMAC-SHA256 (480,000 iterations). A random 16-byte salt is generated per export and stored in the file alongside the encrypted tokens. The passphrase is not stored anywhere — you must provide it again on import.
 
 ---
 
 ## Importing clients
 
 ```bash
-ophix-manage import_clients --input-file clients.json --passphrase 'your-passphrase'
-```
-
-If the file was exported without `--passphrase`:
-
-```bash
 ophix-manage import_clients --input-file clients.json
 ```
 
-The passphrase is validated against the first token in the file **before** any database changes are made. If the passphrase is wrong, the command stops immediately with an error.
-
-Clients are matched by host name + client name. Existing clients are updated when any field differs; tokens are always written on update (this is intentional — restoring a client's token is the point of the import). The import is idempotent.
+Clients are matched by host name + client name. Existing clients are updated when any field differs; token hashes are always written on update (this is intentional — restoring a client's token hash is the point of the import). The import is idempotent.
 
 Run `import_hosts` first — if a referenced host does not exist, the client record is skipped with an error.
+
+Fleet clients reconnect to the restored server without re-registering. They still send the same plaintext bearer token they have always held; the server hashes it on each request and compares to the restored hash.
 
 | Flag | Description |
 | --- | --- |
 | `--input-file FILE` | _(required)_ Source path (JSON produced by `export_clients`) |
-| `--passphrase PASSPHRASE` | Decrypt tokens (required if file was exported with `--passphrase`) |
 | `--dry-run` | Show what would be created or updated without making any changes |
 | `--quiet` | Suppress per-record output; summary line always shown |
 | `--force` | Bypass token uniqueness checks (use when a token conflict exists with a differently-named client on this server) |
@@ -147,16 +123,16 @@ This covers hosts and clients only. Follow this with the domain-specific import 
 ```bash
 # 1. Export from the source server
 ophix-manage export_hosts --output-file hosts.json
-ophix-manage export_clients --output-file clients.json --passphrase 'your-passphrase'
+ophix-manage export_clients --output-file clients.json
 
 # 2. Transfer hosts.json and clients.json to the target server
 
 # 3. Import on the target server
 ophix-manage import_hosts --input-file hosts.json
-ophix-manage import_clients --input-file clients.json --passphrase 'your-passphrase'
+ophix-manage import_clients --input-file clients.json
 ```
 
-Fleet clients can reconnect to the restored server without re-registering, because their tokens are preserved.
+Fleet clients reconnect to the restored server without re-registering — their token hashes are preserved, and the client still holds the original plaintext token that maps to those hashes.
 
 ---
 
@@ -173,6 +149,6 @@ Fleet clients can reconnect to the restored server without re-registering, becau
 **Disaster recovery** (source server lost):
 
 1. Restore from the most recent export files
-2. Clients that rotated their tokens after the last export will need to re-register — their saved token will not match the restored one. Rotation intervals shorter than your backup cadence minimise this window.
+2. Clients that rotated their tokens after the last export will need to re-register — the restored hash reflects the old token, which the client no longer holds. Rotation intervals shorter than your backup cadence minimise this window.
 
 For a full Ophix server backup strategy, schedule exports from cron and store output files off-server with appropriate access controls.

@@ -21,7 +21,7 @@ from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
 from rest_framework import exceptions
 
-from .models import Client
+from .models import Client, hash_token
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ class ClientTokenAuthentication(BaseAuthentication):
         token = auth_header[len(f"{_KEYWORD} "):].strip()
 
         try:
-            client = Client.objects.select_related("host").get(api_token=token)
+            client = Client.objects.select_related("host").get(api_token=hash_token(token))
         except Client.DoesNotExist:
             logger.info("Authentication failed: unrecognised token")
             raise exceptions.AuthenticationFailed(self._msg("Invalid token"))
