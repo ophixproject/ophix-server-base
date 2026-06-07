@@ -303,16 +303,45 @@ class ClientAdmin(admin.ModelAdmin):
             request.session["_ophix_new_client_token"] = raw_token
         super().save_model(request, obj, form, change)
 
+    def changelist_view(self, request, extra_context=None):
+        show_token_pk = request.session.pop("_ophix_show_token_pk", None)
+        if show_token_pk is not None:
+            extra_context = extra_context or {}
+            extra_context["show_token_pk"] = show_token_pk
+        return super().changelist_view(request, extra_context)
+
     def response_add(self, request, obj, post_url_continue=None):
+        from django.shortcuts import render as django_render
+        from django.http import HttpResponseRedirect
         raw_token = request.session.pop("_ophix_new_client_token", None)
-        if raw_token and "_popup" not in request.POST:
-            from django.http import HttpResponseRedirect
-            request.session[f"_ophix_new_client_token_{obj.pk}"] = raw_token
+        if raw_token:
+            change_url = reverse(
+                f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
+                args=[obj.pk],
+                current_app=self.admin_site.name,
+            )
             changelist_url = reverse(
                 f"admin:{obj._meta.app_label}_{obj._meta.model_name}_changelist",
                 current_app=self.admin_site.name,
             )
-            return HttpResponseRedirect(f"{changelist_url}?show_token={obj.pk}")
+            if "_popup" in request.POST:
+                # Add form was opened inside a popup — render token directly in the popup
+                return django_render(request, "admin/ophix_core/client/token_created.html", {
+                    "client": obj,
+                    "token": raw_token,
+                    "change_url": change_url,
+                    "parent_redirect_url": changelist_url,
+                    "is_replacement": False,
+                    "is_popup": True,
+                    "title": _("Client token"),
+                    "opts": obj._meta,
+                    "has_view_permission": self.has_view_permission(request, obj),
+                })
+            else:
+                # Add form opened directly (not popup) — session redirect to trigger popup on changelist
+                request.session[f"_ophix_new_client_token_{obj.pk}"] = raw_token
+                request.session["_ophix_show_token_pk"] = obj.pk
+                return HttpResponseRedirect(changelist_url)
         return super().response_add(request, obj, post_url_continue)
 
 

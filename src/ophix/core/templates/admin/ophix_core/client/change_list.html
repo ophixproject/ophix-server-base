@@ -3,15 +3,29 @@
 
 {% block content %}
 {{ block.super }}
-{% if request.GET.show_token %}
+{% if show_token_pk %}
+{# Fallback: add form was accessed directly (not via popup). Trigger popup from changelist. #}
 <a id="new-client-token-trigger"
-   href="{% url 'admin:ophix_core_client_new_token' request.GET.show_token %}?_popup=1"
+   href="{% url 'admin:ophix_core_client_new_token' show_token_pk %}?_popup=1"
    style="display:none">{% trans "View token" %}</a>
 <script>
-django.jQuery(function() {
-  var el = document.getElementById('new-client-token-trigger');
-  if (el) el.click();
+django.jQuery(function($) {
+  var el = $('#new-client-token-trigger');
+  if (el.length) el.trigger('click');
 });
 </script>
 {% endif %}
+<script>
+django.jQuery(function($) {
+  // Open the "Add Client" form inside a popup so the token appears in the same popup.
+  var addLink = document.querySelector('a.addlink');
+  if (addLink && addLink.href) {
+    try {
+      var url = new URL(addLink.href, window.location.href);
+      url.searchParams.set('_popup', '1');
+      addLink.href = url.toString();
+    } catch(e) {}
+  }
+});
+</script>
 {% endblock %}

@@ -1,5 +1,14 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `ophix-admin-settings` added to `dependencies` in `pyproject.toml` — `run_install` imports `ophix_admin_settings` and the dependency was previously implicit.
+- One-time token display after creating a `Client` via admin: `ClientAdmin.save_model` generates a plaintext token, hashes it, and stashes the plaintext in the session; `response_add` renders `token_created.html` in a popup (if the add form was opened as a popup) or redirects to the changelist and triggers a popup automatically (if navigated to directly).
+- "Issue a replacement token" flow for existing clients: `api_token_display` read-only field on the change form shows hash dots plus a red "Issue a replacement token…" button linked to `<pk>/change-token/`. `change_token_view` handles GET (confirmation page) and POST (generate + save new token, render `token_created.html`).
+- `ClientAdmin` add form: submit row replaced with "Create Token" (primary) and "Cancel" — Cancel closes the popup in popup mode, or navigates to the changelist otherwise.
+- "Add Client +" button on the changelist now opens the add form as a Magnific Popup iframe — same pattern as the replacement-token flow. The token appears in the same popup immediately after save; no full-page redirect required.
+- New templates: `admin/ophix_core/client/token_created.html` (one-time token display; popup + non-popup modes), `admin/ophix_core/client/change_token_confirm.html` (replacement confirmation warning).
+
 ## 2026.06.05.04
 
 - `export_clients`, `export_hosts`: export file now includes a `meta` block with `created_at`, `server_name`, `server_version`, `hostname`, `domain`, `command`, `run_by`, `login_user`, and `ssh_origin`.
