@@ -223,10 +223,12 @@ class ClientAdmin(admin.ModelAdmin):
             current_app=self.admin_site.name,
         )
         if request.method == "POST":
+            from django.utils import timezone
             from .models import generate_api_token, hash_token
             raw_token = generate_api_token()
             obj.api_token = hash_token(raw_token)
-            obj.save(update_fields=["api_token"])
+            obj.last_token_rotation = timezone.now()
+            obj.save(update_fields=["api_token", "last_token_rotation"])
             return render(request, "admin/ophix_core/client/token_created.html", {
                 "client": obj,
                 "token": raw_token,

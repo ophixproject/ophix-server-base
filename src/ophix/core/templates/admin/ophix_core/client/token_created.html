@@ -117,7 +117,7 @@
   </div>
 
   {% if is_popup %}
-    <button type="button" class="token-continue" onclick="window.parent.dismissRelatedObjectModal()">
+    <button type="button" class="token-continue" onclick="window.parent.location.reload()">
       {% trans "I've recorded my token — close" %}
     </button>
   {% else %}
