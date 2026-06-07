@@ -1,0 +1,126 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Client token" %} | {{ block.super }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
+  &rsaquo;
+  <a href="{% url 'admin:ophix_core_client_changelist' %}">{% trans "Clients" %}</a>
+  &rsaquo;
+  <a href="{{ change_url }}">{{ client.name }}</a>
+  &rsaquo;
+  {% trans "Token" %}
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+  .token-card {
+    background: var(--darkened-bg, #f8f8f8);
+    border: 2px solid var(--admin-interface-delete-button-background-color, #ba2121);
+    border-radius: 6px;
+    padding: 1.5rem 2rem;
+    max-width: 700px;
+    margin-bottom: 1.5rem;
+  }
+  .token-card h2 {
+    margin: 0 0 0.75rem;
+    color: var(--admin-interface-delete-button-background-color, #ba2121);
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .token-card p {
+    margin: 0 0 1rem;
+  }
+  .token-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--body-bg, #fff);
+    border: 1px solid var(--border-color, #ccc);
+    border-radius: 4px;
+    padding: 0.6rem 0.8rem;
+  }
+  .token-box code {
+    font-family: monospace;
+    font-size: 0.95rem;
+    flex: 1;
+    word-break: break-all;
+    user-select: all;
+  }
+  .token-copy-btn {
+    flex-shrink: 0;
+    background: var(--admin-interface-save-button-background-color, #44b78b);
+    color: var(--admin-interface-save-button-text-color, #fff);
+    border: none;
+    border-radius: 4px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .token-copy-btn:hover {
+    opacity: 0.85;
+  }
+  .token-continue {
+    display: inline-block;
+    margin-top: 1.5rem;
+    padding: 0.5rem 1.25rem;
+    background: var(--admin-interface-save-button-background-color, #44b78b);
+    color: var(--admin-interface-save-button-text-color, #fff);
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .token-continue:hover {
+    opacity: 0.85;
+    color: var(--admin-interface-save-button-text-color, #fff);
+  }
+  .client-meta {
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    color: var(--body-quiet-color);
+  }
+  .client-meta strong {
+    color: var(--body-fg);
+  }
+</style>
+
+<div id="content-main">
+  <p class="client-meta">
+    {% trans "Client" %} <strong>{{ client.name }}</strong>
+    {% trans "on" %} <strong>{{ client.host }}</strong>
+    {% trans "was created successfully." %}
+  </p>
+
+  <div class="token-card">
+    <h2>{% trans "Record this token — it will not be shown again" %}</h2>
+    <p>
+      {% blocktrans trimmed %}
+        This is the only time this token will be displayed. Once you leave this
+        page it cannot be recovered. Paste it into the client's configuration now.
+      {% endblocktrans %}
+    </p>
+    <div class="token-box">
+      <code id="client-token">{{ token }}</code>
+      <button type="button" class="token-copy-btn" onclick="copyToken()">{% trans "Copy" %}</button>
+    </div>
+  </div>
+
+  <a href="{{ change_url }}" class="token-continue">{% trans "I've recorded my token — continue to client" %}</a>
+</div>
+
+<script>
+function copyToken() {
+  var token = document.getElementById("client-token").textContent;
+  navigator.clipboard.writeText(token).then(function() {
+    var btn = document.querySelector(".token-copy-btn");
+    btn.textContent = "{% trans 'Copied!' %}";
+    setTimeout(function() { btn.textContent = "{% trans 'Copy' %}"; }, 2000);
+  });
+}
+</script>
+{% endblock %}

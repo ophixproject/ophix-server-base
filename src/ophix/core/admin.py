@@ -133,7 +133,7 @@ class ClientAdmin(admin.ModelAdmin):
     list_filter = ('enabled', 'host')
     search_fields = ('name', 'deployment_ref', 'host__name')
     ordering = ('name',)
-    readonly_fields = ('api_token', 'venv_name', 'venv_path', 'last_token_rotation')
+    readonly_fields = ('venv_name', 'venv_path', 'last_token_rotation')
     actions = None
 
     _registered_inlines = []
@@ -161,11 +161,58 @@ class ClientAdmin(admin.ModelAdmin):
         return list(self.list_display) + self._registered_meta_columns + self._registered_columns
 
     def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            # Add view — token is generated on save; not shown here
+            return [
+                (None, {"fields": ("host", "name", "enabled")}),
+                (_("Deployment"), {"fields": ("deployment_ref",)}),
+            ]
         return [
             (None, {"fields": ("host", "name", "enabled")}),
             (_("Deployment"), {"fields": ("deployment_ref", "venv_name", "venv_path")}),
-            (_("Token"), {"fields": ("api_token", "last_token_rotation"), "classes": ("collapse",)}),
+            (_("Token"), {"fields": ("api_token_display", "last_token_rotation"), "classes": ("collapse",)}),
         ]
+
+    def get_readonly_fields(self, request, obj=None):
+        base = list(self.readonly_fields)
+        if obj is not None:
+            base.append("api_token_display")
+        return base
+
+    def api_token_display(self, obj):
+        return format_html(
+            '<span style="font-family:monospace;color:var(--body-quiet-color)">'
+            "Token hash (SHA-256) &nbsp;••••••••••••••••••••••••••••••••"
+            "</span>"
+        )
+    api_token_display.short_description = _("API token")
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            from .models import generate_api_token, hash_token
+            raw_token = generate_api_token()
+            obj.api_token = hash_token(raw_token)
+            request.session["_ophix_new_client_token"] = raw_token
+        super().save_model(request, obj, form, change)
+
+    def response_add(self, request, obj, post_url_continue=None):
+        raw_token = request.session.pop("_ophix_new_client_token", None)
+        if raw_token:
+            from django.shortcuts import render
+            change_url = reverse(
+                f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
+                args=[obj.pk],
+                current_app=self.admin_site.name,
+            )
+            return render(request, "admin/ophix_core/client/token_created.html", {
+                "client": obj,
+                "token": raw_token,
+                "change_url": change_url,
+                "title": _("Client token"),
+                "opts": obj._meta,
+                "has_view_permission": self.has_view_permission(request, obj),
+            })
+        return super().response_add(request, obj, post_url_continue)
 
 
 # ============================================================
