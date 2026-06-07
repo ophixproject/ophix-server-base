@@ -3,14 +3,13 @@
 
 {% block content %}
 {{ block.super }}
-{% if show_token_pk %}
+{% if change_token_pk %}
 <a id="new-client-token-trigger"
-   href="{% url 'admin:ophix_core_client_new_token' show_token_pk %}?_popup=1"
-   style="display:none">{% trans "View token" %}</a>
+   href="{% url 'admin:ophix_core_client_change_token' change_token_pk %}?_popup=1&auto=1"
+   style="display:none">token</a>
 <script>
 django.jQuery(function($) {
-  var el = $('#new-client-token-trigger');
-  if (el.length) el.trigger('click');
+  $('#new-client-token-trigger').trigger('click');
 });
 </script>
 {% endif %}

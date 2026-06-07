@@ -228,9 +228,14 @@ class ClientAdmin(admin.ModelAdmin):
             args=[object_id],
             current_app=self.admin_site.name,
         )
-        if request.method == "POST":
+        if request.method == "POST" or request.GET.get("auto") == "1":
             from django.utils import timezone
             from .models import generate_api_token, hash_token
+            is_new_client = request.GET.get("auto") == "1"
+            changelist_url = reverse(
+                "admin:ophix_core_client_changelist",
+                current_app=self.admin_site.name,
+            )
             raw_token = generate_api_token()
             obj.api_token = hash_token(raw_token)
             obj.last_token_rotation = timezone.now()
@@ -239,10 +244,10 @@ class ClientAdmin(admin.ModelAdmin):
                 "client": obj,
                 "token": raw_token,
                 "change_url": change_url,
-                "parent_redirect_url": change_url,
-                "is_replacement": True,
+                "parent_redirect_url": changelist_url if is_new_client else change_url,
+                "is_replacement": not is_new_client,
                 "is_popup": is_popup,
-                "title": _("Replacement token issued"),
+                "title": _("Client token") if is_new_client else _("Replacement token issued"),
                 "opts": obj._meta,
                 "has_view_permission": self.has_view_permission(request, obj),
             })
@@ -295,27 +300,17 @@ class ClientAdmin(admin.ModelAdmin):
             "has_view_permission": self.has_view_permission(request, obj),
         })
 
-    def save_model(self, request, obj, form, change):
-        if not change:
-            from .models import generate_api_token, hash_token
-            raw_token = generate_api_token()
-            obj.api_token = hash_token(raw_token)
-            request.session["_ophix_new_client_token"] = raw_token
-        super().save_model(request, obj, form, change)
-
     def changelist_view(self, request, extra_context=None):
-        show_token_pk = request.session.pop("_ophix_show_token_pk", None)
-        if show_token_pk is not None:
+        change_token_pk = request.session.pop("_ophix_change_token_pk", None)
+        if change_token_pk is not None:
             extra_context = extra_context or {}
-            extra_context["show_token_pk"] = show_token_pk
+            extra_context["change_token_pk"] = change_token_pk
         return super().changelist_view(request, extra_context)
 
     def response_add(self, request, obj, post_url_continue=None):
         from django.http import HttpResponseRedirect
-        raw_token = request.session.pop("_ophix_new_client_token", None)
-        if raw_token and "_popup" not in request.POST:
-            request.session[f"_ophix_new_client_token_{obj.pk}"] = raw_token
-            request.session["_ophix_show_token_pk"] = obj.pk
+        if "_popup" not in request.POST:
+            request.session["_ophix_change_token_pk"] = obj.pk
             changelist_url = reverse(
                 f"admin:{obj._meta.app_label}_{obj._meta.model_name}_changelist",
                 current_app=self.admin_site.name,
