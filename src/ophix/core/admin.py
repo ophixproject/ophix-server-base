@@ -191,8 +191,9 @@ class ClientAdmin(admin.ModelAdmin):
             "</span>"
             "&emsp;"
             '<a href="{}?_popup=1" id="change-token-link-{}"'
-            ' style="color:var(--admin-interface-delete-button-background-color,#ba2121);'
-            'font-size:0.85rem;">{}</a>',
+            ' style="display:inline-block;padding:0.2rem 0.6rem;'
+            'background:var(--admin-interface-delete-button-background-color,#ba2121);'
+            'color:#fff;border-radius:4px;font-size:0.8rem;text-decoration:none;">{}</a>',
             url, obj.pk,
             _("Issue a replacement token…"),
         )

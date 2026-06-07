@@ -88,6 +88,16 @@
     color: var(--body-fg);
   }
 </style>
+{% if is_popup %}
+<script>
+(function() {
+  try {
+    var c = window.parent.document.querySelector('.mfp-container');
+    if (c) { c.style.padding = '80px 15%'; }
+  } catch(e) {}
+})();
+</script>
+{% endif %}
 
 <div id="content-main">
   <p class="client-meta">
