@@ -194,7 +194,7 @@ class ClientAdmin(admin.ModelAdmin):
             'background:var(--admin-interface-delete-button-background-color,#ba2121);'
             'color:#fff;border-radius:4px;font-size:0.8rem;text-decoration:none;">{}</a>',
             url, obj.pk,
-            _("Issue a replacement token…"),
+            _("Issue a replacement token"),
         )
     api_token_display.short_description = _("API token")
 
