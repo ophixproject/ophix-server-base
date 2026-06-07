@@ -38,6 +38,17 @@
     document.readyState === 'complete' ? fit() : window.addEventListener('load', fit);
   } catch(e) {}
 })();
+// Apply parent dark mode after all scripts (including theme.js) have run
+window.addEventListener('load', function() {
+  try {
+    var parentTheme = window.parent.document.documentElement.getAttribute('data-theme');
+    if (parentTheme) {
+      document.documentElement.setAttribute('data-theme', parentTheme);
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  } catch(e) {}
+});
 </script>
 {% endif %}
 <style>
