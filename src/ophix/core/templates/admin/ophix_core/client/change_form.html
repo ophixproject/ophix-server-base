@@ -5,7 +5,8 @@
 {% if add %}
 <div class="submit-row">
   <input type="submit" value="{% trans 'Create Token' %}" class="default" name="_save">
-  <a href="{% url opts|admin_urlname:'changelist' %}" class="closelink">{% trans 'Cancel' %}</a>
+  <input type="button" value="{% trans 'Cancel' %}" style="order:2"
+    onclick="window.location.href='{% url opts|admin_urlname:'changelist' %}'">
 </div>
 {% else %}
 {{ block.super }}
