@@ -1,0 +1,111 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Issue replacement token" %} | {{ block.super }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
+  &rsaquo;
+  <a href="{% url 'admin:ophix_core_client_changelist' %}">{% trans "Clients" %}</a>
+  &rsaquo;
+  <a href="{{ change_url }}">{{ client.name }}</a>
+  &rsaquo;
+  {% trans "Issue replacement token" %}
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+  .warn-card {
+    background: var(--darkened-bg, #f8f8f8);
+    border: 2px solid var(--admin-interface-delete-button-background-color, #ba2121);
+    border-radius: 6px;
+    padding: 1.5rem 2rem;
+    max-width: 620px;
+    margin-bottom: 1.5rem;
+  }
+  .warn-card h2 {
+    margin: 0 0 0.75rem;
+    color: var(--admin-interface-delete-button-background-color, #ba2121);
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .warn-card p {
+    margin: 0 0 0.5rem;
+  }
+  .warn-card p:last-child {
+    margin-bottom: 0;
+  }
+  .confirm-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 1.5rem;
+  }
+  .btn-issue {
+    padding: 0.5rem 1.25rem;
+    background: var(--admin-interface-delete-button-background-color, #ba2121);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .btn-issue:hover {
+    opacity: 0.85;
+  }
+  .btn-cancel {
+    padding: 0.5rem 1.25rem;
+    background: var(--darkened-bg, #ddd);
+    color: var(--body-fg);
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .btn-cancel:hover {
+    opacity: 0.85;
+    color: var(--body-fg);
+  }
+  .client-meta {
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    color: var(--body-quiet-color);
+  }
+  .client-meta strong {
+    color: var(--body-fg);
+  }
+</style>
+
+<div id="content-main">
+  <p class="client-meta">
+    {% trans "Client" %} <strong>{{ client.name }}</strong>
+    {% trans "on" %} <strong>{{ client.host }}</strong>
+  </p>
+
+  <div class="warn-card">
+    <h2>{% trans "This will lock out the existing client" %}</h2>
+    <p>
+      {% blocktrans trimmed %}
+        Issuing a replacement token immediately invalidates the current token.
+        Any running instance of this client will be unable to authenticate
+        until it is reconfigured with the new token.
+      {% endblocktrans %}
+    </p>
+    <p>
+      {% blocktrans trimmed %}
+        The new token will be shown once and cannot be recovered after that point.
+      {% endblocktrans %}
+    </p>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="confirm-actions">
+      <button type="submit" class="btn-issue">{% trans "Issue replacement token" %}</button>
+      <a href="{{ change_url }}" class="btn-cancel">{% trans "Cancel" %}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -91,9 +91,15 @@
 
 <div id="content-main">
   <p class="client-meta">
-    {% trans "Client" %} <strong>{{ client.name }}</strong>
-    {% trans "on" %} <strong>{{ client.host }}</strong>
-    {% trans "was created successfully." %}
+    {% if is_replacement %}
+      {% trans "Replacement token issued for client" %} <strong>{{ client.name }}</strong>
+      {% trans "on" %} <strong>{{ client.host }}</strong>.
+      {% trans "The previous token is now invalid." %}
+    {% else %}
+      {% trans "Client" %} <strong>{{ client.name }}</strong>
+      {% trans "on" %} <strong>{{ client.host }}</strong>
+      {% trans "was created successfully." %}
+    {% endif %}
   </p>
 
   <div class="token-card">

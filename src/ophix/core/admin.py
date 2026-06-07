@@ -170,13 +170,13 @@ class ClientAdmin(admin.ModelAdmin):
         return [
             (None, {"fields": ("host", "name", "enabled")}),
             (_("Deployment"), {"fields": ("deployment_ref", "venv_name", "venv_path")}),
-            (_("Token"), {"fields": ("api_token_display", "last_token_rotation"), "classes": ("collapse",)}),
+            (_("Token"), {"fields": ("api_token_display", "last_token_rotation", "change_token_link"), "classes": ("collapse",)}),
         ]
 
     def get_readonly_fields(self, request, obj=None):
         base = list(self.readonly_fields)
         if obj is not None:
-            base.append("api_token_display")
+            base += ["api_token_display", "change_token_link"]
         return base
 
     def api_token_display(self, obj):
@@ -186,6 +186,66 @@ class ClientAdmin(admin.ModelAdmin):
             "</span>"
         )
     api_token_display.short_description = _("API token")
+
+    def change_token_link(self, obj):
+        url = reverse(
+            "admin:ophix_core_client_change_token",
+            args=[obj.pk],
+            current_app=self.admin_site.name,
+        )
+        return format_html(
+            '<a href="{}" style="'
+            "color:var(--admin-interface-delete-button-background-color,#ba2121);"
+            "font-size:0.85rem;"
+            '">{}</a>',
+            url,
+            _("Issue a replacement token…"),
+        )
+    change_token_link.short_description = ""
+
+    def get_urls(self):
+        from django.urls import path
+        urls = super().get_urls()
+        custom = [
+            path(
+                "<path:object_id>/change-token/",
+                self.admin_site.admin_view(self.change_token_view),
+                name="ophix_core_client_change_token",
+            ),
+        ]
+        return custom + urls
+
+    def change_token_view(self, request, object_id):
+        from django.shortcuts import render, get_object_or_404
+        from django.core.exceptions import PermissionDenied
+        obj = get_object_or_404(Client, pk=object_id)
+        if not self.has_change_permission(request, obj):
+            raise PermissionDenied
+        change_url = reverse(
+            "admin:ophix_core_client_change",
+            args=[object_id],
+            current_app=self.admin_site.name,
+        )
+        if request.method == "POST":
+            from .models import generate_api_token, hash_token
+            raw_token = generate_api_token()
+            obj.api_token = hash_token(raw_token)
+            obj.save(update_fields=["api_token"])
+            return render(request, "admin/ophix_core/client/token_created.html", {
+                "client": obj,
+                "token": raw_token,
+                "change_url": change_url,
+                "is_replacement": True,
+                "title": _("Replacement token issued"),
+                "opts": obj._meta,
+                "has_view_permission": self.has_view_permission(request, obj),
+            })
+        return render(request, "admin/ophix_core/client/change_token_confirm.html", {
+            "client": obj,
+            "change_url": change_url,
+            "title": _("Issue replacement token"),
+            "opts": obj._meta,
+        })
 
     def save_model(self, request, obj, form, change):
         if not change:
@@ -208,6 +268,7 @@ class ClientAdmin(admin.ModelAdmin):
                 "client": obj,
                 "token": raw_token,
                 "change_url": change_url,
+                "is_replacement": False,
                 "title": _("Client token"),
                 "opts": obj._meta,
                 "has_view_permission": self.has_view_permission(request, obj),
