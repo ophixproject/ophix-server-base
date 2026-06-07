@@ -4,9 +4,7 @@
 {% block submit_buttons_bottom %}
 {% if add %}
 <div class="submit-row">
-  {% if show_save %}
   <input type="submit" value="{% trans 'Create Token' %}" class="default" name="_save">
-  {% endif %}
   <a href="{% url opts|admin_urlname:'changelist' %}" class="closelink">{% trans 'Cancel' %}</a>
 </div>
 {% else %}
