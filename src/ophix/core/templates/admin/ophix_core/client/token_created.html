@@ -38,7 +38,6 @@
     document.readyState === 'complete' ? fit() : window.addEventListener('load', fit);
   } catch(e) {}
 })();
-// Apply parent dark mode after all scripts (including theme.js) have run
 window.addEventListener('load', function() {
   try {
     var parentTheme = window.parent.document.documentElement.getAttribute('data-theme');
@@ -50,6 +49,17 @@ window.addEventListener('load', function() {
   } catch(e) {}
 });
 </script>
+{% else %}
+<style>
+  #nav-sidebar { display: none !important; }
+  #content { padding: 0; }
+  #content-main {
+    max-width: 760px;
+    margin: 3rem auto;
+    padding: 0 1rem;
+  }
+  .token-card { max-width: none; }
+</style>
 {% endif %}
 <style>
   .token-card {
