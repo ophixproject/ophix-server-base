@@ -264,6 +264,7 @@ class ClientAdmin(admin.ModelAdmin):
                 current_app=self.admin_site.name,
             )
             return render(request, "admin/ophix_core/client/token_created.html", {
+                **self.admin_site.each_context(request),
                 "client": obj,
                 "token": raw_token,
                 "change_url": change_url,
