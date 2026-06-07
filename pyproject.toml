@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ophix-server-base"
-version = "2026.06.07.01"
+version = "2026.06.07.02"
 description = "Shared Django base for Ophix fleet management servers"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -31,6 +31,7 @@ dependencies = [
     "Django>=4.2",
     "djangorestframework>=3.14",
     "ophix-admin-interface>=2026.05.26.01",
+    "ophix-admin-settings>=2026.06.06.04",
     "django-colorfield>=0.11",
     "django-apptemplates>=1.5",
     "python-dotenv>=1.0",
