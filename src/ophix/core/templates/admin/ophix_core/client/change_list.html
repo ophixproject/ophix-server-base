@@ -3,13 +3,59 @@
 
 {% block content %}
 {{ block.super }}
-{% if change_token_pk %}
-<a id="new-client-token-trigger"
-   href="{% url 'admin:ophix_core_client_change_token' change_token_pk %}?_popup=1&auto=1"
-   style="display:none">token</a>
+{% if new_client_token %}
+<div id="nct-modal" style="display:none; max-width:720px; padding:2rem; background:var(--body-bg,#fff); border-radius:6px;">
+  <p style="margin-bottom:1rem; font-size:0.95rem; color:var(--body-quiet-color);">
+    {% trans "Client" %} <strong>{{ new_client_token.client_name }}</strong>
+    {% trans "on" %} <strong>{{ new_client_token.host_name }}</strong>
+    {% trans "was created successfully." %}
+  </p>
+  <div style="background:var(--darkened-bg,#f8f8f8); border:2px solid var(--admin-interface-delete-button-background-color,#ba2121); border-radius:6px; padding:1.5rem 2rem; margin-bottom:1.5rem;">
+    <h2 style="margin:0 0 0.75rem; color:var(--admin-interface-delete-button-background-color,#ba2121); font-size:1rem; text-transform:uppercase; letter-spacing:0.04em;">
+      {% trans "Record this token — it will not be shown again" %}
+    </h2>
+    <p style="margin:0 0 1rem;">
+      {% blocktrans trimmed %}
+        This is the only time this token will be displayed. Once you close this
+        panel it cannot be recovered. Paste it into the client's configuration now.
+      {% endblocktrans %}
+    </p>
+    <div style="display:flex; align-items:center; gap:0.75rem; background:var(--body-bg,#fff); border:1px solid var(--border-color,#ccc); border-radius:4px; padding:0.6rem 0.8rem;">
+      <code id="nct-value" style="font-family:monospace; font-size:0.95rem; flex:1; word-break:break-all; user-select:all;">{{ new_client_token.token }}</code>
+      <button type="button" id="nct-copy"
+        style="flex-shrink:0; background:var(--admin-interface-save-button-background-color,#44b78b); color:var(--admin-interface-save-button-text-color,#fff); border:none; border-radius:4px; padding:0.35rem 0.75rem; font-size:0.85rem; cursor:pointer; white-space:nowrap;">
+        {% trans "Copy" %}
+      </button>
+    </div>
+  </div>
+  <div style="display:flex; justify-content:center; margin-top:1.5rem;">
+    <button type="button" id="nct-close"
+      style="padding:0.5rem 1.25rem; background:var(--admin-interface-save-button-background-color,#44b78b); color:var(--admin-interface-save-button-text-color,#fff); border:none; border-radius:4px; font-size:0.9rem; cursor:pointer;">
+      {% trans "I've recorded my token — close" %}
+    </button>
+  </div>
+</div>
 <script>
 django.jQuery(function($) {
-  $('#new-client-token-trigger').trigger('click');
+  $('#nct-copy').on('click', function() {
+    var $btn = $(this);
+    navigator.clipboard.writeText($('#nct-value').text()).then(function() {
+      $btn.text('{% trans "Copied!" %}');
+      setTimeout(function() { $btn.text('{% trans "Copy" %}'); }, 2000);
+    });
+  });
+  $('#nct-close').on('click', function() {
+    $.magnificPopup.close();
+  });
+  $.magnificPopup.open({
+    items: { src: '#nct-modal', type: 'inline' },
+    mainClass: 'related-modal',
+    closeBtnInside: true,
+    showCloseBtn: true,
+    fixedContentPos: false,
+    closeOnBgClick: false,
+    closeOnContentClick: false,
+  });
 });
 </script>
 {% endif %}

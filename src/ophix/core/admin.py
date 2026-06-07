@@ -208,11 +208,6 @@ class ClientAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.change_token_view),
                 name="ophix_core_client_change_token",
             ),
-            path(
-                "<path:object_id>/new-token/",
-                self.admin_site.admin_view(self.show_new_token_view),
-                name="ophix_core_client_new_token",
-            ),
         ]
         return custom + urls
 
@@ -228,14 +223,9 @@ class ClientAdmin(admin.ModelAdmin):
             args=[object_id],
             current_app=self.admin_site.name,
         )
-        if request.method == "POST" or request.GET.get("auto") == "1":
+        if request.method == "POST":
             from django.utils import timezone
             from .models import generate_api_token, hash_token
-            is_new_client = request.GET.get("auto") == "1"
-            changelist_url = reverse(
-                "admin:ophix_core_client_changelist",
-                current_app=self.admin_site.name,
-            )
             raw_token = generate_api_token()
             obj.api_token = hash_token(raw_token)
             obj.last_token_rotation = timezone.now()
@@ -244,10 +234,10 @@ class ClientAdmin(admin.ModelAdmin):
                 "client": obj,
                 "token": raw_token,
                 "change_url": change_url,
-                "parent_redirect_url": changelist_url if is_new_client else change_url,
-                "is_replacement": not is_new_client,
+                "parent_redirect_url": change_url,
+                "is_replacement": True,
                 "is_popup": is_popup,
-                "title": _("Client token") if is_new_client else _("Replacement token issued"),
+                "title": _("Replacement token issued"),
                 "opts": obj._meta,
                 "has_view_permission": self.has_view_permission(request, obj),
             })
@@ -259,58 +249,26 @@ class ClientAdmin(admin.ModelAdmin):
             "opts": obj._meta,
         })
 
-    def show_new_token_view(self, request, object_id):
-        from django.shortcuts import render, get_object_or_404
-        from django.core.exceptions import PermissionDenied
-        from django.http import HttpResponse, HttpResponseRedirect
-        obj = get_object_or_404(Client, pk=object_id)
-        if not self.has_change_permission(request, obj):
-            raise PermissionDenied
-        is_popup = request.GET.get("_popup") == "1"
-        raw_token = request.session.pop(f"_ophix_new_client_token_{obj.pk}", None)
-        if not raw_token:
-            if is_popup:
-                return HttpResponse(
-                    '<script>try{window.parent.dismissRelatedObjectModal();}catch(e){}</script>'
-                )
-            change_url = reverse(
-                f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
-                args=[obj.pk],
-                current_app=self.admin_site.name,
-            )
-            return HttpResponseRedirect(change_url)
-        changelist_url = reverse(
-            f"admin:{obj._meta.app_label}_{obj._meta.model_name}_changelist",
-            current_app=self.admin_site.name,
-        )
-        change_url = reverse(
-            f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
-            args=[obj.pk],
-            current_app=self.admin_site.name,
-        )
-        return render(request, "admin/ophix_core/client/token_created.html", {
-            "client": obj,
-            "token": raw_token,
-            "change_url": change_url,
-            "parent_redirect_url": changelist_url,
-            "is_replacement": False,
-            "is_popup": is_popup,
-            "title": _("Client token"),
-            "opts": obj._meta,
-            "has_view_permission": self.has_view_permission(request, obj),
-        })
-
     def changelist_view(self, request, extra_context=None):
-        change_token_pk = request.session.pop("_ophix_change_token_pk", None)
-        if change_token_pk is not None:
+        new_client_token = request.session.pop("_ophix_new_client_token", None)
+        if new_client_token is not None:
             extra_context = extra_context or {}
-            extra_context["change_token_pk"] = change_token_pk
+            extra_context["new_client_token"] = new_client_token
         return super().changelist_view(request, extra_context)
 
     def response_add(self, request, obj, post_url_continue=None):
-        from django.http import HttpResponseRedirect
+        from django.utils import timezone
+        from .models import generate_api_token, hash_token
         if "_popup" not in request.POST:
-            request.session["_ophix_change_token_pk"] = obj.pk
+            raw_token = generate_api_token()
+            obj.api_token = hash_token(raw_token)
+            obj.last_token_rotation = timezone.now()
+            obj.save(update_fields=["api_token", "last_token_rotation"])
+            request.session["_ophix_new_client_token"] = {
+                "token": raw_token,
+                "client_name": obj.name,
+                "host_name": str(obj.host),
+            }
             changelist_url = reverse(
                 f"admin:{obj._meta.app_label}_{obj._meta.model_name}_changelist",
                 current_app=self.admin_site.name,
