@@ -28,6 +28,8 @@
 <script>
 (function() {
   try {
+    var parentTheme = window.parent.document.documentElement.getAttribute('data-theme');
+    if (parentTheme) document.documentElement.setAttribute('data-theme', parentTheme);
     var el = window.parent.document.querySelector('.mfp-content');
     if (el) { el.style.maxWidth = '780px'; el.style.margin = '80px auto'; el.style.height = 'auto'; }
     var ct = window.parent.document.querySelector('.mfp-container');
@@ -89,9 +91,12 @@
   .token-copy-btn:hover {
     opacity: 0.85;
   }
-  .token-continue {
-    display: inline-block;
+  .token-actions {
+    display: flex;
+    justify-content: center;
     margin-top: 1.5rem;
+  }
+  .token-continue {
     padding: 0.5rem 1.25rem;
     background: var(--admin-interface-save-button-background-color, #44b78b);
     color: var(--admin-interface-save-button-text-color, #fff);
@@ -139,15 +144,17 @@
     </div>
   </div>
 
-  {% if is_popup %}
-    <button type="button" class="token-continue" onclick="window.parent.location.reload()">
-      {% trans "I've recorded my token — close" %}
-    </button>
-  {% else %}
-    <a href="{{ change_url }}" style="text-decoration:none;">
-      <button type="button" class="token-continue">{% trans "I've recorded my token — continue to client" %}</button>
-    </a>
-  {% endif %}
+  <div class="token-actions">
+    {% if is_popup %}
+      <button type="button" class="token-continue" onclick="window.parent.location.reload()">
+        {% trans "I've recorded my token — close" %}
+      </button>
+    {% else %}
+      <a href="{{ change_url }}" style="text-decoration:none;">
+        <button type="button" class="token-continue">{% trans "I've recorded my token — continue to client" %}</button>
+      </a>
+    {% endif %}
+  </div>
 </div>
 
 <script>
