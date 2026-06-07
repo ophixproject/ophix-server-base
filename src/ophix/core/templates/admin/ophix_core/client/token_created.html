@@ -3,6 +3,7 @@
 
 {% block title %}{% trans "Client token" %} | {{ block.super }}{% endblock %}
 
+{% if not is_popup %}
 {% block breadcrumbs %}
 <div class="breadcrumbs">
   <a href="{% url 'admin:index' %}">{% trans "Home" %}</a>
@@ -14,8 +15,27 @@
   {% trans "Token" %}
 </div>
 {% endblock %}
+{% endif %}
 
 {% block content %}
+{% if is_popup %}
+<style>
+  #header, #nav-sidebar { display: none !important; }
+  body { margin: 0; }
+  #container { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  #content-main { max-width: 700px; width: 100%; padding: 2rem 1.5rem; }
+</style>
+<script>
+(function() {
+  try {
+    var el = window.parent.document.querySelector('.mfp-content');
+    if (el) { el.style.maxWidth = '780px'; el.style.margin = '80px auto'; }
+    var ct = window.parent.document.querySelector('.mfp-container');
+    if (ct) { ct.style.padding = '80px 20px'; }
+  } catch(e) {}
+})();
+</script>
+{% endif %}
 <style>
   .token-card {
     background: var(--darkened-bg, #f8f8f8);
@@ -88,17 +108,6 @@
     color: var(--body-fg);
   }
 </style>
-{% if is_popup %}
-<script>
-(function() {
-  try {
-    var c = window.parent.document.querySelector('.mfp-container');
-    if (c) { c.style.padding = '80px 15%'; }
-  } catch(e) {}
-})();
-</script>
-{% endif %}
-
 <div id="content-main">
   <p class="client-meta">
     {% if is_replacement %}
