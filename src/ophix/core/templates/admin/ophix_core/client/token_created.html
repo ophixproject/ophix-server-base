@@ -24,13 +24,13 @@
   #header, #nav-sidebar { display: none !important; }
   html, body { height: auto !important; margin: 0; }
   #container { display: flex; justify-content: center; padding: 2rem 1.5rem; }
-  #content-main { max-width: 700px; width: 100%; }
+  #content-main { max-width: 730px; width: 100%; }
 </style>
 <script>
 (function() {
   try {
     var el = window.parent.document.querySelector('.mfp-content');
-    if (el) { el.style.maxWidth = '780px'; el.style.margin = '80px auto'; el.style.height = 'auto'; }
+    if (el) { el.style.maxWidth = '810px'; el.style.margin = '80px auto'; el.style.height = 'auto'; }
     var ct = window.parent.document.querySelector('.mfp-container');
     if (ct) { ct.style.padding = '80px 20px'; }
     function fit() {
@@ -56,8 +56,8 @@ window.addEventListener('load', function() {
     #main.shifted > #nav-sidebar + .content { max-width: calc(100% - 360px); }
   }
   #content-main { display: flex; flex-direction: column; align-items: center; padding-top: 2rem; }
-  .client-meta, .token-card, .token-actions { width: 100%; max-width: 700px; }
-  .token-card { max-width: 700px; }
+  .client-meta, .token-card, .token-actions { width: 100%; max-width: 730px; }
+  .token-card { max-width: 730px; }
 </style>
 {% endif %}
 <style>
@@ -66,7 +66,7 @@ window.addEventListener('load', function() {
     border: 2px solid var(--admin-interface-delete-button-background-color, #ba2121);
     border-radius: 6px;
     padding: 1.5rem 2rem;
-    max-width: 700px;
+    max-width: 730px;
     margin-bottom: 1.5rem;
   }
   .token-card h2 {
@@ -97,7 +97,6 @@ window.addEventListener('load', function() {
   }
   .token-copy-btn {
     flex-shrink: 0;
-    min-width: 5rem;
     background: var(--admin-interface-save-button-background-color, #44b78b);
     color: var(--admin-interface-save-button-text-color, #fff);
     border: none;
