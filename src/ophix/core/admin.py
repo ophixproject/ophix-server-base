@@ -190,11 +190,10 @@ class ClientAdmin(admin.ModelAdmin):
             "Token hash (SHA-256) &nbsp;••••••••••••••••••••••••••••••••"
             "</span>"
             "&emsp;"
-            '<button type="button" class="change-token-open-btn" data-url="{}"'
-            ' style="background:none;border:none;padding:0;cursor:pointer;'
-            "color:var(--admin-interface-delete-button-background-color,#ba2121);"
-            'font-size:0.85rem;">{}</button>',
-            url,
+            '<a href="{}?_popup=1" id="change-token-link-{}"'
+            ' style="color:var(--admin-interface-delete-button-background-color,#ba2121);'
+            'font-size:0.85rem;">{}</a>',
+            url, obj.pk,
             _("Issue a replacement token…"),
         )
     api_token_display.short_description = _("API token")
@@ -217,6 +216,7 @@ class ClientAdmin(admin.ModelAdmin):
         obj = get_object_or_404(Client, pk=object_id)
         if not self.has_change_permission(request, obj):
             raise PermissionDenied
+        is_popup = "_popup" in request.GET or "_popup" in request.POST
         change_url = reverse(
             "admin:ophix_core_client_change",
             args=[object_id],
@@ -232,6 +232,7 @@ class ClientAdmin(admin.ModelAdmin):
                 "token": raw_token,
                 "change_url": change_url,
                 "is_replacement": True,
+                "is_popup": is_popup,
                 "title": _("Replacement token issued"),
                 "opts": obj._meta,
                 "has_view_permission": self.has_view_permission(request, obj),
@@ -239,6 +240,7 @@ class ClientAdmin(admin.ModelAdmin):
         return render(request, "admin/ophix_core/client/change_token_confirm.html", {
             "client": obj,
             "change_url": change_url,
+            "is_popup": is_popup,
             "title": _("Issue replacement token"),
             "opts": obj._meta,
         })

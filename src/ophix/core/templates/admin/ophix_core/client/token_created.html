@@ -116,9 +116,15 @@
     </div>
   </div>
 
-  <a href="{{ change_url }}" style="text-decoration:none;">
-    <button type="button" class="token-continue">{% trans "I've recorded my token — continue to client" %}</button>
-  </a>
+  {% if is_popup %}
+    <button type="button" class="token-continue" onclick="window.parent.dismissRelatedObjectModal()">
+      {% trans "I've recorded my token — close" %}
+    </button>
+  {% else %}
+    <a href="{{ change_url }}" style="text-decoration:none;">
+      <button type="button" class="token-continue">{% trans "I've recorded my token — continue to client" %}</button>
+    </a>
+  {% endif %}
 </div>
 
 <script>
