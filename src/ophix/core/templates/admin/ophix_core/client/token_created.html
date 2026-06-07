@@ -51,9 +51,9 @@ window.addEventListener('load', function() {
 </script>
 {% else %}
 <style>
-  #nav-sidebar { display: none !important; }
-  #content-main { max-width: 760px; margin: 3rem auto; padding: 0 1rem; }
-  .token-card { max-width: none; }
+  #content-main { display: flex; flex-direction: column; align-items: center; padding-top: 2rem; }
+  .client-meta, .token-card, .token-actions { width: 100%; max-width: 700px; }
+  .token-card { max-width: 700px; }
 </style>
 {% endif %}
 <style>
