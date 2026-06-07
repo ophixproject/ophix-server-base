@@ -180,7 +180,7 @@ class ClientAdmin(admin.ModelAdmin):
         return base
 
     def api_token_display(self, obj):
-        return format_html(
+        return mark_safe(
             '<span style="font-family:monospace;color:var(--body-quiet-color)">'
             "Token hash (SHA-256) &nbsp;••••••••••••••••••••••••••••••••"
             "</span>"
