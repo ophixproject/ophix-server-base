@@ -162,7 +162,6 @@ class ClientAdmin(admin.ModelAdmin):
 
     def get_fieldsets(self, request, obj=None):
         if obj is None:
-            # Add view — token is generated on save; not shown here
             return [
                 (None, {"fields": ("host", "name", "enabled")}),
                 (_("Deployment"), {"fields": ("deployment_ref",)}),
@@ -249,32 +248,27 @@ class ClientAdmin(admin.ModelAdmin):
             "opts": obj._meta,
         })
 
-    def response_add(self, request, obj, post_url_continue=None):
-        from django.shortcuts import render
-        from django.utils import timezone
-        from .models import generate_api_token, hash_token
-        if "_popup" not in request.POST:
+    def add_view(self, request, form_url="", extra_context=None):
+        from .models import generate_api_token
+        extra_context = extra_context or {}
+        if request.method == "GET":
             raw_token = generate_api_token()
+            request.session["_ophix_pending_token"] = raw_token
+            extra_context["pending_token"] = raw_token
+        else:
+            raw_token = request.session.get("_ophix_pending_token")
+            if raw_token:
+                extra_context["pending_token"] = raw_token
+        return super().add_view(request, form_url, extra_context)
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            from django.utils import timezone
+            from .models import generate_api_token, hash_token
+            raw_token = request.session.pop("_ophix_pending_token", None) or generate_api_token()
             obj.api_token = hash_token(raw_token)
             obj.last_token_rotation = timezone.now()
-            obj.save(update_fields=["api_token", "last_token_rotation"])
-            change_url = reverse(
-                f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
-                args=[obj.pk],
-                current_app=self.admin_site.name,
-            )
-            return render(request, "admin/ophix_core/client/token_created.html", {
-                **self.admin_site.each_context(request),
-                "client": obj,
-                "token": raw_token,
-                "change_url": change_url,
-                "is_replacement": False,
-                "is_popup": False,
-                "title": _("Client token"),
-                "opts": obj._meta,
-                "has_view_permission": self.has_view_permission(request, obj),
-            })
-        return super().response_add(request, obj, post_url_continue)
+        super().save_model(request, obj, form, change)
 
 
 # ============================================================

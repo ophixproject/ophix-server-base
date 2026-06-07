@@ -1,14 +1,75 @@
 {% extends "admin/change_form.html" %}
-{% load i18n admin_urls %}
+{% load i18n %}
 
-{% block submit_buttons_bottom %}
-{% if add %}
-<div class="submit-row">
-  <input type="submit" value="{% trans 'Create Token' %}" class="default" name="_save">
-  <input type="button" value="{% trans 'Cancel' %}" style="order:2"
-    onclick="window.location.href='{% url opts|admin_urlname:'changelist' %}'">
+{% block content %}
+{% if add and pending_token %}
+<style>
+  .pending-token-section {
+    background: var(--darkened-bg, #f8f8f8);
+    border: 2px solid var(--admin-interface-delete-button-background-color, #ba2121);
+    border-radius: var(--admin-interface-module-border-radius, 4px);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .pending-token-section h2 {
+    margin: 0 0 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--admin-interface-delete-button-background-color, #ba2121);
+  }
+  .pending-token-section p {
+    margin: 0 0 0.75rem;
+    font-size: 0.9rem;
+    color: var(--body-quiet-color);
+  }
+  .pending-token-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--body-bg, #fff);
+    border: 1px solid var(--border-color, #ccc);
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+  }
+  .pending-token-row code {
+    flex: 1;
+    font-family: monospace;
+    font-size: 0.9rem;
+    word-break: break-all;
+    user-select: all;
+  }
+  .pending-token-copy {
+    flex-shrink: 0;
+    background: var(--admin-interface-save-button-background-color, #44b78b);
+    color: var(--admin-interface-save-button-text-color, #fff);
+    border: none;
+    border-radius: 4px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .pending-token-copy:hover { opacity: 0.85; }
+</style>
+<div class="pending-token-section">
+  <h2>{% trans "Record this token — it will not be shown again" %}</h2>
+  <p>{% trans "Copy it now. Once you save, this token cannot be recovered." %}</p>
+  <div class="pending-token-row">
+    <code id="pending-token-value">{{ pending_token }}</code>
+    <button type="button" class="pending-token-copy" id="pending-token-copy-btn"
+            onclick="copyPendingToken()">{% trans "Copy" %}</button>
+  </div>
 </div>
-{% else %}
-{{ block.super }}
+<script>
+function copyPendingToken() {
+  navigator.clipboard.writeText(document.getElementById('pending-token-value').textContent).then(function() {
+    var btn = document.getElementById('pending-token-copy-btn');
+    btn.textContent = "{% trans 'Copied!' %}";
+    setTimeout(function() { btn.textContent = "{% trans 'Copy' %}"; }, 2000);
+  });
+}
+</script>
 {% endif %}
+{{ block.super }}
 {% endblock %}
