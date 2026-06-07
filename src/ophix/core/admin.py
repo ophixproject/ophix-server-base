@@ -249,14 +249,8 @@ class ClientAdmin(admin.ModelAdmin):
             "opts": obj._meta,
         })
 
-    def changelist_view(self, request, extra_context=None):
-        new_client_token = request.session.pop("_ophix_new_client_token", None)
-        if new_client_token is not None:
-            extra_context = extra_context or {}
-            extra_context["new_client_token"] = new_client_token
-        return super().changelist_view(request, extra_context)
-
     def response_add(self, request, obj, post_url_continue=None):
+        from django.shortcuts import render
         from django.utils import timezone
         from .models import generate_api_token, hash_token
         if "_popup" not in request.POST:
@@ -264,16 +258,21 @@ class ClientAdmin(admin.ModelAdmin):
             obj.api_token = hash_token(raw_token)
             obj.last_token_rotation = timezone.now()
             obj.save(update_fields=["api_token", "last_token_rotation"])
-            request.session["_ophix_new_client_token"] = {
-                "token": raw_token,
-                "client_name": obj.name,
-                "host_name": str(obj.host),
-            }
-            changelist_url = reverse(
-                f"admin:{obj._meta.app_label}_{obj._meta.model_name}_changelist",
+            change_url = reverse(
+                f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
+                args=[obj.pk],
                 current_app=self.admin_site.name,
             )
-            return HttpResponseRedirect(changelist_url)
+            return render(request, "admin/ophix_core/client/token_created.html", {
+                "client": obj,
+                "token": raw_token,
+                "change_url": change_url,
+                "is_replacement": False,
+                "is_popup": False,
+                "title": _("Client token"),
+                "opts": obj._meta,
+                "has_view_permission": self.has_view_permission(request, obj),
+            })
         return super().response_add(request, obj, post_url_continue)
 
 
