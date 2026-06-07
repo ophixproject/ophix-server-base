@@ -155,7 +155,7 @@ window.addEventListener('load', function() {
 
   <div class="token-actions">
     {% if is_popup %}
-      <button type="button" class="token-continue" onclick="window.parent.location.reload()">
+      <button type="button" class="token-continue" onclick="window.parent.location.href='{{ parent_redirect_url }}'">
         {% trans "I've recorded my token — close" %}
       </button>
     {% else %}

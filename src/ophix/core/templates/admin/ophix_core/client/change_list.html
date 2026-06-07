@@ -1,0 +1,17 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block content %}
+{{ block.super }}
+{% if request.GET.show_token %}
+<a id="new-client-token-trigger"
+   href="{% url 'admin:ophix_core_client_new_token' request.GET.show_token %}?_popup=1"
+   style="display:none">{% trans "View token" %}</a>
+<script>
+django.jQuery(function() {
+  var el = document.getElementById('new-client-token-trigger');
+  if (el) el.click();
+});
+</script>
+{% endif %}
+{% endblock %}

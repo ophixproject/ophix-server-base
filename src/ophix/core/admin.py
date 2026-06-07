@@ -208,6 +208,11 @@ class ClientAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.change_token_view),
                 name="ophix_core_client_change_token",
             ),
+            path(
+                "<path:object_id>/new-token/",
+                self.admin_site.admin_view(self.show_new_token_view),
+                name="ophix_core_client_new_token",
+            ),
         ]
         return custom + urls
 
@@ -234,6 +239,7 @@ class ClientAdmin(admin.ModelAdmin):
                 "client": obj,
                 "token": raw_token,
                 "change_url": change_url,
+                "parent_redirect_url": change_url,
                 "is_replacement": True,
                 "is_popup": is_popup,
                 "title": _("Replacement token issued"),
@@ -248,6 +254,47 @@ class ClientAdmin(admin.ModelAdmin):
             "opts": obj._meta,
         })
 
+    def show_new_token_view(self, request, object_id):
+        from django.shortcuts import render, get_object_or_404
+        from django.core.exceptions import PermissionDenied
+        from django.http import HttpResponse, HttpResponseRedirect
+        obj = get_object_or_404(Client, pk=object_id)
+        if not self.has_change_permission(request, obj):
+            raise PermissionDenied
+        is_popup = request.GET.get("_popup") == "1"
+        raw_token = request.session.pop(f"_ophix_new_client_token_{obj.pk}", None)
+        if not raw_token:
+            if is_popup:
+                return HttpResponse(
+                    '<script>try{window.parent.dismissRelatedObjectModal();}catch(e){}</script>'
+                )
+            change_url = reverse(
+                f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
+                args=[obj.pk],
+                current_app=self.admin_site.name,
+            )
+            return HttpResponseRedirect(change_url)
+        changelist_url = reverse(
+            f"admin:{obj._meta.app_label}_{obj._meta.model_name}_changelist",
+            current_app=self.admin_site.name,
+        )
+        change_url = reverse(
+            f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
+            args=[obj.pk],
+            current_app=self.admin_site.name,
+        )
+        return render(request, "admin/ophix_core/client/token_created.html", {
+            "client": obj,
+            "token": raw_token,
+            "change_url": change_url,
+            "parent_redirect_url": changelist_url,
+            "is_replacement": False,
+            "is_popup": is_popup,
+            "title": _("Client token"),
+            "opts": obj._meta,
+            "has_view_permission": self.has_view_permission(request, obj),
+        })
+
     def save_model(self, request, obj, form, change):
         if not change:
             from .models import generate_api_token, hash_token
@@ -258,22 +305,14 @@ class ClientAdmin(admin.ModelAdmin):
 
     def response_add(self, request, obj, post_url_continue=None):
         raw_token = request.session.pop("_ophix_new_client_token", None)
-        if raw_token:
-            from django.shortcuts import render
-            change_url = reverse(
-                f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
-                args=[obj.pk],
+        if raw_token and "_popup" not in request.POST:
+            from django.http import HttpResponseRedirect
+            request.session[f"_ophix_new_client_token_{obj.pk}"] = raw_token
+            changelist_url = reverse(
+                f"admin:{obj._meta.app_label}_{obj._meta.model_name}_changelist",
                 current_app=self.admin_site.name,
             )
-            return render(request, "admin/ophix_core/client/token_created.html", {
-                "client": obj,
-                "token": raw_token,
-                "change_url": change_url,
-                "is_replacement": False,
-                "title": _("Client token"),
-                "opts": obj._meta,
-                "has_view_permission": self.has_view_permission(request, obj),
-            })
+            return HttpResponseRedirect(f"{changelist_url}?show_token={obj.pk}")
         return super().response_add(request, obj, post_url_continue)
 
 
