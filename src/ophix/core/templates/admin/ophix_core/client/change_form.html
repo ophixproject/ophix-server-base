@@ -5,13 +5,8 @@
 {% if add %}
 <div class="submit-row">
   <input type="submit" value="{% trans 'Create Token' %}" class="default" name="_save">
-  {% if is_popup %}
-  <input type="button" value="{% trans 'Cancel' %}" style="order:2"
-    onclick="window.parent.dismissRelatedObjectModal()">
-  {% else %}
   <input type="button" value="{% trans 'Cancel' %}" style="order:2"
     onclick="window.location.href='{% url opts|admin_urlname:'changelist' %}'">
-  {% endif %}
 </div>
 {% else %}
 {{ block.super }}
