@@ -66,31 +66,27 @@
     display: flex;
     gap: 1rem;
     align-items: center;
+    justify-content: center;
     margin-top: 1.5rem;
   }
-  .btn-issue {
+  .btn-issue, .btn-cancel {
     padding: 0.5rem 1.25rem;
-    background: var(--admin-interface-delete-button-background-color, #ba2121);
-    color: #fff;
     border: none;
     border-radius: 4px;
     font-size: 0.9rem;
     cursor: pointer;
+    text-decoration: none;
   }
-  .btn-issue:hover {
-    opacity: 0.85;
+  .btn-issue {
+    background: var(--admin-interface-delete-button-background-color, #ba2121);
+    color: var(--admin-interface-delete-button-text-color, #fff);
   }
   .btn-cancel {
-    padding: 0.5rem 1.25rem;
-    background: var(--darkened-bg, #ddd);
-    color: var(--body-fg);
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 0.9rem;
+    background: var(--admin-interface-save-button-background-color, #44b78b);
+    color: var(--admin-interface-save-button-text-color, #fff);
   }
-  .btn-cancel:hover {
+  .btn-issue:hover, .btn-cancel:hover {
     opacity: 0.85;
-    color: var(--body-fg);
   }
   .client-meta {
     margin-bottom: 1rem;
