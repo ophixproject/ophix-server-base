@@ -170,38 +170,34 @@ class ClientAdmin(admin.ModelAdmin):
         return [
             (None, {"fields": ("host", "name", "enabled")}),
             (_("Deployment"), {"fields": ("deployment_ref", "venv_name", "venv_path")}),
-            (_("Token"), {"fields": ("api_token_display", "last_token_rotation", "change_token_link"), "classes": ("collapse",)}),
+            (_("Token"), {"fields": ("api_token_display", "last_token_rotation"), "classes": ("collapse",)}),
         ]
 
     def get_readonly_fields(self, request, obj=None):
         base = list(self.readonly_fields)
         if obj is not None:
-            base += ["api_token_display", "change_token_link"]
+            base.append("api_token_display")
         return base
 
     def api_token_display(self, obj):
-        return mark_safe(
-            '<span style="font-family:monospace;color:var(--body-quiet-color)">'
-            "Token hash (SHA-256) &nbsp;••••••••••••••••••••••••••••••••"
-            "</span>"
-        )
-    api_token_display.short_description = _("API token")
-
-    def change_token_link(self, obj):
         url = reverse(
             "admin:ophix_core_client_change_token",
             args=[obj.pk],
             current_app=self.admin_site.name,
         )
         return format_html(
-            '<a href="{}" style="'
+            '<span style="font-family:monospace;color:var(--body-quiet-color)">'
+            "Token hash (SHA-256) &nbsp;••••••••••••••••••••••••••••••••"
+            "</span>"
+            "&emsp;"
+            '<button type="button" class="change-token-open-btn" data-url="{}"'
+            ' style="background:none;border:none;padding:0;cursor:pointer;'
             "color:var(--admin-interface-delete-button-background-color,#ba2121);"
-            "font-size:0.85rem;"
-            '">{}</a>',
+            'font-size:0.85rem;">{}</button>',
             url,
             _("Issue a replacement token…"),
         )
-    change_token_link.short_description = ""
+    api_token_display.short_description = _("API token")
 
     def get_urls(self):
         from django.urls import path
