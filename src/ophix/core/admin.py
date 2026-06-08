@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.conf import settings
 from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 from django.http import HttpResponseRedirect
@@ -44,7 +44,7 @@ class CleanSaveMessageMixin:
     def response_add(self, request, obj, post_url_continue=None):
         if "_popup" in request.POST:
             return super().response_add(request, obj, post_url_continue)
-        self.message_user(request, self._clean_msg("added"))
+        self.message_user(request, self._clean_msg("added"), messages.SUCCESS)
         opts = self.model._meta
         if "_continue" in request.POST:
             return HttpResponseRedirect(
@@ -69,7 +69,7 @@ class CleanSaveMessageMixin:
         )
 
     def response_change(self, request, obj):
-        self.message_user(request, self._clean_msg("saved"))
+        self.message_user(request, self._clean_msg("saved"), messages.SUCCESS)
         if "_continue" in request.POST:
             return HttpResponseRedirect(request.path)
         if "_save" in request.POST:
