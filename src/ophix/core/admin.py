@@ -32,15 +32,44 @@ class DeleteRedirectToChangelistMixin:
 
 class CleanSaveMessageMixin:
     """
-    Replaces Django's default "The {verbose_name} '{obj}' was changed successfully..."
-    message (which includes a hyperlink to the object) with a plain "{verbose_name}
-    saved successfully." message. Applies to all save actions.
+    Replaces Django's default linked-object messages with plain text equivalents.
+    Covers both response_add and response_change.
     """
-    def response_change(self, request, obj):
-        msg = _("%(verbose_name)s saved successfully.") % {
+    def _clean_msg(self, verb):
+        return _("%(verbose_name)s %(verb)s successfully.") % {
             "verbose_name": self.model._meta.verbose_name.capitalize(),
+            "verb": verb,
         }
-        self.message_user(request, msg)
+
+    def response_add(self, request, obj, post_url_continue=None):
+        if "_popup" in request.POST:
+            return super().response_add(request, obj, post_url_continue)
+        self.message_user(request, self._clean_msg("added"))
+        opts = self.model._meta
+        if "_continue" in request.POST:
+            return HttpResponseRedirect(
+                reverse(
+                    f"admin:{opts.app_label}_{opts.model_name}_change",
+                    args=[obj.pk],
+                    current_app=self.admin_site.name,
+                )
+            )
+        if "_addanother" in request.POST:
+            return HttpResponseRedirect(
+                reverse(
+                    f"admin:{opts.app_label}_{opts.model_name}_add",
+                    current_app=self.admin_site.name,
+                )
+            )
+        return HttpResponseRedirect(
+            reverse(
+                f"admin:{opts.app_label}_{opts.model_name}_changelist",
+                current_app=self.admin_site.name,
+            )
+        )
+
+    def response_change(self, request, obj):
+        self.message_user(request, self._clean_msg("saved"))
         if "_continue" in request.POST:
             return HttpResponseRedirect(request.path)
         if "_save" in request.POST:
