@@ -30,6 +30,29 @@ class DeleteRedirectToChangelistMixin:
         return HttpResponseRedirect(post_url)
 
 
+class CleanSaveMessageMixin:
+    """
+    Replaces Django's default "The {verbose_name} '{obj}' was changed successfully..."
+    message (which includes a hyperlink to the object) with a plain "{verbose_name}
+    saved successfully." message. Applies to all save actions.
+    """
+    def response_change(self, request, obj):
+        msg = _("%(verbose_name)s saved successfully.") % {
+            "verbose_name": self.model._meta.verbose_name.capitalize(),
+        }
+        self.message_user(request, msg)
+        if "_continue" in request.POST:
+            return HttpResponseRedirect(request.path)
+        if "_save" in request.POST:
+            return HttpResponseRedirect(
+                reverse(
+                    f"admin:{self.model._meta.app_label}_{self.model._meta.model_name}_changelist",
+                    current_app=self.admin_site.name,
+                )
+            )
+        return super().response_change(request, obj)
+
+
 def hide_models(app_label, model_names, toggle: bool):
     """
     Hides models from Django admin unless toggle is True.
@@ -64,7 +87,7 @@ hide_models("django.contrib.auth", ["User", "Group"], getattr(settings, "SHOW_AU
 # ============================================================
 
 @admin.register(Host)
-class HostAdmin(admin.ModelAdmin):
+class HostAdmin(CleanSaveMessageMixin, admin.ModelAdmin):
     menu_order = 100
     list_display = ('name', 'ipv4_address', 'enabled', 'description')
     list_editable = ('enabled',)
@@ -119,7 +142,7 @@ class HostAdmin(admin.ModelAdmin):
 # ============================================================
 
 @admin.register(Client)
-class ClientAdmin(admin.ModelAdmin):
+class ClientAdmin(CleanSaveMessageMixin, admin.ModelAdmin):
     menu_order = 200
     list_display = (
         'name',
