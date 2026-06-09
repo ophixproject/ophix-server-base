@@ -152,3 +152,19 @@ Fleet clients reconnect to the restored server without re-registering — their 
 2. Clients that rotated their tokens after the last export will need to re-register — the restored hash reflects the old token, which the client no longer holds. Rotation intervals shorter than your backup cadence minimise this window.
 
 For a full Ophix server backup strategy, schedule exports from cron and store output files off-server with appropriate access controls.
+
+---
+
+## Scheduled backups
+
+`ophix-manage create_backup_script` generates `ophix-backup.sh` — a cron-ready wrapper that reads `BACKUP_TARGETS` and `BACKUP_TARGETS_ENCRYPTED` from `.env` and runs the corresponding export commands. Re-generate after upgrading or moving the venv to refresh the baked-in `ophix-manage` path.
+
+Add these entries to `.env` for the base server layer:
+
+```ini
+BACKUP_PATH=/path/to/backup/directory
+BACKUP_TARGETS=hosts,clients,settings
+BACKUP_PASSPHRASE=your-passphrase
+```
+
+`hosts`, `clients`, and `settings` contain no secrets — client tokens are SHA-256 hashes. They always go in `BACKUP_TARGETS` regardless of server type. See the backup documentation for your installed domain to add the domain-specific target.

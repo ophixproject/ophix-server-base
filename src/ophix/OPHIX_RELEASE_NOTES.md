@@ -1,14 +1,19 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.06.09.03
 
 - Added `create_backup_script` management command — generates `ophix-backup.sh` in the
-  current directory. The script sources `.env` for `BACKUP_PATH` and `BACKUP_PASSPHRASE`,
-  auto-detects installed domain exports via `has_cmd`, and bakes in the `ophix-manage`
-  path from the running venv. Re-run after upgrading or moving the venv. Plain exports
-  (hosts, settings, tasks, zones) run without passphrase; encrypted exports (clients,
-  confs, creds, certs, dns_servers) use `--passphrase-env BACKUP_PASSPHRASE` when set.
-- Added `BACKUP_PATH` and `BACKUP_PASSPHRASE` commented entries to `env.sample.j2`.
+  current directory. The script sources `.env` at runtime, reads `BACKUP_TARGETS` and
+  `BACKUP_TARGETS_ENCRYPTED` to determine which domain exports to run, auto-detects
+  whether each export is available on this server, and bakes in the `ophix-manage` path
+  from the running venv. Re-run after upgrading or moving the venv. See each domain's
+  backup docs for the recommended `BACKUP_TARGETS` / `BACKUP_TARGETS_ENCRYPTED` values.
+- Added "Scheduled backups" section to `env.sample.j2` with `BACKUP_PATH`,
+  `BACKUP_TARGETS`, `BACKUP_TARGETS_ENCRYPTED`, `BACKUP_PASSPHRASE`, and
+  `BACKUP_INCLUDE_CLIENT_LINKS` entries.
+- Added "Scheduled backups" section to `server-backup.md` with base `.env` values
+  (`BACKUP_TARGETS=hosts,clients,settings`) and a note to check domain docs for
+  domain-specific targets.
 - `ophix-admin-settings` added to `dependencies` in `pyproject.toml` — `run_install` imports `ophix_admin_settings` and the dependency was previously implicit.
 - One-time token display on the Client add form: `ClientAdmin.add_view` pre-generates a plaintext token on GET and carries it through POST via the session; the token is shown inline on the add form (inside a styled warning card with a Copy button) before the operator saves. On save, `save_model` pops the session token, hashes it, and persists the hash — the plaintext is never stored.
 - "Issue a replacement token" flow for existing clients: `api_token_display` read-only field on the change form shows hash dots plus a red "Issue a replacement token…" button linked to `<pk>/change-token/`. `change_token_view` handles GET (confirmation page) and POST (generate + save new token, render `token_created.html`). The replacement token page is shown as a Magnific Popup iframe and reloads the parent on close to reflect the updated `last_token_rotation`.

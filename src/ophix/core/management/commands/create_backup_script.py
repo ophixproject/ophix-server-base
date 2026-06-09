@@ -95,14 +95,18 @@ class Command(BaseCommand):
                 if "BACKUP_TARGETS" not in env_text:
                     missing.append("BACKUP_TARGETS=hosts,clients,settings")
                 if "BACKUP_TARGETS_ENCRYPTED" not in env_text:
-                    missing.append("BACKUP_TARGETS_ENCRYPTED=creds")
+                    missing.append(
+                        "BACKUP_TARGETS_ENCRYPTED=  "
+                        "# see the backup docs for your domain"
+                    )
                 if "BACKUP_PASSPHRASE" not in env_text:
                     missing.append("BACKUP_PASSPHRASE=your-passphrase")
             else:
                 missing = [
                     "BACKUP_PATH=/path/to/backup/directory",
                     "BACKUP_TARGETS=hosts,clients,settings",
-                    "BACKUP_TARGETS_ENCRYPTED=creds",
+                    "BACKUP_TARGETS_ENCRYPTED=  "
+                    "# see the backup docs for your domain",
                     "BACKUP_PASSPHRASE=your-passphrase",
                 ]
 

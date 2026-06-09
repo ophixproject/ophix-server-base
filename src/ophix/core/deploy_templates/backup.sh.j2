@@ -7,8 +7,9 @@
 #
 # Required .env entries (file co-located with this script):
 #   BACKUP_PATH=/path/to/backup/directory
-#   BACKUP_TARGETS=hosts,clients,settings   # plain exports (no passphrase)
-#   BACKUP_TARGETS_ENCRYPTED=creds          # encrypted if BACKUP_PASSPHRASE is set
+#   BACKUP_TARGETS=...             # comma-separated plain export targets
+#   BACKUP_TARGETS_ENCRYPTED=...   # comma-separated encrypted export targets
+# See the backup docs for recommended values for your server type.
 #
 # Optional .env entries:
 #   BACKUP_PASSPHRASE=your-passphrase       # omit to export without encryption
