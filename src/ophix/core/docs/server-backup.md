@@ -162,10 +162,12 @@ For a full Ophix server backup strategy, schedule exports from cron and store ou
 Add these entries to `.env` for the base server layer:
 
 ```ini
-BACKUP_PATH=/path/to/backup/directory
+BACKUP_PATH=/home/websites/taskserver/backups
 BACKUP_TARGETS=hosts,clients,settings
 BACKUP_PASSPHRASE=your-passphrase
 ```
+
+**Use a separate `BACKUP_PATH` for each server.** All servers export files named `hosts_<timestamp>.json`, `clients_<timestamp>.json`, and `settings_<timestamp>.json`. If two backup scripts run at the same time — common when all are scheduled at 02:00 — they will write colliding filenames into the same directory. With `--compress`, the bundling step globs `*_<timestamp>.json` and will pick up files from the wrong server. A per-server subdirectory avoids both problems.
 
 `hosts`, `clients`, and `settings` contain no secrets — client tokens are SHA-256 hashes. They always go in `BACKUP_TARGETS` regardless of server type. See the backup documentation for your installed domain to add the domain-specific target.
 
