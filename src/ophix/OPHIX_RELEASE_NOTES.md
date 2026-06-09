@@ -1,5 +1,15 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `create_backup_script` now names the generated script `<server_name>-backup.sh`
+  (e.g. `taskserver-backup.sh`) instead of `ophix-backup.sh`, so deployments with
+  multiple servers produce distinctly named scripts.
+- Added `--compress` flag to the generated backup script: after all exports complete,
+  the `.json` files are bundled into `<server_name>_<timestamp>.tgz` and removed,
+  leaving a single portable archive. The suggested cron entry now includes `--compress`.
+- Updated `server-backup.md` to document the naming convention and `--compress` flag.
+
 ## 2026.06.09.03
 
 - Added `create_backup_script` management command — generates `ophix-backup.sh` in the

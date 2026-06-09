@@ -22,7 +22,7 @@ Template: ophix/core/deploy_templates/backup.sh.j2
 Usage::
 
     ophix-manage create_backup_script
-    ophix-manage create_backup_script --output-file /home/websites/credserver/ophix-backup.sh
+    ophix-manage create_backup_script --output-file /home/websites/credserver/credserver-backup.sh
 """
 
 import stat
@@ -69,7 +69,7 @@ class Command(BaseCommand):
         if output_file:
             script_path = Path(output_file).resolve()
         else:
-            script_path = Path.cwd() / "ophix-backup.sh"
+            script_path = Path.cwd() / f"{server_name}-backup.sh"
 
         ctx = {
             "manage_path": str(manage_path),
@@ -117,4 +117,4 @@ class Command(BaseCommand):
                 self.stdout.write("")
 
             self.stdout.write("Suggested cron entry (daily at 02:00):")
-            self.stdout.write(f"  0 2 * * * {script_path} >> /var/log/ophix-backup.log 2>&1")
+            self.stdout.write(f"  0 2 * * * {script_path} --compress >> /var/log/ophix-backup.log 2>&1")

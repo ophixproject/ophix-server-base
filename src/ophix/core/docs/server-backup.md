@@ -20,7 +20,7 @@ Domain plugins add their own artifact layer on top (credentials, configs, certs,
 
 The restore dependency order is always:
 
-```
+```text
 import_hosts  →  import_clients  →  import_<domain>
 ```
 
@@ -157,7 +157,7 @@ For a full Ophix server backup strategy, schedule exports from cron and store ou
 
 ## Scheduled backups
 
-`ophix-manage create_backup_script` generates `ophix-backup.sh` — a cron-ready wrapper that reads `BACKUP_TARGETS` and `BACKUP_TARGETS_ENCRYPTED` from `.env` and runs the corresponding export commands. Re-generate after upgrading or moving the venv to refresh the baked-in `ophix-manage` path.
+`ophix-manage create_backup_script` generates `<server_name>-backup.sh` (e.g. `taskserver-backup.sh`) — a cron-ready wrapper that reads `BACKUP_TARGETS` and `BACKUP_TARGETS_ENCRYPTED` from `.env` and runs the corresponding export commands. Re-generate after upgrading or moving the venv to refresh the baked-in `ophix-manage` path.
 
 Add these entries to `.env` for the base server layer:
 
@@ -168,3 +168,15 @@ BACKUP_PASSPHRASE=your-passphrase
 ```
 
 `hosts`, `clients`, and `settings` contain no secrets — client tokens are SHA-256 hashes. They always go in `BACKUP_TARGETS` regardless of server type. See the backup documentation for your installed domain to add the domain-specific target.
+
+Pass `--compress` to bundle all exported `.json` files into a single dated `.tgz` and remove the originals:
+
+```bash
+taskserver-backup.sh --compress
+```
+
+The typical cron entry:
+
+```bash
+0 2 * * * /home/websites/taskserver/taskserver-backup.sh --compress >> /var/log/ophix-backup.log 2>&1
+```
