@@ -162,12 +162,23 @@ For a full Ophix server backup strategy, schedule exports from cron and store ou
 Add these entries to `.env` for the base server layer:
 
 ```ini
-BACKUP_PATH=/home/ophix/taskserver/backups
+BACKUP_PATH=/home/ophix/backups/taskserver
 BACKUP_TARGETS=hosts,clients,settings
 BACKUP_PASSPHRASE=your-passphrase
 ```
 
-**Use a separate `BACKUP_PATH` for each server.** All servers export files named `hosts_<timestamp>.json`, `clients_<timestamp>.json`, and `settings_<timestamp>.json`. If two backup scripts run at the same time — common when all are scheduled at 02:00 — they will write colliding filenames into the same directory. With `--compress`, the bundling step globs `*_<timestamp>.json` and will pick up files from the wrong server. A per-server subdirectory avoids both problems.
+**Keep `BACKUP_PATH` outside the install directory** and use a shared `backups/` folder subdivided by server name:
+
+```text
+/home/ophix/
+  taskserver/           ← INSTALL_DIR  (removed on uninstall)
+  credserver/           ← INSTALL_DIR
+  backups/
+    taskserver/         ← BACKUP_PATH for taskserver
+    credserver/         ← BACKUP_PATH for credserver
+```
+
+The uninstall script removes the entire install directory. Backups inside that tree go with it. A parallel `backups/<server>/` structure also prevents simultaneous cron runs from writing colliding filenames — all servers export identically named files (`hosts_<timestamp>.json` etc.) and with `--compress` the bundling step would pick up files from the wrong server if both ran into the same directory at the same second.
 
 `hosts`, `clients`, and `settings` contain no secrets — client tokens are SHA-256 hashes. They always go in `BACKUP_TARGETS` regardless of server type. See the backup documentation for your installed domain to add the domain-specific target.
 
