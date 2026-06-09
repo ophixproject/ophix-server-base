@@ -129,7 +129,7 @@ if [[ "$COMPRESS" -eq 1 ]]; then
     shopt -s nullglob
     _json_files=("${BACKUP_PATH}"/*_${DATE}.json)
     shopt -u nullglob
-    if [[ ${#_json_files[@]} -gt 0 ]]; then
+    if [[ -n "${_json_files[0]:-}" ]]; then
         _archive="${BACKUP_PATH}/{{ server_name }}_${DATE}.tgz"
         tar -czf "$_archive" -C "$BACKUP_PATH" "${_json_files[@]##*/}"
         rm -f "${_json_files[@]}"
