@@ -22,7 +22,7 @@ Template: ophix/core/deploy_templates/backup.sh.j2
 Usage::
 
     ophix-manage create_backup_script
-    ophix-manage create_backup_script --output-file /home/websites/credserver/credserver-backup.sh
+    ophix-manage create_backup_script --output-file /home/ophix/credserver/credserver-backup.sh
 """
 
 import stat

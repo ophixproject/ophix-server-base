@@ -162,7 +162,7 @@ For a full Ophix server backup strategy, schedule exports from cron and store ou
 Add these entries to `.env` for the base server layer:
 
 ```ini
-BACKUP_PATH=/home/websites/taskserver/backups
+BACKUP_PATH=/home/ophix/taskserver/backups
 BACKUP_TARGETS=hosts,clients,settings
 BACKUP_PASSPHRASE=your-passphrase
 ```
@@ -180,5 +180,5 @@ taskserver-backup.sh --compress
 The typical cron entry:
 
 ```bash
-0 2 * * * /home/websites/taskserver/taskserver-backup.sh --compress >> /var/log/ophix-backup.log 2>&1
+0 2 * * * /home/ophix/taskserver/taskserver-backup.sh --compress >> /var/log/ophix-backup.log 2>&1
 ```
