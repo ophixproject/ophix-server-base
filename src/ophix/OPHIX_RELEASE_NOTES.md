@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.06.09.04
 
 - `create_backup_script` now names the generated script `<server_name>-backup.sh`
   (e.g. `taskserver-backup.sh`) instead of `ophix-backup.sh`, so deployments with
