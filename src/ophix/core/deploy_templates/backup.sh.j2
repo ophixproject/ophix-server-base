@@ -7,7 +7,12 @@
 #
 # Required .env entries (file co-located with this script):
 #   BACKUP_PATH=/path/to/backup/directory
-#   BACKUP_PASSPHRASE=your-passphrase   # omit to export without encryption
+#   BACKUP_TARGETS=hosts,clients,settings   # plain exports (no passphrase)
+#   BACKUP_TARGETS_ENCRYPTED=creds          # encrypted if BACKUP_PASSPHRASE is set
+#
+# Optional .env entries:
+#   BACKUP_PASSPHRASE=your-passphrase       # omit to export without encryption
+#   BACKUP_INCLUDE_CLIENT_LINKS=true        # include client-artifact links (default: true)
 #
 # Suggested cron entry (daily at 02:00):
 #   0 2 * * * {{ script_path }} >> /var/log/ophix-backup.log 2>&1
@@ -33,6 +38,11 @@ if [[ -z "${BACKUP_PATH:-}" ]]; then
     exit 1
 fi
 
+if [[ -z "${BACKUP_TARGETS:-}" ]] && [[ -z "${BACKUP_TARGETS_ENCRYPTED:-}" ]]; then
+    echo "Error: neither BACKUP_TARGETS nor BACKUP_TARGETS_ENCRYPTED is set in $ENV_FILE" >&2
+    exit 1
+fi
+
 MANAGE="{{ manage_path }}"
 DATE="$(date +%Y%m%d_%H%M%S)"
 
@@ -41,30 +51,69 @@ mkdir -p "$BACKUP_PATH"
 # Returns 0 if the management command is available on this server
 has_cmd() { "$MANAGE" "$1" --help > /dev/null 2>&1; }
 
-# Populate passphrase args when BACKUP_PASSPHRASE is set; empty array otherwise
-pass_args=()
-if [[ -n "${BACKUP_PASSPHRASE:-}" ]]; then
-    pass_args=(--passphrase-env BACKUP_PASSPHRASE)
+# Warn early if the operator listed encrypted targets but forgot the passphrase
+if [[ -n "${BACKUP_TARGETS_ENCRYPTED:-}" ]] && [[ -z "${BACKUP_PASSPHRASE:-}" ]]; then
+    echo "WARNING: BACKUP_TARGETS_ENCRYPTED is set but BACKUP_PASSPHRASE is not — these exports will run without encryption" >&2
 fi
+
+# run_export <name> <use_passphrase:0|1>
+#   - Skips with a warning if the command is not installed on this server
+#   - Appends --passphrase-env BACKUP_PASSPHRASE when use_passphrase=1 and passphrase is set
+#   - Appends --include-client-links when BACKUP_INCLUDE_CLIENT_LINKS=true (default)
+#     and the command actually supports that flag (auto-detected from --help)
+run_export() {
+    local name=$1 use_passphrase=$2
+    local cmd="export_${name}"
+
+    local help_text
+    if ! help_text=$("$MANAGE" "$cmd" --help 2>&1); then
+        echo "  WARNING: $cmd not available on this server — skipped" >&2
+        return
+    fi
+
+    local -a args
+    args=(--output-file "$BACKUP_PATH/${name}_${DATE}.json" --quiet)
+
+    local encrypted=0
+    if [[ "$use_passphrase" -eq 1 ]] && [[ -n "${BACKUP_PASSPHRASE:-}" ]]; then
+        args+=(--passphrase-env BACKUP_PASSPHRASE)
+        encrypted=1
+    fi
+
+    if [[ "${BACKUP_INCLUDE_CLIENT_LINKS:-true}" == "true" ]] && \
+       grep -q -- '--include-client-links' <<< "$help_text"; then
+        args+=(--include-client-links)
+    fi
+
+    "$MANAGE" "$cmd" "${args[@]}"
+
+    if [[ "$use_passphrase" -eq 1 ]]; then
+        if [[ "$encrypted" -eq 1 ]]; then
+            echo "  ${name}.json written [encrypted]"
+        else
+            echo "  ${name}.json written [unencrypted — BACKUP_PASSPHRASE not set]"
+        fi
+    else
+        echo "  ${name}.json written"
+    fi
+}
 
 echo "[$DATE] Starting backup — {{ server_name }}"
 
-# ── Plain exports (no passphrase) ─────────────────────────────────────────────
-for cmd in export_hosts export_settings export_tasks export_zones; do
-    if has_cmd "$cmd"; then
-        "$MANAGE" "$cmd" --output-file "$BACKUP_PATH/${cmd#export_}_${DATE}.json" --quiet
-        echo "  ${cmd#export_}.json written"
-    fi
+# ── Plain exports ──────────────────────────────────────────────────────────────
+IFS=',' read -ra _plain <<< "${BACKUP_TARGETS:-}"
+for _name in "${_plain[@]}"; do
+    _name="${_name// /}"
+    [[ -z "$_name" ]] && continue
+    run_export "$_name" 0
 done
 
-# ── Encrypted exports (passphrase optional) ───────────────────────────────────
-for cmd in export_clients export_confs export_creds export_certs export_dns_servers; do
-    if has_cmd "$cmd"; then
-        "$MANAGE" "$cmd" \
-            --output-file "$BACKUP_PATH/${cmd#export_}_${DATE}.json" \
-            "${pass_args[@]}" --quiet
-        echo "  ${cmd#export_}.json written"
-    fi
+# ── Encrypted exports ──────────────────────────────────────────────────────────
+IFS=',' read -ra _encrypted <<< "${BACKUP_TARGETS_ENCRYPTED:-}"
+for _name in "${_encrypted[@]}"; do
+    _name="${_name// /}"
+    [[ -z "$_name" ]] && continue
+    run_export "$_name" 1
 done
 
 echo "[$DATE] Backup complete — $BACKUP_PATH"

@@ -92,11 +92,17 @@ class Command(BaseCommand):
                 env_text = env_file.read_text(encoding="utf-8")
                 if "BACKUP_PATH" not in env_text:
                     missing.append("BACKUP_PATH=/path/to/backup/directory")
+                if "BACKUP_TARGETS" not in env_text:
+                    missing.append("BACKUP_TARGETS=hosts,clients,settings")
+                if "BACKUP_TARGETS_ENCRYPTED" not in env_text:
+                    missing.append("BACKUP_TARGETS_ENCRYPTED=creds")
                 if "BACKUP_PASSPHRASE" not in env_text:
                     missing.append("BACKUP_PASSPHRASE=your-passphrase")
             else:
                 missing = [
                     "BACKUP_PATH=/path/to/backup/directory",
+                    "BACKUP_TARGETS=hosts,clients,settings",
+                    "BACKUP_TARGETS_ENCRYPTED=creds",
                     "BACKUP_PASSPHRASE=your-passphrase",
                 ]
 
