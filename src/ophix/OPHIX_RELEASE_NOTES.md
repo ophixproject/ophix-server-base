@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.06.10.01
 
 - Added `export_env` management command — encrypts the server's `.env` file with a
   passphrase (Fernet + PBKDF2) and writes a versioned `.env.enc` backup file. Requires
