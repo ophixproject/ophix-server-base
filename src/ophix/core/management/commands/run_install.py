@@ -19,6 +19,8 @@ Steps performed directly:
   - Activates theme (if configured)
   - Sets admin title on the active theme
   - Loads documentation for all installed apps (if ophix-docs is installed)
+  - Generates static error pages (400, 403, 404, 500, 503) with active theme
+  - Creates backup directory and generates backup script (if BACKUP_PATH configured)
 
 After this command succeeds, run:
     sudo bash <server_name>_sudo_install.sh
@@ -421,6 +423,7 @@ class Command(BaseCommand):
         admin_title     = _get("admin", "admin_title", "")
         admin_env_name  = _get("admin", "admin_env_name", None)
         http_redirect   = conf.getboolean("server", "http_redirect", fallback=True)
+        backup_path_str = _get("backup", "backup_path", "")
 
         slug = _slugify(server_name)
         nginx_group = options["nginx_group"]
@@ -623,6 +626,35 @@ class Command(BaseCommand):
         self.stdout.write("Loading documentation\n")
         _auto_install_docs(self.stdout, self.style)
         self.stdout.write("\n")
+
+        # ------------------------------------------------------------------ #
+        # 12. Generate static error pages
+        # ------------------------------------------------------------------ #
+        self.stdout.write("Generating error pages\n")
+        try:
+            call_command("generate_error_pages", verbosity=0)
+            error_pages_dir = install_dir / "static" / "error_pages"
+            self.stdout.write(self.style.SUCCESS(f"  Written: {error_pages_dir}/\n"))
+        except Exception as exc:
+            self.stdout.write(self.style.WARNING(f"  Skipped: {exc}\n"))
+        self.stdout.write("\n")
+
+        # ------------------------------------------------------------------ #
+        # 13. Create backup directory and generate backup script
+        # ------------------------------------------------------------------ #
+        if backup_path_str:
+            self.stdout.write("Generating backup script\n")
+            backup_dir = Path(backup_path_str)
+            try:
+                backup_dir.mkdir(parents=True, exist_ok=True)
+                self.stdout.write(self.style.SUCCESS(f"  Created: {backup_dir}\n"))
+            except Exception as exc:
+                self.stdout.write(self.style.WARNING(f"  Could not create backup directory: {exc}\n"))
+            try:
+                call_command("create_backup_script", verbosity=1)
+            except Exception as exc:
+                self.stdout.write(self.style.WARNING(f"  Could not generate backup script: {exc}\n"))
+            self.stdout.write("\n")
 
         # ------------------------------------------------------------------ #
         # Summary

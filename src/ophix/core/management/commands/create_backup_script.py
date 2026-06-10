@@ -86,12 +86,20 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Generated: {script_path}"))
             self.stdout.write("")
 
+            # Derive a sensible BACKUP_PATH suggestion from INSTALL_DIR:
+            # /home/user/ophix/taskserver  →  /home/user/ophix/backups/taskserver
+            install_dir = getattr(settings, "INSTALL_DIR", None)
+            if install_dir:
+                suggested_backup_path = install_dir.parent / "backups" / install_dir.name
+            else:
+                suggested_backup_path = Path("/path/to/backup/directory")
+
             env_file = script_path.parent / ".env"
             missing = []
             if env_file.exists():
                 env_text = env_file.read_text(encoding="utf-8")
                 if "BACKUP_PATH" not in env_text:
-                    missing.append("BACKUP_PATH=/path/to/backup/directory")
+                    missing.append(f"BACKUP_PATH={suggested_backup_path}")
                 if "BACKUP_TARGETS" not in env_text:
                     missing.append("BACKUP_TARGETS=hosts,clients,settings")
                 if "BACKUP_TARGETS_ENCRYPTED" not in env_text:
@@ -103,7 +111,7 @@ class Command(BaseCommand):
                     missing.append("BACKUP_PASSPHRASE=your-passphrase")
             else:
                 missing = [
-                    "BACKUP_PATH=/path/to/backup/directory",
+                    f"BACKUP_PATH={suggested_backup_path}",
                     "BACKUP_TARGETS=hosts,clients,settings",
                     "BACKUP_TARGETS_ENCRYPTED=  "
                     "# see the backup docs for your domain",

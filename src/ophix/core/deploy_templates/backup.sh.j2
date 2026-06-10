@@ -17,7 +17,7 @@
 #
 # Optional .env entries:
 #   BACKUP_PASSPHRASE=your-passphrase       # omit to export without encryption
-#   BACKUP_INCLUDE_CLIENT_LINKS=true        # include client-artifact links (default: true)
+#   BACKUP_INCLUDE_CLIENT_LINKS=True        # include client-artifact links (default: True)
 #
 # Suggested cron entry (daily at 02:00):
 #   0 2 * * * {{ script_path }} --compress >> /var/log/ophix-backup.log 2>&1
@@ -67,7 +67,7 @@ fi
 # run_export <name> <use_passphrase:0|1>
 #   - Skips with a warning if the command is not installed on this server
 #   - Appends --passphrase-env BACKUP_PASSPHRASE when use_passphrase=1 and passphrase is set
-#   - Appends --include-client-links when BACKUP_INCLUDE_CLIENT_LINKS=true (default)
+#   - Appends --include-client-links when BACKUP_INCLUDE_CLIENT_LINKS=True (default)
 #     and the command actually supports that flag (auto-detected from --help)
 run_export() {
     local name=$1 use_passphrase=$2
@@ -88,7 +88,7 @@ run_export() {
         encrypted=1
     fi
 
-    if [[ "${BACKUP_INCLUDE_CLIENT_LINKS:-true}" == "true" ]] && \
+    if [[ "${BACKUP_INCLUDE_CLIENT_LINKS:-True}" =~ ^[Tt]rue$ ]] && \
        grep -q -- '--include-client-links' <<< "$help_text"; then
         args+=(--include-client-links)
     fi

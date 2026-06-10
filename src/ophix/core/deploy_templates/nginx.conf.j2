@@ -38,6 +38,14 @@ server {
     access_log {{ install_dir }}/logs/{{ portal_name }}.access.log;
     error_log  {{ install_dir }}/logs/{{ portal_name }}.error.log;
 
+    # Custom error pages — served directly from static files
+    # (503 is served even when Gunicorn is down because /static/ is a direct alias)
+    error_page 400 /static/error_pages/400.html;
+    error_page 403 /static/error_pages/403.html;
+    error_page 404 /static/error_pages/404.html;
+    error_page 500 502 /static/error_pages/500.html;
+    error_page 503 504 /static/error_pages/503.html;
+
     # Proxy to Gunicorn via Unix socket
     location / {
         proxy_pass         http://unix:{{ install_dir }}/run/{{ portal_name }}.sock;

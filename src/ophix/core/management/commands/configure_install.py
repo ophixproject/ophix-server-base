@@ -36,6 +36,45 @@ from ophix.core.management.commands.generate_config import (
 
 
 # ---------------------------------------------------------------------------
+# Backup target defaults
+# ---------------------------------------------------------------------------
+
+# (unencrypted_targets, encrypted_targets) per detected domain package.
+_DOMAIN_BACKUP_TARGETS = {
+    "ophix-creds": ("hosts,clients,settings",                   "env,creds"),
+    "ophix-confs": ("hosts,clients,settings,confs",             "env"),
+    "ophix-certs": ("hosts,clients,settings,certs",             "env"),
+    "ophix-tasks": ("hosts,clients,settings,tasks",             "env"),
+    "ophix-zones": ("hosts,clients,settings,dns_servers,zones", "env"),
+}
+_BACKUP_DEFAULT_TARGETS     = "hosts,clients,settings"
+_BACKUP_DEFAULT_ENC_TARGETS = "env"
+# Targets that always require a passphrase; stripped when no passphrase is set.
+_BACKUP_ALWAYS_ENCRYPTED = {"env", "certs_ca"}
+
+
+def _merge_backup_targets(*target_strings):
+    seen = set()
+    result = []
+    for ts in target_strings:
+        for t in ts.split(","):
+            t = t.strip()
+            if t and t not in seen:
+                seen.add(t)
+                result.append(t)
+    return ",".join(result)
+
+
+def _is_package_installed(package_name):
+    try:
+        from importlib.metadata import distribution
+        distribution(package_name)
+        return True
+    except Exception:
+        return False
+
+
+# ---------------------------------------------------------------------------
 # Plugin hook discovery
 # ---------------------------------------------------------------------------
 
@@ -192,7 +231,7 @@ class Command(BaseCommand):
 
         self.stdout.write("=" * 60 + "\n\n")
 
-        for section in ("server", "tls", "database", "superuser", "admin"):
+        for section in ("server", "tls", "database", "superuser", "admin", "backup"):
             if not conf.has_section(section):
                 conf.add_section(section)
 
@@ -403,9 +442,113 @@ class Command(BaseCommand):
         self.stdout.write("\n")
 
         # ------------------------------------------------------------------ #
+        # [backup]
+        # ------------------------------------------------------------------ #
+        self.stdout.write("--- Backup ---\n")
+
+        default_backup_path = conf.get("backup", "backup_path", fallback="")
+        if not default_backup_path and install_dir:
+            install_path = Path(install_dir)
+            default_backup_path = str(install_path.parent / "backups" / install_path.name)
+
+        backup_path = self._prompt(
+            "Backup directory (where backup files will be stored)",
+            default_backup_path,
+        )
+        conf.set("backup", "backup_path", backup_path)
+
+        self.stdout.write(
+            "  Backup passphrase — used to encrypt the .env backup and any\n"
+            "  credential/key exports. Leave blank to skip encryption.\n"
+        )
+        has_passphrase = bool(conf.get("backup", "backup_passphrase", fallback=""))
+        if has_passphrase:
+            self.stdout.write("  (press Enter to keep existing, space+Enter to clear)\n")
+
+        while True:
+            bp = getpass.getpass("  Passphrase: ")
+            if bp == " " and has_passphrase:
+                backup_passphrase = ""
+                self.stdout.write(self.style.WARNING("  Passphrase cleared.\n"))
+                break
+            if not bp:
+                if has_passphrase:
+                    backup_passphrase = conf.get("backup", "backup_passphrase")
+                    self.stdout.write("  Keeping existing passphrase.\n")
+                else:
+                    backup_passphrase = ""
+                    self.stdout.write(
+                        self.style.WARNING(
+                            "  No passphrase set — .env file backup will be disabled.\n"
+                        )
+                    )
+                break
+            bp2 = getpass.getpass("  Confirm passphrase: ")
+            if bp != bp2:
+                self.stdout.write(self.style.ERROR("  Passphrases do not match — try again.\n"))
+                continue
+            backup_passphrase = bp
+            self.stdout.write(self.style.SUCCESS("  Passphrase set.\n"))
+            break
+
+        conf.set("backup", "backup_passphrase", backup_passphrase)
+        self.stdout.write("\n")
+
+        # ------------------------------------------------------------------ #
         # Plugin configure hooks
         # ------------------------------------------------------------------ #
         _call_plugin_configure_hooks(conf, self)
+
+        # ------------------------------------------------------------------ #
+        # Backup targets (assembled after plugin hooks so plugins can contribute)
+        # ------------------------------------------------------------------ #
+        self.stdout.write("--- Backup targets ---\n")
+
+        targets_base, enc_targets_base = _DOMAIN_BACKUP_TARGETS.get(
+            dist_name, (_BACKUP_DEFAULT_TARGETS, _BACKUP_DEFAULT_ENC_TARGETS)
+        )
+        # certs-ca adds encrypted CA key backups when installed alongside certs
+        if dist_name == "ophix-certs" and _is_package_installed("ophix-certs-ca"):
+            enc_targets_base = _merge_backup_targets(enc_targets_base, "certs_ca")
+
+        # Merge any targets contributed by plugin hooks
+        targets_extra = conf.get("backup", "targets_extra", fallback="")
+        enc_targets_extra = conf.get("backup", "targets_encrypted_extra", fallback="")
+        targets_assembled = _merge_backup_targets(targets_base, targets_extra)
+        enc_targets_assembled = _merge_backup_targets(enc_targets_base, enc_targets_extra)
+
+        # Strip targets that require a passphrase when none is configured
+        if not backup_passphrase:
+            stripped = [
+                t for t in enc_targets_assembled.split(",")
+                if t.strip() and t.strip() not in _BACKUP_ALWAYS_ENCRYPTED
+            ]
+            removed = [
+                t for t in enc_targets_assembled.split(",")
+                if t.strip() and t.strip() in _BACKUP_ALWAYS_ENCRYPTED
+            ]
+            enc_targets_assembled = ",".join(stripped)
+            if removed:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  Targets requiring a passphrase excluded: {', '.join(removed)}\n"
+                        f"  Set BACKUP_PASSPHRASE in .env to re-enable them.\n"
+                    )
+                )
+
+        prev_targets = conf.get("backup", "backup_targets", fallback="")
+        prev_enc = conf.get("backup", "backup_targets_encrypted", fallback="")
+        backup_targets = self._prompt(
+            "BACKUP_TARGETS (unencrypted)",
+            prev_targets if prev_targets else targets_assembled,
+        )
+        backup_enc_targets = self._prompt(
+            "BACKUP_TARGETS_ENCRYPTED (requires passphrase)",
+            prev_enc if prev_enc else enc_targets_assembled,
+        )
+        conf.set("backup", "backup_targets", backup_targets)
+        conf.set("backup", "backup_targets_encrypted", backup_enc_targets)
+        self.stdout.write("\n")
 
         # ------------------------------------------------------------------ #
         # Write conf file
@@ -436,6 +579,10 @@ class Command(BaseCommand):
             db_ssl_ca=ssl_ca,
             db_ssl_cert=ssl_cert,
             db_ssl_key=ssl_key,
+            backup_path=conf.get("backup", "backup_path", fallback=""),
+            backup_passphrase=conf.get("backup", "backup_passphrase", fallback=""),
+            backup_targets=conf.get("backup", "backup_targets", fallback=""),
+            backup_targets_encrypted=conf.get("backup", "backup_targets_encrypted", fallback=""),
         )
 
         self.stdout.write(
@@ -452,6 +599,8 @@ class Command(BaseCommand):
         ca_bundle,
         engine, db_host, db_port, db_name, db_user, db_password,
         db_ssl_ca, db_ssl_cert, db_ssl_key,
+        backup_path="", backup_passphrase="",
+        backup_targets="", backup_targets_encrypted="",
     ):
         from django.conf import settings as django_settings
 
@@ -509,6 +658,18 @@ class Command(BaseCommand):
         ]
         for key, value in pairs:
             set_key(str(env_path), key, value, quote_mode="never")
+
+        # Backup settings — only write non-empty values to keep .env clean
+        # when the operator skipped the backup configuration.
+        backup_pairs = [
+            ("BACKUP_PATH",                 backup_path),
+            ("BACKUP_PASSPHRASE",           backup_passphrase),
+            ("BACKUP_TARGETS",              backup_targets),
+            ("BACKUP_TARGETS_ENCRYPTED",    backup_targets_encrypted),
+        ]
+        for key, value in backup_pairs:
+            if value:
+                set_key(str(env_path), key, value, quote_mode="never")
 
         self.stdout.write(self.style.SUCCESS(f"Written: {env_path}\n"))
 

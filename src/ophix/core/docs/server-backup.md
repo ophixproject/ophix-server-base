@@ -116,6 +116,70 @@ Fleet clients reconnect to the restored server without re-registering. They stil
 
 ---
 
+## Exporting the .env file
+
+The `.env` file contains the Django secret key, database credentials, and all encryption keys. It is the most critical backup target — without it a server cannot start, and without the encryption keys encrypted data cannot be decrypted on restore.
+
+A passphrase is always required; there is no plaintext export option.
+
+```bash
+ophix-manage export_env --output-file env.json --passphrase
+```
+
+With passphrase from an environment variable (for cron):
+
+```bash
+ophix-manage export_env --output-file env.json --passphrase-env BACKUP_PASSPHRASE
+```
+
+Preview without writing:
+
+```bash
+ophix-manage export_env --output-file env.json --passphrase --dry-run
+```
+
+| Flag | Description |
+| --- | --- |
+| `--output-file FILE` | _(required)_ Destination path |
+| `--passphrase [VALUE]` | Encrypt with passphrase. Omit value to be prompted securely |
+| `--passphrase-env ENVVAR` | Read passphrase from named environment variable |
+| `--dry-run` | Show what would be exported without writing |
+| `--quiet` | Suppress all output |
+
+---
+
+## Importing the .env file
+
+`import_env` is used during disaster recovery to restore the `.env` from backup. Because it is a management command, Django needs a minimal `.env` to start — use `configure_install` to generate a skeleton first.
+
+```bash
+ophix-manage import_env env.json --passphrase
+```
+
+If the install path differs on the new machine, patch `INSTALL_DIR` in place:
+
+```bash
+ophix-manage import_env env.json --passphrase --install-dir /srv/ophix/credserver
+```
+
+After restoring, restart the service so Django picks up the recovered settings:
+
+```bash
+sudo systemctl restart credserver
+```
+
+| Flag | Description |
+| --- | --- |
+| `FILE` | _(required)_ Source path (JSON produced by `export_env`) |
+| `--passphrase [VALUE]` | Decrypt with passphrase. Omit value to be prompted securely |
+| `--passphrase-env ENVVAR` | Read passphrase from named environment variable |
+| `--output-file FILE` | Where to write the restored `.env` (default: `.env` in current directory) |
+| `--install-dir PATH` | Override `INSTALL_DIR` in the restored `.env` |
+| `--dry-run` | Decrypt and show what would be written without writing |
+| `--quiet` | Suppress all output |
+
+---
+
 ## Full base-layer restore workflow
 
 This covers hosts and clients only. Follow this with the domain-specific import for a complete server restore.
@@ -148,8 +212,15 @@ Fleet clients reconnect to the restored server without re-registering — their 
 
 **Disaster recovery** (source server lost):
 
-1. Restore from the most recent export files
-2. Clients that rotated their tokens after the last export will need to re-register — the restored hash reflects the old token, which the client no longer holds. Rotation intervals shorter than your backup cadence minimise this window.
+1. `pip install` all packages onto the new machine
+2. `ophix-manage configure_install <slug>` — generates a skeleton `.env` so Django can start
+3. `ophix-manage import_env env.json --passphrase` — restores the real `.env` (encryption keys, DB credentials, secret key)
+4. If `INSTALL_DIR` differs on the new machine, add `--install-dir /new/path` to the command above
+5. `sudo systemctl restart <slug>` — Django now has all the correct settings
+6. `ophix-manage migrate` — schema is up to date from the fresh install; confirms state
+7. `ophix-manage import_hosts`, `import_clients`, `import_<domain>` — restore data
+
+Clients that rotated their tokens after the last export will need to re-register — the restored hash reflects the old token, which the client no longer holds. Rotation intervals shorter than your backup cadence minimise this window.
 
 For a full Ophix server backup strategy, schedule exports from cron and store output files off-server with appropriate access controls.
 
@@ -157,13 +228,31 @@ For a full Ophix server backup strategy, schedule exports from cron and store ou
 
 ## Scheduled backups
 
-`ophix-manage create_backup_script` generates `<server_name>-backup.sh` (e.g. `taskserver-backup.sh`) — a cron-ready wrapper that reads `BACKUP_TARGETS` and `BACKUP_TARGETS_ENCRYPTED` from `.env` and runs the corresponding export commands. Re-generate after upgrading or moving the venv to refresh the baked-in `ophix-manage` path.
+### Automatic setup via configure_install
 
-Add these entries to `.env` for the base server layer:
+`ophix-manage configure_install` now includes a backup configuration section. It prompts for:
+
+- **Backup directory** — where backup files will be stored. The wizard suggests a path derived from `INSTALL_DIR`: `INSTALL_DIR/../backups/<server_name>` (e.g. if `INSTALL_DIR=/home/ophix/taskserver`, the suggested path is `/home/ophix/backups/taskserver`).
+- **Backup passphrase** — used to encrypt the `.env` backup and any credential or CA-key exports. Leave blank to skip encryption (the `.env` backup will not be included).
+- **BACKUP_TARGETS** — comma-separated list of unencrypted export targets. Defaults are set automatically based on the installed domain plugin (e.g. `hosts,clients,settings,tasks` for ophix-tasks).
+- **BACKUP_TARGETS_ENCRYPTED** — encrypted export targets (always requires a passphrase). Defaults include `env` plus any domain-specific encrypted targets (e.g. `env,creds` for ophix-creds).
+
+After `configure_install` writes `.env`, `run_install` creates the backup directory and generates the backup script automatically as step 13.
+
+To regenerate the backup script manually (e.g. after upgrading or moving the venv):
+
+```bash
+ophix-manage create_backup_script
+```
+
+### Manual .env configuration
+
+If you set up backup settings manually or want to review what was written, add these entries to `.env`:
 
 ```ini
 BACKUP_PATH=/home/ophix/backups/taskserver
 BACKUP_TARGETS=hosts,clients,settings
+BACKUP_TARGETS_ENCRYPTED=env
 BACKUP_PASSPHRASE=your-passphrase
 ```
 
