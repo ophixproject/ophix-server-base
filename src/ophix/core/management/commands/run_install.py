@@ -21,6 +21,7 @@ Steps performed directly:
   - Loads documentation for all installed apps (if ophix-docs is installed)
   - Generates static error pages (400, 403, 404, 500, 503) with active theme
   - Creates backup directory and generates backup script (if BACKUP_PATH configured)
+  - Generates <server_name>-update.sh convenience upgrade script
 
 After this command succeeds, run:
     sudo bash <server_name>_sudo_install.sh
@@ -655,6 +656,16 @@ class Command(BaseCommand):
             except Exception as exc:
                 self.stdout.write(self.style.WARNING(f"  Could not generate backup script: {exc}\n"))
             self.stdout.write("\n")
+
+        # ------------------------------------------------------------------ #
+        # 14. Generate update script
+        # ------------------------------------------------------------------ #
+        self.stdout.write("Generating update script\n")
+        try:
+            call_command("create_update_script", verbosity=1)
+        except Exception as exc:
+            self.stdout.write(self.style.WARNING(f"  Could not generate update script: {exc}\n"))
+        self.stdout.write("\n")
 
         # ------------------------------------------------------------------ #
         # Summary
