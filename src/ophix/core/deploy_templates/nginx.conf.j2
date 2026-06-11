@@ -46,7 +46,16 @@ server {
     error_page 500 502 /static/error_pages/500.html;
     error_page 503 504 /static/error_pages/503.html;
 
-    # Proxy to Gunicorn via Unix socket
+    # API — error responses pass through as-is (clients expect JSON, not HTML)
+    location /api/ {
+        proxy_pass         http://unix:{{ install_dir }}/run/{{ portal_name }}.sock;
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+
+    # Admin and everything else — intercept upstream errors to serve custom pages
     location / {
         proxy_pass         http://unix:{{ install_dir }}/run/{{ portal_name }}.sock;
         proxy_set_header   Host $host;
