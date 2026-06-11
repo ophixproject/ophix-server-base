@@ -395,6 +395,30 @@ ENABLE_ARTIFACT_DELETE = get_bool_env("ENABLE_ARTIFACT_DELETE", default=False)
 SERVER_READ_ONLY_MODE = get_bool_env("SERVER_READ_ONLY_MODE", default=False)
 
 # ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+# Django's default logging only writes to the console when DEBUG=True, so
+# request errors (500s) are silently discarded in production.  Override just
+# the django.request logger to always write ERROR-level tracebacks to stderr
+# (captured by gunicorn as credserver.gunicorn.error.log).
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+}
+
+# ---------------------------------------------------------------------------
 # Audit logging
 # ---------------------------------------------------------------------------
 
