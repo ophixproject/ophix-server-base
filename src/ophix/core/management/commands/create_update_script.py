@@ -97,5 +97,7 @@ class Command(BaseCommand):
         if not quiet:
             self.stdout.write(self.style.SUCCESS(f"Generated: {script_path}"))
             self.stdout.write("")
-            self.stdout.write("Run this script after any package update. Then restart the service:")
-            self.stdout.write(self.style.WARNING(f"    sudo systemctl restart {service_name}"))
+            self.stdout.write(
+                "Run this script to download and install all available updates "
+                "for this server, including all dependencies in the venv."
+            )
