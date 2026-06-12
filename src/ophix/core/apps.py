@@ -11,6 +11,18 @@ class OphixCoreConfig(AppConfig):
 
     def ready(self):
         _patch_admin_ordering()
+        _suppress_view_site_link()
+
+
+def _suppress_view_site_link():
+    """Remove the 'View site' link from the admin header.
+
+    The admin is the site — there is no separate front-end to link to.
+    Setting site_url to '' makes {% if site_url %} false in Django's own
+    userlinks template block, so the link is never rendered.
+    """
+    from django.contrib import admin
+    admin.site.site_url = ""
 
 
 def _patch_admin_ordering():
