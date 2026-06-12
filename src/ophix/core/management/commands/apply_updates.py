@@ -73,16 +73,20 @@ class Command(BaseCommand):
         if options["include_docs"]:
             self.stdout.write("")
             self.stdout.write(self.style.MIGRATE_HEADING("=== update_docs ==="))
-            modules = _modules_with_docs()
-            if modules:
-                self.stdout.write(f"Modules: {', '.join(modules)}")
-                management.call_command(
-                    "update_docs",
-                    include_app_docs=",".join(modules),
-                    verbosity=verbosity,
-                )
+            from django.apps import apps as django_apps
+            if not django_apps.is_installed("ophix_docs"):
+                self.stdout.write(self.style.WARNING("ophix-docs not installed — skipping."))
             else:
-                self.stdout.write(self.style.WARNING("No modules with docs/ directories found."))
+                modules = _modules_with_docs()
+                if modules:
+                    self.stdout.write(f"Modules: {', '.join(modules)}")
+                    management.call_command(
+                        "update_docs",
+                        include_app_docs=",".join(modules),
+                        verbosity=verbosity,
+                    )
+                else:
+                    self.stdout.write(self.style.WARNING("No modules with docs/ directories found."))
 
         # SERVICE_NAME is written to .env by run_install. Fall back to
         # slugifying SERVER_NAME for installs that pre-date this feature.
