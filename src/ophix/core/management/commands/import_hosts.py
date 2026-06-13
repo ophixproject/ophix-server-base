@@ -73,6 +73,14 @@ class Command(BaseCommand):
                 "skipped with an error."
             ),
         )
+        parser.add_argument(
+            "--name",
+            metavar="NAME",
+            action="append",
+            dest="names",
+            default=None,
+            help="Only import record(s) with this name. Repeat to specify multiple names.",
+        )
 
     def handle(self, *args, **options):
         from ophix.core.models import Host
@@ -81,6 +89,7 @@ class Command(BaseCommand):
         dry_run    = options["dry_run"]
         quiet      = options["quiet"]
         force      = options["force"]
+        names      = options["names"]
 
         if not input_path.exists():
             raise CommandError(f"Input file not found: {input_path}")
@@ -94,6 +103,14 @@ class Command(BaseCommand):
             records = records["hosts"]
         if not isinstance(records, list):
             raise CommandError("Unrecognised file format — expected export_hosts output.")
+
+        if names:
+            names_set = set(names)
+            records = [r for r in records if (r.get("name") or "").strip() in names_set]
+            if not records:
+                raise CommandError(
+                    f"No records found matching --name filter: {', '.join(sorted(names_set))}"
+                )
 
         created = updated = unchanged = skipped = 0
 

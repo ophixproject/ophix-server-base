@@ -54,6 +54,14 @@ class Command(BaseCommand):
                 "file is already assigned to a differently-named client on this server."
             ),
         )
+        parser.add_argument(
+            "--name",
+            metavar="NAME",
+            action="append",
+            dest="names",
+            default=None,
+            help="Only import client(s) with this name. Repeat to specify multiple names.",
+        )
 
     def handle(self, *args, **options):
         from ophix.core.models import Client, Host
@@ -62,6 +70,7 @@ class Command(BaseCommand):
         dry_run    = options["dry_run"]
         quiet      = options["quiet"]
         force      = options["force"]
+        names      = options["names"]
 
         if not input_path.exists():
             raise CommandError(f"Input file not found: {input_path}")
@@ -84,6 +93,14 @@ class Command(BaseCommand):
         records = payload["clients"]
         if not isinstance(records, list):
             raise CommandError("Expected 'clients' to be a JSON array.")
+
+        if names:
+            names_set = set(names)
+            records = [r for r in records if (r.get("name") or "").strip() in names_set]
+            if not records:
+                raise CommandError(
+                    f"No records found matching --name filter: {', '.join(sorted(names_set))}"
+                )
 
         created = updated = unchanged = skipped = 0
 
