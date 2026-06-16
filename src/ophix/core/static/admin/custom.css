@@ -140,8 +140,7 @@ input.vTimeField {
     width: 610px;
 }
 
-/* Plugin versions list: fixed percentage widths prevent reflow when
-   "⬆ Update available" appears or disappears across rows. */
+/* Plugin versions list: fixed percentage widths prevent reflow. */
 .model-packageupdaterecord #result_list {
     table-layout: fixed;
 }
@@ -150,15 +149,42 @@ input.vTimeField {
 .model-packageupdaterecord #result_list th.column-category            { width:  9%; }
 .model-packageupdaterecord #result_list th.column-installed_version   { width: 12%; }
 .model-packageupdaterecord #result_list th.column-latest_version      { width: 12%; }
-.model-packageupdaterecord #result_list th.column-up_to_date          { width: 13%; }
-.model-packageupdaterecord #result_list th.column-last_checked_at     { width: 16%; }
-.model-packageupdaterecord #result_list th.column-first_recorded_at   { width: 16%; }
+.model-packageupdaterecord #result_list th.column-up_to_date          { width:  8%; text-align: center; }
+.model-packageupdaterecord #result_list td.field-up_to_date           { text-align: center; }
+.model-packageupdaterecord #result_list th.column-last_checked_at     { width: 18%; }
+.model-packageupdaterecord #result_list th.column-first_recorded_at   { width: 19%; }
 
 .model-packageupdaterecord #result_list td,
 .model-packageupdaterecord #result_list th {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Plugin versions legend */
+.plugin-versions-legend {
+    margin: 8px 0 0 0;
+    font-size: 0.85em;
+    display: flex;
+    gap: 1.5rem;
+}
+
+.plugin-versions-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.plugin-versions-legend .legend-icon-ok {
+    color: var(--admin-interface-success-color, #28A745);
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.plugin-versions-legend .legend-icon-warn {
+    color: var(--admin-interface-warning-color, #E67E22);
+    font-size: 1.2em;
+    font-weight: 600;
 }
 
 /* Release notes rendered in PackageUpdateRecord detail view — mirrors docs TOC structure */

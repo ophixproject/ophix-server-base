@@ -375,6 +375,7 @@ hide_models("ophix.core", ["AccessLog"], getattr(settings, "SHOW_ACCESS_LOGS", F
 @admin.register(PackageUpdateRecord)
 class PackageUpdateRecordAdmin(admin.ModelAdmin):
     menu_order = 600
+    change_list_template = "admin/ophix_core/packageupdaterecord/change_list.html"
     list_display = (
         "package_name",
         "category",
@@ -409,6 +410,16 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
             "notice_rendered",
         )}),
     )
+
+    @admin.display(description=_("Installed"))
+    def installed_version(self, obj):
+        return obj.installed_version
+
+    @admin.display(description=_("Latest"))
+    def latest_version(self, obj):
+        if obj.latest_version == obj.installed_version:
+            return "—"
+        return obj.latest_version
 
     @admin.display(description=_("Release Notes"))
     def notice_rendered(self, obj):
@@ -542,17 +553,16 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
         except Exception:
             return _markdown_fallback(obj.notice)
 
-    @admin.display(description=_("Up To Date"))
+    @admin.display(description=_("Status"))
     def up_to_date(self, obj):
         if not obj.update_available:
             return mark_safe(
                 '<span style="color:var(--admin-interface-success-color,#28A745);'
-                'font-size:1.2em">✓</span>'
+                'font-size:1.2em;font-weight:600">✓</span>'
             )
-        return format_html(
+        return mark_safe(
             '<span style="color:var(--admin-interface-warning-color,#E67E22);'
-            'font-weight:bold">✗ {}</span>',
-            _("Update available"),
+            'font-size:1.2em;font-weight:600">✗</span>'
         )
 
     def has_add_permission(self, request):

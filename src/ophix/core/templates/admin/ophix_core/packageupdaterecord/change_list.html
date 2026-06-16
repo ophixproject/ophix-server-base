@@ -1,0 +1,14 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block result_list %}
+{{ block.super }}
+<div class="plugin-versions-legend">
+    <span class="legend-item">
+        <span class="legend-icon-ok">✓</span>{% trans "Up to date" %}
+    </span>
+    <span class="legend-item">
+        <span class="legend-icon-warn">✗</span>{% trans "New version available" %}
+    </span>
+</div>
+{% endblock %}
