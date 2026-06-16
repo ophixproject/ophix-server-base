@@ -92,12 +92,17 @@ window.addEventListener('load', function() {
     background: var(--admin-interface-delete-button-background-color, #ba2121);
     color: var(--admin-interface-delete-button-text-color, #fff);
   }
+  .btn-issue:hover, .btn-issue:focus {
+    background: var(--admin-interface-delete-button-background-hover-color, #a41515);
+    color: var(--admin-interface-delete-button-text-color, #fff);
+  }
   .btn-cancel {
     background: var(--admin-interface-save-button-background-color, #44b78b);
     color: var(--admin-interface-save-button-text-color, #fff);
   }
-  .btn-issue:hover, .btn-cancel:hover {
-    opacity: 0.85;
+  .btn-cancel:hover, .btn-cancel:focus {
+    background: var(--admin-interface-save-button-background-hover-color, #2fa878);
+    color: var(--admin-interface-save-button-text-color, #fff);
   }
   .client-meta {
     margin-bottom: 1rem;

@@ -243,10 +243,7 @@ class ClientAdmin(CleanSaveMessageMixin, admin.ModelAdmin):
             "Token hash (SHA-256) &nbsp;••••••••••••••••••••••••••••••••"
             "</span>"
             "&emsp;"
-            '<a href="{}?_popup=1" id="change-token-link-{}"'
-            ' style="display:inline-block;padding:0.2rem 0.6rem;'
-            'background:var(--admin-interface-delete-button-background-color,#ba2121);'
-            'color:#fff;border-radius:4px;font-size:0.8rem;text-decoration:none;">{}</a>',
+            '<a href="{}?_popup=1" id="change-token-link-{}" class="ophix-token-action-link">{}</a>',
             url, obj.pk,
             _("Issue a replacement token"),
         )

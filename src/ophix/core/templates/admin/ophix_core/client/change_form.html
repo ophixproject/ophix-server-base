@@ -50,7 +50,11 @@
     cursor: pointer;
     white-space: nowrap;
   }
-  .pending-token-copy:hover { opacity: 0.85; }
+  .pending-token-copy:hover,
+  .pending-token-copy:focus {
+    background: var(--admin-interface-save-button-background-hover-color, #2fa878);
+    color: var(--admin-interface-save-button-text-color, #fff);
+  }
 </style>
 <fieldset class="module aligned">
   <h2>{% trans "Token" %}</h2>

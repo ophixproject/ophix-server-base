@@ -106,8 +106,10 @@ window.addEventListener('load', function() {
     cursor: pointer;
     white-space: nowrap;
   }
-  .token-copy-btn:hover {
-    opacity: 0.85;
+  .token-copy-btn:hover,
+  .token-copy-btn:focus {
+    background: var(--admin-interface-save-button-background-hover-color, #2fa878);
+    color: var(--admin-interface-save-button-text-color, #fff);
   }
   .token-actions {
     display: flex;
@@ -123,8 +125,10 @@ window.addEventListener('load', function() {
     font-size: 0.9rem;
     cursor: pointer;
   }
-  .token-continue:hover {
-    opacity: 0.85;
+  .token-continue:hover,
+  .token-continue:focus {
+    background: var(--admin-interface-save-button-background-hover-color, #2fa878);
+    color: var(--admin-interface-save-button-text-color, #fff);
   }
   .client-meta {
     margin-bottom: 1rem;

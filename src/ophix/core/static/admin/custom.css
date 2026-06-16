@@ -335,3 +335,20 @@ input.vTimeField {
     padding: 0.1em 0.35em;
     border-radius: 3px;
 }
+
+/* "Issue a replacement token" link in the Token field row */
+.ophix-token-action-link {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    background: var(--admin-interface-delete-button-background-color, #ba2121);
+    color: var(--admin-interface-delete-button-text-color, #fff);
+    border-radius: var(--admin-interface-button-border-radius, 4px);
+    font-size: 0.8rem;
+    text-decoration: none;
+}
+
+.ophix-token-action-link:hover,
+.ophix-token-action-link:focus {
+    background: var(--admin-interface-delete-button-background-hover-color, #a41515);
+    color: var(--admin-interface-delete-button-text-color, #fff);
+}
