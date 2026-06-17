@@ -175,14 +175,16 @@ input.vTimeField {
     gap: 0.35rem;
 }
 
-.plugin-versions-legend .legend-icon-ok {
+.plugin-versions-legend .legend-item:has(.legend-icon-ok) {
     color: var(--admin-interface-success-color, #28A745);
-    font-size: 1.2em;
-    font-weight: 600;
 }
 
-.plugin-versions-legend .legend-icon-warn {
+.plugin-versions-legend .legend-item:has(.legend-icon-warn) {
     color: var(--admin-interface-warning-color, #E67E22);
+}
+
+.plugin-versions-legend .legend-icon-ok,
+.plugin-versions-legend .legend-icon-warn {
     font-size: 1.2em;
     font-weight: 600;
 }
