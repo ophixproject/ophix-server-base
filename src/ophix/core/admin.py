@@ -376,8 +376,8 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
     list_display = (
         "package_name",
         "category",
-        "installed_version",
-        "latest_version",
+        "installed_col",
+        "latest_col",
         "up_to_date",
         "last_checked_at",
         "first_recorded_at",
@@ -409,11 +409,11 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
     )
 
     @admin.display(description=_("Installed"))
-    def installed_version(self, obj):
+    def installed_col(self, obj):
         return obj.installed_version
 
     @admin.display(description=_("Latest"))
-    def latest_version(self, obj):
+    def latest_col(self, obj):
         if obj.latest_version == obj.installed_version:
             return "—"
         return obj.latest_version
