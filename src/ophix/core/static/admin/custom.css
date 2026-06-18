@@ -339,9 +339,9 @@ input.vTimeField {
 }
 
 /* "Issue a replacement token" link in the Token field row */
-.ophix-token-action-link,
-.ophix-token-action-link:link,
-.ophix-token-action-link:visited {
+.admin-interface .ophix-token-action-link,
+.admin-interface .ophix-token-action-link:link,
+.admin-interface .ophix-token-action-link:visited {
     display: inline-block;
     padding: 0.2rem 0.6rem;
     background: var(--admin-interface-delete-button-background-color, #ba2121);
@@ -351,8 +351,8 @@ input.vTimeField {
     text-decoration: none;
 }
 
-.ophix-token-action-link:hover,
-.ophix-token-action-link:focus {
+.admin-interface .ophix-token-action-link:hover,
+.admin-interface .ophix-token-action-link:focus {
     background: var(--admin-interface-delete-button-background-hover-color, #a41515);
     color: var(--admin-interface-delete-button-text-color, #fff);
 }
