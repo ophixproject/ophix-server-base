@@ -408,11 +408,11 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
         )}),
     )
 
-    @admin.display(description=_("Installed"))
+    @admin.display(description=_("Installed"), ordering="installed_version")
     def installed_col(self, obj):
         return obj.installed_version
 
-    @admin.display(description=_("Latest"))
+    @admin.display(description=_("Latest"), ordering="latest_version")
     def latest_col(self, obj):
         if obj.latest_version == obj.installed_version:
             return "—"
