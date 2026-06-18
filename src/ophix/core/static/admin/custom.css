@@ -355,4 +355,5 @@ input.vTimeField {
 .admin-interface .ophix-token-action-link:focus {
     background: var(--admin-interface-delete-button-background-hover-color, #a41515);
     color: var(--admin-interface-delete-button-text-color, #fff);
+    text-decoration: none;
 }
