@@ -339,7 +339,9 @@ input.vTimeField {
 }
 
 /* "Issue a replacement token" link in the Token field row */
-.ophix-token-action-link {
+.ophix-token-action-link,
+.ophix-token-action-link:link,
+.ophix-token-action-link:visited {
     display: inline-block;
     padding: 0.2rem 0.6rem;
     background: var(--admin-interface-delete-button-background-color, #ba2121);
