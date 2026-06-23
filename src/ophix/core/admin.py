@@ -390,7 +390,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
     ordering = ("sort_order", "package_name")
     readonly_fields = (
         "package_name",
-        "description",
+        "description_display",
         "category",
         "installed_version",
         "latest_version",
@@ -402,7 +402,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {"fields": (
             "package_name",
-            "description",
+            "description_display",
             "category",
             "installed_version",
             "latest_version",
@@ -412,6 +412,10 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
             "notice_rendered",
         )}),
     )
+
+    @admin.display(description=_("Description"))
+    def description_display(self, obj):
+        return obj.description or "—"
 
     @admin.display(description=_("Package"), ordering="package_name")
     def package_name_col(self, obj):
