@@ -74,6 +74,14 @@ def _format_ophix_version(version: str) -> str:
     return version
 
 
+def _read_description(pip_name: str) -> str:
+    """Read the Summary field from importlib.metadata for the pip package."""
+    try:
+        return dist_metadata(pip_name).get("Summary", "") or ""
+    except Exception:
+        return ""
+
+
 def _read_release_notes(module_name: str) -> str:
     """Read OPHIX_RELEASE_NOTES.md from the package's installed directory."""
     try:
@@ -170,12 +178,13 @@ class Command(BaseCommand):
                 status     = _STATUS_OK
             notes = _read_release_notes(module_name)
             category, sort_order = _read_plugin_meta(module_name)
-            results.append((plugin_name, pip_name, installed_fmt, latest_fmt, status, notes, category, sort_order))
+            description = _read_description(pip_name)
+            results.append((plugin_name, pip_name, installed_fmt, latest_fmt, status, notes, category, sort_order, description))
 
         # --- Upsert PackageUpdateRecord rows ---------------------------------
         from ophix.core.models import PackageUpdateRecord
         now = timezone.now()
-        for plugin_name, pip_name, installed, latest, status, notes, category, sort_order in results:
+        for plugin_name, pip_name, installed, latest, status, notes, category, sort_order, description in results:
             PackageUpdateRecord.objects.update_or_create(
                 package_name=pip_name,
                 defaults={
@@ -186,12 +195,13 @@ class Command(BaseCommand):
                     "notice": notes,
                     "category": category,
                     "sort_order": sort_order,
+                    "description": description,
                 },
             )
 
         # --- Prune stale rows ------------------------------------------------
         if prune:
-            known = {pip_name for _, pip_name, _, _, _, _, _, _ in results}
+            known = {pip_name for _, pip_name, _, _, _, _, _, _, _ in results}
             deleted = PackageUpdateRecord.objects.exclude(
                 package_name__in=known
             ).delete()[0]

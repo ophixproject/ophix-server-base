@@ -291,6 +291,11 @@ class PackageUpdateRecord(models.Model):
         max_length=200,
         unique=True,
     )
+    description = models.TextField(
+        _("description"),
+        blank=True,
+        help_text=_("Package summary from importlib.metadata, populated by check_updates."),
+    )
     installed_version = models.CharField(
         _("installed version"),
         max_length=100,

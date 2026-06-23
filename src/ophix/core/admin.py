@@ -376,7 +376,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
     menu_order = 600
     change_list_template = "admin/ophix_core/packageupdaterecord/change_list.html"
     list_display = (
-        "package_name",
+        "package_name_col",
         "category",
         "installed_col",
         "latest_col",
@@ -384,11 +384,13 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
         "last_checked_at",
         "first_recorded_at",
     )
+    list_display_links = ("package_name_col",)
     list_filter = ("category", "update_available",)
     search_fields = ("package_name",)
     ordering = ("sort_order", "package_name")
     readonly_fields = (
         "package_name",
+        "description",
         "category",
         "installed_version",
         "latest_version",
@@ -400,6 +402,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {"fields": (
             "package_name",
+            "description",
             "category",
             "installed_version",
             "latest_version",
@@ -409,6 +412,12 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
             "notice_rendered",
         )}),
     )
+
+    @admin.display(description=_("Package"), ordering="package_name")
+    def package_name_col(self, obj):
+        if obj.description:
+            return format_html('<span title="{}">{}</span>', obj.description, obj.package_name)
+        return obj.package_name
 
     @admin.display(description=_("Installed"), ordering="installed_version")
     def installed_col(self, obj):
