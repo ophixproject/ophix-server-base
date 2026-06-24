@@ -193,6 +193,7 @@ class ClientAdmin(CleanSaveMessageMixin, admin.ModelAdmin):
     _registered_inlines = []
     _registered_meta_columns = []
     _registered_columns = []
+    _registered_field_displays = {}
 
     @classmethod
     def register_inline(cls, inline_class):
@@ -208,6 +209,13 @@ class ClientAdmin(CleanSaveMessageMixin, admin.ModelAdmin):
         else:
             cls._registered_columns.append(fn.__name__)
 
+    @classmethod
+    def register_field_display(cls, field_name, display_fn):
+        """Register a custom readonly display for a model field on the change view.
+        Replaces the raw field value with the plugin's formatted output."""
+        setattr(cls, display_fn.__name__, display_fn)
+        cls._registered_field_displays[field_name] = display_fn.__name__
+
     def get_inlines(self, request, obj=None):
         return self._registered_inlines
 
@@ -215,6 +223,7 @@ class ClientAdmin(CleanSaveMessageMixin, admin.ModelAdmin):
         return list(self.list_display) + self._registered_meta_columns + self._registered_columns
 
     def get_fieldsets(self, request, obj=None):
+        r = self._registered_field_displays
         if obj is None:
             return [
                 (None, {"fields": ("host", "name", "enabled")}),
@@ -223,11 +232,12 @@ class ClientAdmin(CleanSaveMessageMixin, admin.ModelAdmin):
         return [
             (None, {"fields": ("host", "name", "enabled")}),
             (_("Deployment"), {"fields": ("deployment_ref", "venv_name", "venv_path")}),
-            (_("Token"), {"fields": ("api_token_display", "last_token_rotation"), "classes": ("collapse",)}),
+            (_("Token"), {"fields": ("api_token_display", r.get("last_token_rotation", "last_token_rotation")), "classes": ("collapse",)}),
         ]
 
     def get_readonly_fields(self, request, obj=None):
-        base = list(self.readonly_fields)
+        r = self._registered_field_displays
+        base = [r.get(f, f) for f in self.readonly_fields]
         if obj is not None:
             base.append("api_token_display")
         return base

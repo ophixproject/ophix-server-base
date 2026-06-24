@@ -1,5 +1,13 @@
 # ophix-server-base Release Notes
 
+## 2026.06.24.01
+
+- `ClientAdmin.register_field_display(field_name, display_fn)` hook added — plugins can
+  now register a custom readonly display function for any named field on the Client change
+  view. The function replaces the raw field value with formatted HTML. Used by
+  `ophix-client-management` to show token rotation state as a styled status indicator
+  rather than a plain datetime.
+
 ## 2026.06.10.01
 
 - Added `export_env` management command — encrypts the server's `.env` file with a
