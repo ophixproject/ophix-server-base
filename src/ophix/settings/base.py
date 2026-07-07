@@ -49,7 +49,7 @@ if not SECRET_KEY:
     # confuses the bootstrap workflow.
     env_file = find_dotenv(usecwd=True)
     if env_file:
-        set_key(env_file, "DJANGO_SECRET_KEY", SECRET_KEY)
+        set_key(env_file, "DJANGO_SECRET_KEY", SECRET_KEY, quote_mode="always")
 
 DEBUG = get_bool_env("DEBUG", default=False)
 

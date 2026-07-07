@@ -113,7 +113,7 @@ class Command(BaseCommand):
             ("DB_SSL_CERT", ssl_cert),
             ("DB_SSL_KEY",  ssl_key),
         ]:
-            set_key(env_file, key, value, quote_mode="never")
+            set_key(env_file, key, value, quote_mode="always" if key == "DB_PASSWORD" else "never")
 
         self.stdout.write(self.style.SUCCESS(f"\nWritten to {env_file}\n"))
         self.stdout.write(

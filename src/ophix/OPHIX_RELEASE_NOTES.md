@@ -1,5 +1,12 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `DJANGO_SECRET_KEY`, `DB_PASSWORD`, and `BACKUP_PASSPHRASE` are now written to `.env`
+  with single-quote wrapping (`quote_mode="always"`). Previously written unquoted, characters
+  such as `$`, `!`, and `#` in these values could be misinterpreted when the file was
+  `source`d by the backup script.
+
 ## 2026.07.07.01
 
 - `import_env` now uses `--input-file FILE` instead of a positional argument, matching the

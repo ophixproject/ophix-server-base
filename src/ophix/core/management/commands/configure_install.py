@@ -656,8 +656,9 @@ class Command(BaseCommand):
             ("DB_SSL_CERT",   db_ssl_cert),
             ("DB_SSL_KEY",    db_ssl_key),
         ]
+        _quoted = {"DB_PASSWORD", "BACKUP_PASSPHRASE"}
         for key, value in pairs:
-            set_key(str(env_path), key, value, quote_mode="never")
+            set_key(str(env_path), key, value, quote_mode="always" if key in _quoted else "never")
 
         # Backup settings — only write non-empty values to keep .env clean
         # when the operator skipped the backup configuration.
@@ -669,7 +670,7 @@ class Command(BaseCommand):
         ]
         for key, value in backup_pairs:
             if value:
-                set_key(str(env_path), key, value, quote_mode="never")
+                set_key(str(env_path), key, value, quote_mode="always" if key in _quoted else "never")
 
         self.stdout.write(self.style.SUCCESS(f"Written: {env_path}\n"))
 
