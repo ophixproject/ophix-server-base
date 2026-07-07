@@ -46,7 +46,7 @@ def favicon_view(request):
     correct fix regardless: this endpoint should return an actual icon.
     """
     Theme = apps.get_model("admin_interface", "Theme")
-    theme = Theme.objects.filter(active=True).first()
+    theme = Theme.objects.get_active()
     if not theme or not theme.favicon:
         raise Http404
     content_type, _ = mimetypes.guess_type(theme.favicon.name)
