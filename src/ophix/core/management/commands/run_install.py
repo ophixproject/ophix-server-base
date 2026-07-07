@@ -459,7 +459,7 @@ class Command(BaseCommand):
             _copy_tls(ca_bundle_src, ca_dest, self.stdout, self.style, "CA bundle")
             ca_bundle_dest = str(ca_dest)
             from dotenv import set_key as _set_key
-            _set_key(str(Path.cwd() / ".env"), "CA_CERT_FILE", ca_bundle_dest, quote_mode="never")
+            _set_key(str(Path.cwd() / ".env"), "CA_CERT_FILE", ca_bundle_dest, quote_mode="always")
             self.stdout.write(self.style.SUCCESS(f"  CA_CERT_FILE set in .env\n"))
 
         self.stdout.write("\n")
@@ -547,7 +547,7 @@ class Command(BaseCommand):
         # systemctl restart command even when the slug differs from SERVER_NAME.
         try:
             from dotenv import set_key as _set_key
-            _set_key(str(Path.cwd() / ".env"), "SERVICE_NAME", slug, quote_mode="never")
+            _set_key(str(Path.cwd() / ".env"), "SERVICE_NAME", slug, quote_mode="always")
             self.stdout.write(self.style.SUCCESS(f"  SERVICE_NAME={slug} set in .env\n\n"))
         except Exception:
             pass

@@ -736,7 +736,7 @@ class Command(BaseCommand):
             current_version = _get_env_value(env_file.read_text(encoding="utf-8"), "SERVER_VERSION")
             if current_version != new_version:
                 from dotenv import set_key as dotenv_set_key
-                dotenv_set_key(str(env_file), "SERVER_VERSION", new_version, quote_mode="never")
+                dotenv_set_key(str(env_file), "SERVER_VERSION", new_version, quote_mode="always")
                 if current_version:
                     self.stdout.write(
                         self.style.SUCCESS(
