@@ -10,7 +10,7 @@ then run import_env to overwrite it with the backed-up version.
 Typical restore sequence on a fresh machine:
     1. pip install <packages>
     2. ophix-manage configure_install <slug>   (generates skeleton .env)
-    3. ophix-manage import_env env.json --passphrase
+    3. ophix-manage import_env --input-file env.json --passphrase
     4. sudo systemctl restart <slug>           (Django now has correct keys/DB)
     5. ophix-manage migrate
     6. ophix-manage import_hosts, import_clients, import_<domain>
@@ -21,16 +21,16 @@ it in place so you don't need to manually edit the restored .env.
 Examples
 --------
 Restore from encrypted backup (prompted securely):
-    ophix-manage import_env env.json --passphrase
+    ophix-manage import_env --input-file env.json --passphrase
 
 Restore with INSTALL_DIR patched to a different path:
-    ophix-manage import_env env.json --passphrase --install-dir /srv/ophix/credserver
+    ophix-manage import_env --input-file env.json --passphrase --install-dir /srv/ophix/credserver
 
 Restore with passphrase from environment variable:
-    ophix-manage import_env env.json --passphrase-env BACKUP_PASSPHRASE
+    ophix-manage import_env --input-file env.json --passphrase-env BACKUP_PASSPHRASE
 
 Preview decrypted content without writing:
-    ophix-manage import_env env.json --passphrase --dry-run
+    ophix-manage import_env --input-file env.json --passphrase --dry-run
 """
 
 import base64
@@ -54,8 +54,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "input_file",
+            "--input-file",
             metavar="FILE",
+            required=True,
             help="Source file (JSON produced by export_env).",
         )
         passphrase_group = parser.add_mutually_exclusive_group()

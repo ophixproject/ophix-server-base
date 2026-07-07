@@ -1,5 +1,11 @@
 # ophix-server-base Release Notes
 
+## 2026.07.07.01
+
+- `import_env` now uses `--input-file FILE` instead of a positional argument, matching the
+  convention used by all other `import_*` commands. Existing scripts that pass the filename
+  as a bare positional argument must be updated to use `--input-file`.
+
 ## 2026.06.24.01
 
 - `ClientAdmin.register_field_display(field_name, display_fn)` hook added — plugins can

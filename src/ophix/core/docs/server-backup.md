@@ -153,13 +153,13 @@ ophix-manage export_env --output-file env.json --passphrase --dry-run
 `import_env` is used during disaster recovery to restore the `.env` from backup. Because it is a management command, Django needs a minimal `.env` to start — use `configure_install` to generate a skeleton first.
 
 ```bash
-ophix-manage import_env env.json --passphrase
+ophix-manage import_env --input-file env.json --passphrase
 ```
 
 If the install path differs on the new machine, patch `INSTALL_DIR` in place:
 
 ```bash
-ophix-manage import_env env.json --passphrase --install-dir /srv/ophix/credserver
+ophix-manage import_env --input-file env.json --passphrase --install-dir /srv/ophix/credserver
 ```
 
 After restoring, restart the service so Django picks up the recovered settings:
@@ -170,7 +170,7 @@ sudo systemctl restart credserver
 
 | Flag | Description |
 | --- | --- |
-| `FILE` | _(required)_ Source path (JSON produced by `export_env`) |
+| `--input-file FILE` | _(required)_ Source path (JSON produced by `export_env`) |
 | `--passphrase [VALUE]` | Decrypt with passphrase. Omit value to be prompted securely |
 | `--passphrase-env ENVVAR` | Read passphrase from named environment variable |
 | `--output-file FILE` | Where to write the restored `.env` (default: `.env` in current directory) |
@@ -214,7 +214,7 @@ Fleet clients reconnect to the restored server without re-registering — their 
 
 1. `pip install` all packages onto the new machine
 2. `ophix-manage configure_install <slug>` — generates a skeleton `.env` so Django can start
-3. `ophix-manage import_env env.json --passphrase` — restores the real `.env` (encryption keys, DB credentials, secret key)
+3. `ophix-manage import_env --input-file env.json --passphrase` — restores the real `.env` (encryption keys, DB credentials, secret key)
 4. If `INSTALL_DIR` differs on the new machine, add `--install-dir /new/path` to the command above
 5. `sudo systemctl restart <slug>` — Django now has all the correct settings
 6. `ophix-manage migrate` — schema is up to date from the fresh install; confirms state
