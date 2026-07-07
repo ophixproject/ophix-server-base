@@ -6,12 +6,15 @@ Standard API views present on every Ophix Project Server.
 CACertDownloadView      Unauthenticated — serves the internal CA cert.
 RegisterClientView      Unauthenticated — registers a new client for a known host.
 ClientViewSet           Authenticated  — client self-inspection, update, token rotation.
+favicon_view            Unauthenticated — serves /favicon.ico from the active theme.
 """
 
+import mimetypes
 import os
 import ssl
 import logging
 
+from django.apps import apps
 from django.conf import settings
 from django.db import IntegrityError
 from django.http import FileResponse, Http404
@@ -30,6 +33,24 @@ from .utils import get_client_ip, err_response
 logger = logging.getLogger(__name__)
 
 MINIMUM_TOKEN_ROTATE_TIME = lambda: getattr(settings, "MINIMUM_TOKEN_ROTATE_TIME", 3600)  # noqa: E731
+
+
+def favicon_view(request):
+    """
+    Serve /favicon.ico directly from the active theme's favicon file.
+
+    Browsers probe /favicon.ico independently of any <link rel="icon"> tag
+    on the page. Without this route the probe fell through to the catch-all
+    in ophix.urls and got a 302 to /admin/ — an HTML page, not an image.
+    Harmless once a browser has a favicon cached for the site, but the
+    correct fix regardless: this endpoint should return an actual icon.
+    """
+    Theme = apps.get_model("admin_interface", "Theme")
+    theme = Theme.objects.filter(active=True).first()
+    if not theme or not theme.favicon:
+        raise Http404
+    content_type, _ = mimetypes.guess_type(theme.favicon.name)
+    return FileResponse(theme.favicon.open("rb"), content_type=content_type or "image/x-icon")
 
 
 def _log_client_headers(request) -> None:

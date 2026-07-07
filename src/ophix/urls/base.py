@@ -6,9 +6,11 @@ of which domain plugin is installed.
 
 Includes:
   - Django admin
+  - favicon.ico (served from the active theme, so the browser's implicit
+    probe doesn't fall through to the catch-all redirect)
   - i18n language switching
   - Standard Ophix API endpoints (register, ca-cert, client self-management)
-  - Catch-all redirect to /admin/ (must remain last)
+  - Catch-all redirect to /admin/ (must remain last, defined in ophix.urls)
 """
 
 from django.conf import settings
@@ -23,6 +25,7 @@ from ophix.core.views import (
     RegisterClientView,
     CACertDownloadView,
     ClientViewSet,
+    favicon_view,
 )
 
 router = DefaultRouter()
@@ -31,6 +34,10 @@ router.register(r"client/self", ClientViewSet, basename="client-self")
 urlpatterns = [
     # Django admin
     path("admin/", admin.site.urls),
+
+    # Browser favicon.ico probe — must resolve to the theme's favicon, not
+    # fall through to the catch-all redirect (see favicon_view docstring).
+    path("favicon.ico", favicon_view, name="favicon"),
 
     # i18n language switching
     path("i18n/setlang/", set_language, name="set_language"),
