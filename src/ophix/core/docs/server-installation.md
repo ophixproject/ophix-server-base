@@ -18,7 +18,7 @@ Both are installed in the same virtual environment. Each domain runs as its own 
 
 - Python 3.10 or later
 - MariaDB (recommended) or another supported database engine, with a database and user pre-created
-- A virtual environment tool (`python -m venv`)
+- A virtual environment tool (`python -m venv`, or [`uv`](https://docs.astral.sh/uv/))
 - nginx and systemd (for production deployments)
 
 ---
@@ -30,6 +30,16 @@ mkdir credserver && cd credserver
 python -m venv venv
 source venv/bin/activate
 ```
+
+Or, using [uv](https://docs.astral.sh/uv/):
+
+```bash
+mkdir credserver && cd credserver
+uv venv
+source .venv/bin/activate
+```
+
+uv doesn't install `pip` into the venv by default. Either replace `pip install` with `uv pip install` in the commands throughout this guide, or create the venv with `uv venv --seed` to have plain `pip` available. Ophix has no dependency on how the venv was created — see [Client Quickstart](client-quickstart) for the equivalent note on the client side.
 
 ---
 

@@ -23,6 +23,18 @@ pip install ophix-cred-client     # for the credentials domain
 pip install ophix-conf-client     # for the configurations domain
 ```
 
+Or, using [uv](https://docs.astral.sh/uv/):
+
+```bash
+uv venv
+source .venv/bin/activate
+
+uv pip install ophix-cred-client
+uv pip install ophix-conf-client
+```
+
+Ophix detects a virtual environment by checking the running interpreter itself (`sys.prefix`), not by the venv's folder name or which tool created it — `uv`-managed clients work identically to `venv`/`pip`-managed ones, including venv-aware config file resolution and the `venv_name`/`venv_path` reported to the server for fleet visibility.
+
 The installed entry point matches the package:
 
 | Package | Command |
