@@ -234,8 +234,8 @@ For a full Ophix server backup strategy, schedule exports from cron and store ou
 
 - **Backup directory** — where backup files will be stored. The wizard suggests a path derived from `INSTALL_DIR`: `INSTALL_DIR/../backups/<server_name>` (e.g. if `INSTALL_DIR=/home/ophix/taskserver`, the suggested path is `/home/ophix/backups/taskserver`).
 - **Backup passphrase** — used to encrypt the `.env` backup and any credential or CA-key exports. Leave blank to skip encryption (the `.env` backup will not be included).
-- **BACKUP_TARGETS** — comma-separated list of unencrypted export targets. Defaults are set automatically based on the installed domain plugin (e.g. `hosts,clients,settings,tasks` for ophix-tasks).
-- **BACKUP_TARGETS_ENCRYPTED** — encrypted export targets (always requires a passphrase). Defaults include `env` plus any domain-specific encrypted targets (e.g. `env,creds` for ophix-creds).
+- **BACKUP_TARGETS** — comma-separated list of unencrypted export targets. Base default is `hosts,clients,settings`, present on every server. Each installed domain plugin contributes its own target(s) via its `install_configure` hook (e.g. `ophix-tasks` adds `tasks`, `ophix-zones` adds `dns_servers,zones`) — `configure_install` itself has no domain-specific knowledge of these.
+- **BACKUP_TARGETS_ENCRYPTED** — encrypted export targets (always requires a passphrase). Base default is `env`. Domain plugins whose exports contain secrets or private key material contribute here instead of the plain bucket (e.g. `ophix-creds` adds `creds`, `ophix-certs` adds `certs`, `ophix-certs-ca` adds `certs_ca`).
 
 After `configure_install` writes `.env`, `run_install` creates the backup directory and generates the backup script automatically as step 13.
 

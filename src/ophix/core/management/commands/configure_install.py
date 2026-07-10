@@ -39,14 +39,10 @@ from ophix.core.management.commands.generate_config import (
 # Backup target defaults
 # ---------------------------------------------------------------------------
 
-# (unencrypted_targets, encrypted_targets) per detected domain package.
-_DOMAIN_BACKUP_TARGETS = {
-    "ophix-creds": ("hosts,clients,settings",                   "env,creds"),
-    "ophix-confs": ("hosts,clients,settings,confs",             "env"),
-    "ophix-certs": ("hosts,clients,settings,certs",             "env"),
-    "ophix-tasks": ("hosts,clients,settings,tasks",             "env"),
-    "ophix-zones": ("hosts,clients,settings,dns_servers,zones", "env"),
-}
+# Base targets present on every server regardless of installed domain plugin.
+# Domain plugins contribute their own targets via their install_configure
+# hook, by appending to conf["backup"]["targets_extra"] /
+# ["targets_encrypted_extra"] — see _call_plugin_configure_hooks below.
 _BACKUP_DEFAULT_TARGETS     = "hosts,clients,settings"
 _BACKUP_DEFAULT_ENC_TARGETS = "env"
 # Targets that always require a passphrase; stripped when no passphrase is set.
@@ -63,15 +59,6 @@ def _merge_backup_targets(*target_strings):
                 seen.add(t)
                 result.append(t)
     return ",".join(result)
-
-
-def _is_package_installed(package_name):
-    try:
-        from importlib.metadata import distribution
-        distribution(package_name)
-        return True
-    except Exception:
-        return False
 
 
 # ---------------------------------------------------------------------------
@@ -504,12 +491,8 @@ class Command(BaseCommand):
         # ------------------------------------------------------------------ #
         self.stdout.write("--- Backup targets ---\n")
 
-        targets_base, enc_targets_base = _DOMAIN_BACKUP_TARGETS.get(
-            dist_name, (_BACKUP_DEFAULT_TARGETS, _BACKUP_DEFAULT_ENC_TARGETS)
-        )
-        # certs-ca adds encrypted CA key backups when installed alongside certs
-        if dist_name == "ophix-certs" and _is_package_installed("ophix-certs-ca"):
-            enc_targets_base = _merge_backup_targets(enc_targets_base, "certs_ca")
+        targets_base = _BACKUP_DEFAULT_TARGETS
+        enc_targets_base = _BACKUP_DEFAULT_ENC_TARGETS
 
         # Merge any targets contributed by plugin hooks
         targets_extra = conf.get("backup", "targets_extra", fallback="")
