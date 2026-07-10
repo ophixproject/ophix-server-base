@@ -6,7 +6,9 @@ report whether newer versions are available.
 
 Uses ``pip list --outdated`` under the hood, so every pip source configured
 for this environment (local mirror, private index, PyPI, etc.) is respected
-automatically.  No extra network configuration is needed.
+automatically.  No extra network configuration is needed. Falls back to
+``uv pip list --outdated`` if pip isn't importable in this environment (e.g.
+a venv created with ``uv venv`` without ``--seed``).
 
 Results are stored in the PackageUpdateRecord table and optionally displayed
 on screen.  Use --quiet to suppress output (suitable for cron jobs).
@@ -22,6 +24,7 @@ Examples
 """
 
 import json
+import shutil
 import subprocess
 import sys
 from importlib.metadata import entry_points, metadata as dist_metadata
@@ -41,14 +44,37 @@ _STATUS_OK     = "ok"
 _STATUS_UPDATE = "update"
 
 
-def _get_outdated_map(timeout: int) -> dict:
-    """Return {package_name_lower: latest_version} for all outdated packages."""
+def _run_pip_list_outdated(timeout: int) -> subprocess.CompletedProcess:
+    """Run `pip list --outdated --format=json` for the current interpreter.
+
+    Falls back to `uv pip list --outdated --format=json --python <this
+    interpreter>` if pip isn't importable (e.g. a seedless uv-created venv).
+    The explicit --python flag targets this exact interpreter rather than
+    relying on VIRTUAL_ENV, which isn't reliably set under cron/systemd.
+    """
     result = subprocess.run(
         [sys.executable, "-m", "pip", "list", "--outdated", "--format=json"],
         capture_output=True,
         text=True,
         timeout=timeout,
     )
+    if result.returncode == 0:
+        return result
+
+    uv_path = shutil.which("uv")
+    if uv_path:
+        return subprocess.run(
+            [uv_path, "pip", "list", "--outdated", "--format=json", "--python", sys.executable],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    return result
+
+
+def _get_outdated_map(timeout: int) -> dict:
+    """Return {package_name_lower: latest_version} for all outdated packages."""
+    result = _run_pip_list_outdated(timeout)
     if result.returncode != 0:
         return {}
     try:
