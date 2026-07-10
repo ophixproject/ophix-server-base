@@ -15,15 +15,16 @@
 # Paths are baked in at generation time. Re-run create_update_script after
 # moving the venv or changing INSTALL_DIR.
 #
-# After this script completes, restart the service:
-#   sudo systemctl restart {{ service_name }}
+# apply_updates (step 3 below) prints a "restart the service" reminder with
+# the current SERVICE_NAME read fresh from .env — not repeated here, since a
+# value baked into this script at generation time would go stale if
+# SERVICE_NAME is ever changed afterward without regenerating the script.
 
 set -euo pipefail
 
 INSTALL_DIR="{{ install_dir }}"
 VENV="{{ venv_path }}"
 MANAGE="{{ manage_path }}"
-SERVICE="{{ service_name }}"
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting update — {{ server_name }}"
 echo ""
@@ -73,6 +74,3 @@ fi
 deactivate
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Update complete — {{ server_name }}"
-echo ""
-echo "Restart the service to activate changes:"
-echo "  sudo systemctl restart $SERVICE"
