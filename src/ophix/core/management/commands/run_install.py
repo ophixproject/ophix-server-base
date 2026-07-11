@@ -108,6 +108,18 @@ _SUDO_INSTALL_TEMPLATE = """\
 
 set -e
 
+if [ "$(id -u)" -ne 0 ]; then
+    echo "ERROR: this script must be run as root:" >&2
+    echo "  sudo bash {{ server_name }}_sudo_install.sh" >&2
+    echo "" >&2
+    echo "Running it unprivileged first leaves ownership partially applied —" >&2
+    echo "some chown calls to your own user silently no-op, but the chown to" >&2
+    echo "the nginx group fails and aborts the script partway through, which" >&2
+    echo "can leave media/logs/run with the wrong group even after a correct" >&2
+    echo "root re-run, if those directories get recreated in between." >&2
+    exit 1
+fi
+
 SERVICE_USER="{{ service_user }}"
 SERVICE_GROUP="{{ service_group }}"
 NGINX_GROUP="{{ nginx_group }}"
