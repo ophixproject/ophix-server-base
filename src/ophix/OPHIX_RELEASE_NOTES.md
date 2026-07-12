@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Documented that `DB_SSL_CA`/`DB_SSL_CERT`/`DB_SSL_KEY` (`env.sample.j2`) only apply to
+  `DB_ENGINE=mariadb/mysql`, `postgres`, and `cockroachdb`. They have no effect for
+  `sqlserver` (TLS is on by default, validated against the OS certificate trust store —
+  see the mssql plugin's own env fragment) or `oracle` (TLS is not currently supported by
+  that engine plugin at all — enabling `DB_ORACLE_THICK_MODE` does not configure an Oracle
+  Wallet or any other TLS parameter, it only switches the underlying client library).
+  Found while scoping out a DB-engine TLS/plaintext testing matrix — no functional change,
+  comments only (`env.sample.j2` and `settings/base.py`).
+
 - `<slug>-update.sh` (`create_update_script`) now refuses to run as root — mirrors the
   existing root-required guard on `<slug>_sudo_install.sh`, but inverted. This script is
   designed to run entirely as the unprivileged service user; running it under `sudo` causes

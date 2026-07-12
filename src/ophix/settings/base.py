@@ -187,6 +187,10 @@ elif _db_engine == "sqlserver":
     # OS dep: ODBC Driver 17 or 18 for SQL Server
     # TLS is negotiated by the ODBC driver; set Encrypt/TrustServerCertificate
     # via DB_SQLSERVER_ENCRYPT / DB_SQLSERVER_TRUST_CERT if needed.
+    # _db_ssl_ca/_db_ssl_cert/_db_ssl_key are deliberately NOT used here — the
+    # ODBC driver validates against the OS certificate trust store, not a file
+    # path. See env.sample.j2 and the mssql plugin's env.fragment.j2 for the
+    # operator-facing explanation.
     _db_options = {
         "driver": os.getenv("DB_SQLSERVER_DRIVER", "ODBC Driver 18 for SQL Server"),
         "Encrypt": os.getenv("DB_SQLSERVER_ENCRYPT", "yes"),
@@ -209,6 +213,10 @@ elif _db_engine == "oracle":
     # Runs in thin mode by default (pure Python, no Oracle Instant Client needed).
     # Switch to thick mode by installing Oracle Instant Client and setting
     # DB_ORACLE_THICK_MODE=True in .env.
+    # TLS is NOT currently supported for this engine — no OPTIONS/wallet wiring
+    # exists below. _db_ssl_ca/_db_ssl_cert/_db_ssl_key are deliberately unused.
+    # Thick mode alone (see ophix_dbengine_oracle.settings) only switches the
+    # underlying client library; it does not configure an Oracle Wallet.
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.oracle",
