@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.07.12.01
 
 - Documented that `DB_SSL_CA`/`DB_SSL_CERT`/`DB_SSL_KEY` (`env.sample.j2`) only apply to
   `DB_ENGINE=mariadb/mysql`, `postgres`, and `cockroachdb`. They have no effect for
