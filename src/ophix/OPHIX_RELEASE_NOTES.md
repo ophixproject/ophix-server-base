@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.07.12.02
 
 - `Client.api_token` renamed to `Client.token_hash`. The field has stored a SHA-256 hash
   (not a live credential) since the session-28 token-hashing work, but the field name never
