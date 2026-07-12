@@ -22,6 +22,19 @@
 
 set -euo pipefail
 
+if [ "$(id -u)" -eq 0 ]; then
+    echo "ERROR: do not run this script as root (e.g. via sudo)." >&2
+    echo "  Run it as the service user instead:" >&2
+    echo "    ./{{ server_name }}-update.sh" >&2
+    echo "" >&2
+    echo "This script is designed to run entirely as the unprivileged service" >&2
+    echo "user. Running it as root causes any .env rewrite during the update" >&2
+    echo "(e.g. the SERVER_VERSION bump in 'generate_config --append', part of" >&2
+    echo "'apply_updates') to leave .env owned by root — which then breaks" >&2
+    echo "every subsequent unprivileged run with a permission error reading .env." >&2
+    exit 1
+fi
+
 INSTALL_DIR="{{ install_dir }}"
 VENV="{{ venv_path }}"
 MANAGE="{{ manage_path }}"

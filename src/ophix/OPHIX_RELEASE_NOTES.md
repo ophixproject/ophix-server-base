@@ -1,5 +1,17 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `<slug>-update.sh` (`create_update_script`) now refuses to run as root — mirrors the
+  existing root-required guard on `<slug>_sudo_install.sh`, but inverted. This script is
+  designed to run entirely as the unprivileged service user; running it under `sudo` causes
+  any `.env` rewrite mid-run (e.g. the `SERVER_VERSION` bump in `generate_config --append`,
+  part of `apply_updates`) to leave `.env` owned by `root`, silently breaking every
+  subsequent unprivileged run with a permission error reading `.env`. Root-caused on
+  zoneserver after an accidental `sudo ./<slug>-update.sh` run. **Only affects newly
+  generated scripts** — re-run `ophix-manage create_update_script` on each server to pick
+  up the guard on an already-deployed `-update.sh`.
+
 ## 2026.07.07.02
 
 - `DJANGO_SECRET_KEY`, `DB_PASSWORD`, and `BACKUP_PASSPHRASE` are now written to `.env`
