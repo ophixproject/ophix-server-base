@@ -1,5 +1,20 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `Client.api_token` renamed to `Client.token_hash`. The field has stored a SHA-256 hash
+  (not a live credential) since the session-28 token-hashing work, but the field name never
+  changed to reflect that — a hash and the original token look like similarly-shaped opaque
+  hex strings, so anyone looking at a `client export` JSON file had no visual cue that the
+  value is a hash. Plain column rename via migration `0004` (`RenameField` — `ALTER TABLE ...
+  RENAME COLUMN`, existing values preserved, no data transformation). Fleet clients are
+  unaffected — they never read this field, only ever send their plaintext token in the
+  Authorization header. **Breaking change to the `export_clients`/`import_clients` JSON
+  schema**: the `api_token` key is now `token_hash`; export payload `version` bumped to `2`.
+  `import_clients` rejects older files with a clear error pointing at re-export rather than
+  silently skipping every record. `ClientAdmin.api_token_display` renamed to
+  `token_hash_display` to match.
+
 ## 2026.07.12.01
 
 - Documented that `DB_SSL_CA`/`DB_SSL_CERT`/`DB_SSL_KEY` (`env.sample.j2`) only apply to

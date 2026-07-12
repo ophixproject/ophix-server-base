@@ -45,7 +45,12 @@ def hash_token(token: str) -> str:
 
 
 def _default_api_token() -> str:
-    """Generate a random token and return its hash. Plaintext is discarded."""
+    """Generate a random token and return its hash. Plaintext is discarded.
+
+    Name is historical — referenced by name in migration 0002's frozen
+    state (`ophix.core.models._default_api_token`). Do not rename without
+    also updating that migration's serialized default callable.
+    """
     return hash_token(generate_api_token())
 
 
@@ -113,8 +118,8 @@ class Client(models.Model):
         help_text=_("Absolute path to the Python virtual environment"),
     )
     enabled = models.BooleanField(_("enabled"), default=True)
-    api_token = models.CharField(
-        _("API token (SHA-256 hash)"),
+    token_hash = models.CharField(
+        _("token hash (SHA-256)"),
         max_length=64,
         unique=True,
         default=_default_api_token,

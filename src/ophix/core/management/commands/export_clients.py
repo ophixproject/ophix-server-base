@@ -59,7 +59,7 @@ def _serialize(client):
         "venv_name":          client.venv_name,
         "venv_path":          client.venv_path,
         "enabled":            client.enabled,
-        "api_token":          client.api_token,
+        "token_hash":         client.token_hash,
         "last_token_rotation": (
             client.last_token_rotation.isoformat()
             if client.last_token_rotation else None
@@ -111,7 +111,7 @@ class Command(BaseCommand):
             raise CommandError(f"Output directory does not exist: {output_path.parent}")
 
         payload = {
-            "version":      1,
+            "version":      2,
             "token_format": "hash",
             "meta":         _build_meta("clients", "export_clients"),
             "clients":      [_serialize(c) for c in clients],

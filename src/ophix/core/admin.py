@@ -232,17 +232,17 @@ class ClientAdmin(CleanSaveMessageMixin, admin.ModelAdmin):
         return [
             (None, {"fields": ("host", "name", "enabled")}),
             (_("Deployment"), {"fields": ("deployment_ref", "venv_name", "venv_path")}),
-            (_("Token"), {"fields": ("api_token_display", r.get("last_token_rotation", "last_token_rotation")), "classes": ("collapse",)}),
+            (_("Token"), {"fields": ("token_hash_display", r.get("last_token_rotation", "last_token_rotation")), "classes": ("collapse",)}),
         ]
 
     def get_readonly_fields(self, request, obj=None):
         r = self._registered_field_displays
         base = [r.get(f, f) for f in self.readonly_fields]
         if obj is not None:
-            base.append("api_token_display")
+            base.append("token_hash_display")
         return base
 
-    def api_token_display(self, obj):
+    def token_hash_display(self, obj):
         url = reverse(
             "admin:ophix_core_client_change_token",
             args=[obj.pk],
@@ -259,7 +259,7 @@ class ClientAdmin(CleanSaveMessageMixin, admin.ModelAdmin):
             _("Issue a replacement token"),
             _("Issuing a replacement token will immediately lock out the existing client until it reconnects with the new token."),
         )
-    api_token_display.short_description = _("API token")
+    token_hash_display.short_description = _("API token")
 
     def get_urls(self):
         from django.urls import path
@@ -289,9 +289,9 @@ class ClientAdmin(CleanSaveMessageMixin, admin.ModelAdmin):
             from django.utils import timezone
             from .models import generate_api_token, hash_token
             raw_token = generate_api_token()
-            obj.api_token = hash_token(raw_token)
+            obj.token_hash = hash_token(raw_token)
             obj.last_token_rotation = timezone.now()
-            obj.save(update_fields=["api_token", "last_token_rotation"])
+            obj.save(update_fields=["token_hash", "last_token_rotation"])
             return render(request, "admin/ophix_core/client/token_created.html", {
                 "client": obj,
                 "token": raw_token,
@@ -329,7 +329,7 @@ class ClientAdmin(CleanSaveMessageMixin, admin.ModelAdmin):
             from django.utils import timezone
             from .models import generate_api_token, hash_token
             raw_token = request.session.pop("_ophix_pending_token", None) or generate_api_token()
-            obj.api_token = hash_token(raw_token)
+            obj.token_hash = hash_token(raw_token)
             obj.last_token_rotation = timezone.now()
         super().save_model(request, obj, form, change)
 

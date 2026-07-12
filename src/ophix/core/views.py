@@ -172,7 +172,7 @@ class RegisterClientView(APIView):
                 deployment_ref=deployment_ref,
                 venv_name=venv_name,
                 venv_path=venv_path,
-                api_token=hash_token(raw_token),
+                token_hash=hash_token(raw_token),
             )
         except IntegrityError:
             return Response(
@@ -242,7 +242,7 @@ class ClientViewSet(viewsets.ViewSet):
             )
 
         new_hash = hash_token(new_token)
-        if Client.objects.filter(api_token=new_hash).exists():
+        if Client.objects.filter(token_hash=new_hash).exists():
             return Response(
                 {"error": err_response("Token already in use", "Bad request")},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -256,10 +256,10 @@ class ClientViewSet(viewsets.ViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        client.api_token = new_hash
+        client.token_hash = new_hash
         client.last_token_rotation = timezone.now()
         client.rotation_required = False
         client.lockout_override = False
-        client.save(update_fields=["api_token", "last_token_rotation", "rotation_required", "lockout_override"])
+        client.save(update_fields=["token_hash", "last_token_rotation", "rotation_required", "lockout_override"])
 
         return Response({"status": "ok"}, status=status.HTTP_200_OK)

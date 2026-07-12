@@ -5,7 +5,7 @@ Import Client records from a JSON file produced by export_clients.
 
 Idempotent: clients are matched by host name + client name. Existing clients
 are updated only when a field value differs; identical records are skipped.
-The api_token hash is always written — this is intentional for migration/recovery
+The token_hash is always written — this is intentional for migration/recovery
 so that fleet clients can reconnect to a restored server without re-registering.
 
 Referenced hosts must already exist on the target server. Run import_hosts
@@ -90,6 +90,14 @@ class Command(BaseCommand):
                 "source server using the current version before importing."
             )
 
+        if payload.get("version", 1) < 2:
+            raise CommandError(
+                "This file was produced by an older version of export_clients "
+                "and uses the 'api_token' key for the token hash field, which was "
+                "renamed to 'token_hash'. Re-export from the source server using "
+                "the current version before importing."
+            )
+
         records = payload["clients"]
         if not isinstance(records, list):
             raise CommandError("Expected 'clients' to be a JSON array.")
@@ -123,15 +131,15 @@ class Command(BaseCommand):
                 skipped += 1
                 continue
 
-            token_hash = rec.get("api_token", "")
+            token_hash = rec.get("token_hash", "")
             if not token_hash:
-                self.stderr.write(f"  {host_name}/{name}: missing api_token — skipped.")
+                self.stderr.write(f"  {host_name}/{name}: missing token_hash — skipped.")
                 skipped += 1
                 continue
 
             if not force:
                 conflict = (
-                    Client.objects.filter(api_token=token_hash)
+                    Client.objects.filter(token_hash=token_hash)
                     .exclude(name=name, host=host)
                     .first()
                 )
@@ -154,7 +162,7 @@ class Command(BaseCommand):
                 "venv_name":           rec.get("venv_name") or None,
                 "venv_path":           rec.get("venv_path") or None,
                 "enabled":             bool(rec.get("enabled", True)),
-                "api_token":           token_hash,
+                "token_hash":          token_hash,
                 "last_token_rotation": ltr,
             }
 
@@ -170,8 +178,8 @@ class Command(BaseCommand):
                         self.stdout.write(f"  {host_name}/{name}: unchanged.")
                 else:
                     if not quiet:
-                        visible = [f for f in changed if f != "api_token"]
-                        token_note = " + token" if "api_token" in changed else ""
+                        visible = [f for f in changed if f != "token_hash"]
+                        token_note = " + token" if "token_hash" in changed else ""
                         label = (", ".join(visible) + token_note) if visible else "token"
                         self.stdout.write(f"  {host_name}/{name}: updating {label}.")
                     if not dry_run:

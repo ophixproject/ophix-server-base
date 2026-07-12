@@ -13,7 +13,7 @@ class ClientSerializer(serializers.ModelSerializer):
     """
     Read/update serializer for the authenticated client's own record.
 
-    Excludes api_token (managed via rotate-token endpoint) and
+    Excludes token_hash (managed via rotate-token endpoint) and
     host (immutable after registration).
     """
 

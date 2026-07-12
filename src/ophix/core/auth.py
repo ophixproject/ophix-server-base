@@ -49,7 +49,7 @@ class ClientTokenAuthentication(BaseAuthentication):
         token = auth_header[len(f"{_KEYWORD} "):].strip()
 
         try:
-            client = Client.objects.select_related("host").get(api_token=hash_token(token))
+            client = Client.objects.select_related("host").get(token_hash=hash_token(token))
         except Client.DoesNotExist:
             logger.info("Authentication failed: unrecognised token")
             raise exceptions.AuthenticationFailed(self._msg("Invalid token"))

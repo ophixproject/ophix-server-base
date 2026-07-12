@@ -95,3 +95,15 @@ because:
   computationally infeasible).
 - `DNSServer.api_token` follows the identical hashing pattern despite being in the
   `ophix-zones` package — the same rationale applies.
+
+## Follow-up (2026-07-12)
+
+`Client.api_token` and `DNSServer.api_token` were renamed to `token_hash` to match what
+they actually store. The field name was never updated when this ADR's decision landed,
+and a SHA-256 hash reads as an opaque hex string indistinguishable from a live token at a
+glance — the old name gave no visual cue on sight (e.g. in an export JSON file) that the
+value could not be used to authenticate. Plain column rename, no data transformation,
+no change to the hashing/auth behaviour described above. Breaking change to the
+`export_clients`/`import_clients`/`export_dns_servers`/`import_dns_servers` JSON schema
+(the `api_token` export key is now `token_hash`) — not a security concern, since (per this
+ADR) the exported value was already a hash and not a usable credential either way.
