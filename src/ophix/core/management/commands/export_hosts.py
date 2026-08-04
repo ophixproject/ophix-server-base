@@ -72,6 +72,12 @@ class Command(BaseCommand):
             help="Show how many hosts would be exported without writing anything.",
         )
         parser.add_argument(
+            "--stable",
+            action="store_true",
+            help="Omit the meta block and sort keys, so re-exporting unchanged data "
+                 "produces byte-identical output (used by ophix-revisions).",
+        )
+        parser.add_argument(
             "--quiet",
             action="store_true",
             help="Suppress all output.",
@@ -82,6 +88,7 @@ class Command(BaseCommand):
 
         output_path = Path(options["output_file"])
         dry_run     = options["dry_run"]
+        stable      = options["stable"]
         quiet       = options["quiet"]
 
         hosts = list(Host.objects.order_by("name"))
@@ -99,13 +106,13 @@ class Command(BaseCommand):
         if not output_path.parent.exists():
             raise CommandError(f"Output directory does not exist: {output_path.parent}")
 
-        payload = {
-            "version": 1,
-            "meta":    _build_meta("hosts", "export_hosts"),
-            "hosts":   [_serialize(h) for h in hosts],
-        }
+        payload = {"version": 1}
+        if not stable:
+            payload["meta"] = _build_meta("hosts", "export_hosts")
+        payload["hosts"] = [_serialize(h) for h in hosts]
+
         with output_path.open("w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=2)
+            json.dump(payload, f, indent=2, sort_keys=stable)
 
         if not quiet:
             self.stdout.write(self.style.SUCCESS(f"Exported {count} host(s) to {output_path}."))

@@ -83,6 +83,12 @@ class Command(BaseCommand):
             help="Show how many clients would be exported without writing anything.",
         )
         parser.add_argument(
+            "--stable",
+            action="store_true",
+            help="Omit the meta block and sort keys, so re-exporting unchanged data "
+                 "produces byte-identical output (used by ophix-revisions).",
+        )
+        parser.add_argument(
             "--quiet",
             action="store_true",
             help="Suppress all output.",
@@ -93,6 +99,7 @@ class Command(BaseCommand):
 
         output_path = Path(options["output_file"])
         dry_run     = options["dry_run"]
+        stable      = options["stable"]
         quiet       = options["quiet"]
 
         clients = list(Client.objects.select_related("host").order_by("host__name", "name"))
@@ -113,12 +120,13 @@ class Command(BaseCommand):
         payload = {
             "version":      2,
             "token_format": "hash",
-            "meta":         _build_meta("clients", "export_clients"),
-            "clients":      [_serialize(c) for c in clients],
         }
+        if not stable:
+            payload["meta"] = _build_meta("clients", "export_clients")
+        payload["clients"] = [_serialize(c) for c in clients]
 
         with output_path.open("w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=2)
+            json.dump(payload, f, indent=2, sort_keys=stable)
 
         if not quiet:
             self.stdout.write(self.style.SUCCESS(

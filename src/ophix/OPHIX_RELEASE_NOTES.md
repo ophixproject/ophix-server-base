@@ -1,5 +1,14 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `export_hosts`/`export_clients` gain a `--stable` flag: omits the `meta` block
+  (`created_at`/`hostname`/`run_by`/`login_user`/`ssh_origin` — all run/machine-specific
+  noise) and passes `sort_keys=True`, so re-exporting unchanged data produces byte-identical
+  output. Written for `ophix-revisions` (git-backed continuous history — commits only when
+  the export actually differs from what's already there), but usable standalone by anyone
+  who wants reproducible exports. Normal (non-`--stable`) output is unchanged.
+
 ## 2026.07.12.02
 
 - `Client.api_token` renamed to `Client.token_hash`. The field has stored a SHA-256 hash
