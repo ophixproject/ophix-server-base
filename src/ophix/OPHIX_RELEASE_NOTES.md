@@ -8,6 +8,10 @@
   output. Written for `ophix-revisions` (git-backed continuous history — commits only when
   the export actually differs from what's already there), but usable standalone by anyone
   who wants reproducible exports. Normal (non-`--stable`) output is unchanged.
+- `ophix.core` gains `get_revisions_targets()`, declaring its own `hosts`/`clients`/`env`
+  targets for `ophix-revisions` (if installed) to discover — no hardcoded catalog of domain
+  packages lives in `ophix-revisions` itself; each domain declares itself. See memory
+  `feedback_no_hardcoded_target_catalogs.md`.
 
 ## 2026.07.12.02
 
