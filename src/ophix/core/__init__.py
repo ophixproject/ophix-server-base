@@ -1,9 +1,8 @@
 def get_revisions_targets():
     """
-    Optional hook discovered by ophix-revisions (if installed) — see memory
-    `feedback_no_hardcoded_target_catalogs.md`. ophix-server-base is the one
-    package ophix-revisions imports this from directly rather than via
-    entry-point discovery, since every install already has an unconditional
+    Optional hook discovered by ophix-revisions (if installed). ophix-server-base
+    is the one package ophix-revisions imports this from directly rather than
+    via entry-point discovery, since every install already has an unconditional
     dependency on it.
     """
     return [
