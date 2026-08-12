@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.08.12.01
 
 - Django dependency split by `python_version` marker: `Django>=4.2,<6.0` on Python < 3.12,
   `Django>=4.2` (no upper bound) on Python >= 3.12. Django 6.0 itself requires Python 3.12+;
