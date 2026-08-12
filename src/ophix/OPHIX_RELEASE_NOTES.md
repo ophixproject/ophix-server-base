@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.08.04.01
 
 - `export_hosts`/`export_clients` gain a `--stable` flag: omits the `meta` block
   (`created_at`/`hostname`/`run_by`/`login_user`/`ssh_origin` — all run/machine-specific
