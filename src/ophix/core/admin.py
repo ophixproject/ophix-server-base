@@ -467,6 +467,8 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
 
             for line in lines:
                 stripped = line.strip()
+                if not stripped:
+                    continue
                 if stripped.startswith('## '):
                     heading = stripped[3:].strip()
                     current_section = {'heading': heading, 'items': []}
@@ -479,6 +481,11 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
                         'text': stripped[2:].strip(),
                         'category': current_category,
                     })
+                elif current_section is not None and current_section['items']:
+                    # Continuation line of the previous bullet — release notes entries
+                    # are hand-wrapped across multiple lines in the .md source for
+                    # readability, with no leading "- "/"* " marker on the wrapped lines.
+                    current_section['items'][-1]['text'] += ' ' + stripped
 
             if not sections:
                 return _markdown_fallback(obj.notice)

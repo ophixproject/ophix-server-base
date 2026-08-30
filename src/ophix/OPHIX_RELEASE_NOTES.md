@@ -1,5 +1,14 @@
 # ophix-server-base Release Notes
 
+## 2026.08.30.02
+
+- Plugin Versions "Release Notes" panel: fixed multi-line entries being truncated to
+  just their first line. Release notes bullets that wrap across several lines in the
+  source `OPHIX_RELEASE_NOTES.md` (continuation lines indented, with no leading `-`
+  or `*` marker) were silently dropped by the parser — only the first line of each
+  bullet ever reached the rendered panel. Continuation lines are now appended to the
+  preceding bullet's text instead of being ignored.
+
 ## 2026.08.30.01
 
 - Plugin Versions "Release Notes" panel: removed the per-version collapse toggle.
