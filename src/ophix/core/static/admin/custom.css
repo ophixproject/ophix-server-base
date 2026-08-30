@@ -269,15 +269,13 @@ input.vTimeField {
     margin-bottom: 0.75em;
 }
 
-/* Version heading — like a page row with left toggle */
+/* Version heading — always-expanded, no per-version toggle */
 .rn-version-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0.4em 0;
     border-bottom: 1px solid var(--admin-interface-module-background-color);
-    cursor: pointer;
-    user-select: none;
 }
 
 .rn-version-left {

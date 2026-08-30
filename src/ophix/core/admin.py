@@ -520,14 +520,13 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
 
                 parts.append(
                     f'<div class="rn-version-row" data-ver="{escape(heading)}">'
-                    f'<div class="rn-version-header" role="button">'
+                    f'<div class="rn-version-header">'
                     f'<div class="rn-version-left">'
-                    f'<button class="rn-toggle" type="button">▶</button>'
                     f'<span class="rn-version-name">{escape(display)}</span>'
                     f'</div>'
                     f'<span class="rn-count">{item_label}</span>'
                     f'</div>'
-                    f'<div class="rn-version-items" style="display:none">{"".join(items_html)}</div>'
+                    f'<div class="rn-version-items">{"".join(items_html)}</div>'
                     f'</div>'
                 )
 
@@ -544,12 +543,6 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
                 'var outerBody=el.querySelector(".rn-outer-body");'
                 'var outerBtn=el.querySelector(".rn-outer-header .rn-toggle");'
                 'if(state.outer){outerBody.style.display="";outerBtn.textContent="▼";}'
-                # Restore version states
-                'el.querySelectorAll(".rn-version-row").forEach(function(row){'
-                'var ver=row.dataset.ver;'
-                'var body=row.querySelector(".rn-version-items");'
-                'var btn=row.querySelector(".rn-toggle");'
-                'if(state[ver]){body.style.display="";btn.textContent="▼";}});'
                 # Outer toggle
                 'el.querySelector(".rn-outer-header").addEventListener("click",function(){'
                 'var s=load();'
@@ -557,18 +550,6 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
                 'outerBody.style.display=isOpen?"none":"";'
                 'outerBtn.textContent=isOpen?"▶":"▼";'
                 's.outer=!isOpen;save(s);});'
-                # Version toggles
-                'el.querySelectorAll(".rn-version-header").forEach(function(hdr){'
-                'hdr.addEventListener("click",function(){'
-                'var row=hdr.parentElement;'
-                'var ver=row.dataset.ver;'
-                'var body=hdr.nextElementSibling;'
-                'var btn=hdr.querySelector(".rn-toggle");'
-                'var s=load();'
-                'var isOpen=body.style.display!=="none";'
-                'body.style.display=isOpen?"none":"";'
-                'btn.textContent=isOpen?"▶":"▼";'
-                's[ver]=!isOpen;save(s);});});'
                 '})();</script>'
             )
 

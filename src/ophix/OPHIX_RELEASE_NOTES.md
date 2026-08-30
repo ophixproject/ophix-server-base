@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Plugin Versions "Release Notes" panel: removed the per-version collapse toggle.
+  Expanding the outer "RELEASE NOTES" section now shows every version's changes in
+  one continuous list, with each version string still rendered as its own heading —
+  no more clicking each version open individually to read it.
 - Client change view: the "Issuing a replacement token will immediately lock out..."
   line under the "Issue a replacement token" button is now prefixed with "WARNING:"
   and rendered in the theme's warning colour (`--admin-interface-warning-color`,
