@@ -1,5 +1,12 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- Client change view: the "Issuing a replacement token will immediately lock out..."
+  line under the "Issue a replacement token" button is now prefixed with "WARNING:"
+  and rendered in the theme's warning colour (`--admin-interface-warning-color`,
+  bold) instead of the muted body-quiet colour it inherited by default.
+
 ## 2026.08.12.01
 
 - Django dependency split by `python_version` marker: `Django>=4.2,<6.0` on Python < 3.12,
