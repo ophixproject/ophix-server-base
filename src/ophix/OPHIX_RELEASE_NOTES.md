@@ -2,18 +2,22 @@
 
 ## 2026.08.30.03
 
-- Changelist disabled-row styling reworked: the red/pink background tint is
-  removed in favour of italic row text plus a disabled-coloured name link
-  (`--admin-interface-disabled-color`, new in `ophix-admin-interface
-  2026.08.30.11`). Paused rows keep their amber background tint but now also
-  get the same italic-row + disabled-coloured-link treatment, since a paused
-  task is itself a form of "disabled" — it just additionally keeps a
-  background tint that a fully-disabled row does not. Both rules are declared
-  in the single shared `tr:has(td.field-enabled ...)` / `tr:has(td.field-paused
-  ...)` selectors in `custom.css`, so this applies globally to every changelist
-  with an `enabled`/`paused` checkbox column — Hosts, Clients, Schedules,
-  Scheduled Tasks, Credentials, Configurations, etc. — with no per-model
-  changes needed. Also fixed a stale doc comment referencing
+- Changelist disabled/paused row styling reworked into two independent,
+  non-overlapping treatments: disabled affects text only (italic row +
+  disabled-coloured name link, `--admin-interface-disabled-color`, new in
+  `ophix-admin-interface 2026.08.30.11`) and never touches the background — an
+  enabled, unpaused row's background stays the standard alternating row
+  stripe. Paused affects background only (the existing amber tint) and never
+  touches text. A row that is both disabled and paused gets both treatments
+  simultaneously, since neither rule ever sets the other's property — no
+  priority/override logic needed. The previous version of this change
+  (removing paused row's background) was a misreading of the ask; corrected
+  before release. Both rules are declared in the single shared
+  `tr:has(td.field-enabled ...)` / `tr:has(td.field-paused ...)` selectors in
+  `custom.css`, so this applies globally to every changelist with an
+  `enabled`/`paused` checkbox column — Hosts, Clients, Schedules, Scheduled
+  Tasks, Credentials, Configurations, etc. — with no per-model changes needed.
+  Also fixed a stale doc comment referencing
   `--ophix-paused-color`/`--ophix-disabled-color` custom properties that were
   never actually declared anywhere in the file.
 
