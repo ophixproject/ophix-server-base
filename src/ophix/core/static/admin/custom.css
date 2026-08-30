@@ -98,34 +98,42 @@ td.field-enabled input[type="checkbox"]:hover {
 }
 
 /*
- * Ophix row-state colours.
- *
- * --ophix-paused-color:   tint for paused rows. No theme equivalent exists in
- *                         django-admin-interface, so a default is provided here.
- *                         Override in a theme pack's custom CSS to change it.
- *
- * --ophix-disabled-color: derives from the theme's delete/danger button colour
- *                         so it tracks the active theme automatically.
- *                         Override only if you need to decouple it from the
- *                         delete button colour.
+ * Ophix row-state colours — both tracked from the active theme, no local
+ * fallback variables of their own:
+ *   - paused background tint:  --admin-interface-warning-color
+ *   - disabled row link color: --admin-interface-disabled-color
  */
-/* Subtle amber tint for paused rows — colour from theme warning/paused field */
+/* Paused rows — amber background tint kept (colour from theme warning/paused
+   field); the whole row is italicised and its clickable name link uses the
+   theme's disabled colour, same treatment as a fully disabled row below,
+   since a paused task is itself a form of "disabled" — it just also keeps its
+   own background tint, which a fully disabled row does not. */
 tr:has(td.field-paused input[type="checkbox"]:checked) {
     box-shadow: inset 0 0 0 9999px color-mix(
         in srgb,
         var(--admin-interface-warning-color, #E67E22) 8%,
         transparent
     );
+    font-style: italic;
+}
+tr:has(td.field-paused input[type="checkbox"]:checked) th a {
+    color: var(--admin-interface-disabled-color, #666666);
 }
 
-/* Subtle red/pink tint for disabled rows — colour from theme delete button field.
-   Declared last so it wins over paused when both classes are present. */
+/* Disabled rows — no background tint (an earlier red/pink tint was removed in
+   favour of italic text + a disabled-coloured link only), applied globally to
+   any changelist with an "enabled" list_editable checkbox column: Hosts,
+   Clients, Schedules, Scheduled Tasks, Credentials, Configurations, etc. — the
+   selector matches on the auto-generated field-enabled class, not any
+   particular model. Declared last, with an explicit box-shadow:none, so it
+   wins over the paused rule above when both apply — a disabled row should
+   never show a background, even if it's also paused. */
 tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) {
-    box-shadow: inset 0 0 0 9999px color-mix(
-        in srgb,
-        var(--admin-interface-delete-button-background-color, #BA2121) 12%,
-        transparent
-    );
+    box-shadow: none;
+    font-style: italic;
+}
+tr:has(td.field-enabled input[type="checkbox"]:not(:checked)) th a {
+    color: var(--admin-interface-disabled-color, #666666);
 }
 
 /* Equalise date and time inputs — Django default has date at 10em, time at 8em */
