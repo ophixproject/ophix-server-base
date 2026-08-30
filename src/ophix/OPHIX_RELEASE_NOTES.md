@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.08.30.01
 
 - Plugin Versions "Release Notes" panel: removed the per-version collapse toggle.
   Expanding the outer "RELEASE NOTES" section now shows every version's changes in
