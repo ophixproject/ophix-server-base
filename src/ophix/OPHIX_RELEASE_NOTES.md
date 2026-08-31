@@ -1,5 +1,13 @@
 # ophix-server-base Release Notes
 
+## 2026.08.31.01
+
+- Client change view: the "WARNING: Issuing a replacement token…" line now uses
+  the theme's delete/danger colour (`--admin-interface-delete-button-background-color`)
+  instead of the warning colour — this action is destructive (immediately locks
+  out the existing client), which the delete colour communicates more accurately
+  than the warning colour.
+
 ## 2026.08.30.03
 
 - Changelist disabled/paused row styling reworked into two independent,

@@ -254,7 +254,7 @@ class ClientAdmin(CleanSaveMessageMixin, admin.ModelAdmin):
             "</span>"
             "&emsp;"
             '<a href="{}?_popup=1" id="change-token-link-{}" class="ophix-token-action-link" role="button">{}</a>'
-            '<br><span style="font-size:0.85em;font-weight:bold;color:var(--admin-interface-warning-color);'
+            '<br><span style="font-size:0.85em;font-weight:bold;color:var(--admin-interface-delete-button-background-color);'
             'margin-top:4px;display:inline-block">{} {}</span>',
             url, obj.pk,
             _("Issue a replacement token"),
