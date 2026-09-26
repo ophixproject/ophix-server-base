@@ -119,7 +119,7 @@ scratch.
 | `ALLOWED_HOSTS` | *(hostname)* | Comma-separated hostnames this server accepts |
 | `DEBUG` | `False` | Enable only during development — never in production |
 | `SERVER_READ_ONLY_MODE` | `False` | Reject all API write requests. Use during migration change windows: set on the source server before exporting, leave unset on the target, then update DNS. |
-| `DB_ENGINE` | `mariadb` | `mariadb` \| `mysql` \| `postgres` \| `sqlserver` \| `oracle` \| `cockroachdb` |
+| `DB_ENGINE` | `mariadb` | `mariadb` \| `mysql` \| `postgres` \| `sqlserver` \| `cockroachdb` |
 | `DB_HOST` | `localhost` | Database host |
 | `DB_PORT` | `3306` | Database port |
 | `DB_NAME` | `ophix_db` | Database name |

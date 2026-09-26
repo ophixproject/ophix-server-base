@@ -56,7 +56,6 @@ pip install ophix-creds        # or ophix-confs, ophix-certs, etc.
 ```bash
 pip install ophix-dbengine-postgres     # PostgreSQL
 pip install ophix-dbengine-mssql        # SQL Server (also requires ODBC Driver 17/18)
-pip install ophix-dbengine-oracle       # Oracle
 pip install ophix-dbengine-cockroachdb  # CockroachDB
 ```
 
@@ -66,7 +65,6 @@ pip install ophix-dbengine-cockroachdb  # CockroachDB
 pip install ophix-docs             # inline markdown documentation in admin
 pip install ophix-theme-midnight   # custom branding theme (optional)
 pip install ophix-codemirror       # code editor widgets (used by ophix-confs)
-pip install ophix-auth-oidc        # OpenID Connect / Azure AD SSO
 pip install ophix-auth-ldap        # Active Directory / LDAP authentication
 pip install venv-cmds              # lists venv commands and checks for updates
 ```
@@ -286,12 +284,12 @@ All settings are controlled via `.env`. Run `ophix-manage generate_config --env`
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `DB_ENGINE` | `mariadb` | Database backend. Valid values: `mariadb`, `mysql`, `postgres`, `sqlserver`, `oracle`, `cockroachdb`. Install the matching driver plugin for non-MariaDB engines. |
+| `DB_ENGINE` | `mariadb` | Database backend. Valid values: `mariadb`, `mysql`, `postgres`, `sqlserver`, `cockroachdb`. Install the matching driver plugin for non-MariaDB engines. |
 | `DB_NAME` | `ophix_db` | Database name |
 | `DB_USER` | `ophixuser` | Database user |
 | `DB_PASSWORD` | _(blank)_ | Database password |
 | `DB_HOST` | `localhost` | Database host |
-| `DB_PORT` | `3306` | Database port. Default `3306` for MariaDB/MySQL; `5432` for PostgreSQL; `1433` for SQL Server; `1521` for Oracle; `26257` for CockroachDB. |
+| `DB_PORT` | `3306` | Database port. Default `3306` for MariaDB/MySQL; `5432` for PostgreSQL; `1433` for SQL Server; `26257` for CockroachDB. |
 | `DB_SSL_CA` | _(blank)_ | CA certificate path for database TLS. Setting this enables TLS. |
 | `DB_SSL_CERT` | _(blank)_ | Client certificate path. Only required for mutual TLS. |
 | `DB_SSL_KEY` | _(blank)_ | Client private key path. Required only when `DB_SSL_CERT` is set. |
