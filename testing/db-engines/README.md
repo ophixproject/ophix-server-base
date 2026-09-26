@@ -1,10 +1,13 @@
 # DB engine testing matrix
 
-Docker-based test harness validating Ophix against every supported DB engine
-in plaintext, TLS, and mutual-TLS modes. Oracle and SQL Server are excluded —
-see `ophix-dbengine-oracle`/`ophix-dbengine-mssql` docs for why (Oracle has no
-TLS support at all; SQL Server's TLS doesn't use the generic `DB_SSL_*`
-mechanism the other engines share).
+Docker-based test harness validating Ophix against every supported DB engine.
+MariaDB/Postgres/CockroachDB get a full plaintext/TLS/mutual-TLS matrix (9
+cells, 9/9 pass — session 48/49). SQL Server gets a differently-shaped test
+(see below) — its ODBC driver negotiates encryption per-connection rather
+than needing a separate container per mode, so there's no plaintext/TLS/mTLS
+split the way the other three have. Oracle is excluded entirely — no TLS
+wiring exists for it at all, and there's no record of it ever connecting to a
+real Oracle instance even in plaintext; see `ophix-dbengine-oracle`'s own docs.
 
 ## Usage
 
@@ -14,7 +17,53 @@ bash certs/generate-certs.sh      # one-time: throwaway CA + server/client certs
 docker compose up -d
 bash setup-cockroach-users.sh        # one-time per fresh cockroach volume
 bash setup-postgres-mtls-role.sh     # one-time per fresh postgres-mtls volume
+bash setup-mssql-tls.sh              # one-time per fresh mssql container
 ```
+
+## SQL Server
+
+`ophix-server-base`'s sqlserver wiring claims TLS is on by default and
+validates against the OS certificate trust store rather than a `DB_SSL_CA`
+file path (the other three engines' mechanism doesn't apply here at all).
+Verified directly (2026-09-26), not just by reading the settings code — build
+and run `mssql-test` (`docker compose run --rm mssql-test`) after
+`setup-mssql-tls.sh`, which exercises all three real scenarios against the
+same server:
+
+1. Strict validation (`Encrypt=yes`, `TrustServerCertificate=no`) with the
+   test CA **not** in the OS trust store — must **fail** (proves it actually
+   validates, not just "TLS happens").
+2. `TrustServerCertificate=yes` — must **succeed** (the common self-hosted
+   bypass an operator would actually use).
+3. Strict validation **after** adding the test CA to the OS trust store —
+   must **succeed** (the actual documented claim).
+4. A real `ophix-manage migrate` end-to-end in scenario 3's conditions, as
+   the capstone.
+
+All 4 passed. Two real gotchas hit building this, worth knowing before
+touching it again:
+
+- **Cert file ownership must match the container's runtime UID (10001,
+  `mssql`), not just permission bits** — same class of bug as the Postgres/
+  CockroachDB client-cert gotcha from the original harness build. Fix via a
+  throwaway root-context container (`docker run --rm -v ...:/certs alpine
+  chown 10001:10001 ...`), no host `sudo` needed.
+- **The cert's SAN must include whatever hostname the *client* actually
+  connects through.** The other three engines' tests always connect via
+  `localhost:<mapped-port>` from the host, matching their certs' `DNS:
+  localhost` SAN entry. `mssql-test` runs as a separate container on the same
+  compose network and connects via the service name (`mssql:1433`) instead —
+  so the mssql cert's CN/SAN is `mssql`, not `mssql-test` like the naming
+  convention would otherwise suggest. If this ever changes to connect via a
+  mapped host port instead, regenerate the cert with a SAN that actually
+  matches.
+- The container image has no `MSSQL_TLS_*` env vars (unlike some docs
+  imply) — `mssql-conf set network.tlscert/tlskey/forceencryption` must be
+  run post-boot, then the container restarted; `setup-mssql-tls.sh` does
+  this. It also needs mysqlclient build deps (`build-essential
+  default-libmysqlclient-dev pkg-config`) in the test image even though the
+  test targets sqlserver, since `ophix-server-base` unconditionally depends
+  on `mysqlclient` (MariaDB support is bundled, not a plugin).
 
 ## Cell → connection settings
 

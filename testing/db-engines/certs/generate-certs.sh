@@ -34,6 +34,7 @@ EOF
 
 gen_server_cert mariadb mariadb-test
 gen_server_cert postgres postgres-test
+gen_server_cert mssql mssql
 
 echo "=== Generating client cert (mTLS) ==="
 mkdir -p client

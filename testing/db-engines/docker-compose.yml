@@ -160,3 +160,34 @@ services:
     ports:
       - "26259:26257"
       - "8082:8080"
+
+  # ── SQL Server ───────────────────────────────────────────────────────────
+  # No plaintext/TLS/mTLS split the way the other engines have - SQL Server's
+  # ODBC driver negotiates encryption per-connection (Encrypt=yes/no,
+  # TrustServerCertificate=yes/no) against a single server config, not a
+  # separate container per mode. One instance with a custom self-signed cert
+  # installed; the test client varies Encrypt/TrustServerCertificate and
+  # whether the CA is present in the OS trust store to exercise all 3 real
+  # scenarios against it. See setup-mssql-tls.sh for the post-start cert wiring
+  # (the container image has no MSSQL_TLS_* env var support - mssql.conf must
+  # be set via mssql-conf after first boot, then the process restarted).
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "OphixTest123!"
+      MSSQL_PID: "Developer"
+    volumes:
+      - ./certs/mssql/server.crt:/certs/server.crt:ro
+      - ./certs/mssql/server.key:/certs/server.key:ro
+    ports:
+      - "1434:1433"
+
+  mssql-test:
+    build:
+      context: .
+      dockerfile: mssql-test/Dockerfile
+      network: host
+    profiles: ["test"]
+    depends_on:
+      - mssql
