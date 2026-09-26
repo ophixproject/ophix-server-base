@@ -6,6 +6,9 @@
   plugins list — it now has a real unit test suite (see `ophix-auth-oidc`'s
   own release notes) clearing the bar for an Alpha release. Oracle stays
   removed; its own confidence level hasn't changed.
+- Docs: `server-installation.md`'s `ophix-codemirror` line only credited
+  `ophix-confs` as a consumer — `ophix-creds` uses it too (`JSONCodeMirrorWidget`
+  for `secret_json`), confirmed directly in `ophix-creds/admin.py`.
 
 ## 2026.09.26.01
 
