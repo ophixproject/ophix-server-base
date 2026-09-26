@@ -192,7 +192,7 @@ ophix-manage generate_config --all \
 ophix-manage generate_config --append
 ```
 
-**`configure_database`** — interactive prompt to configure and live-test the database connection, then write the result to `.env`. Supports MariaDB, MySQL, PostgreSQL. Optional TLS and mutual TLS.
+**`configure_database`** — interactive prompt to configure and live-test the database connection, then write the result to `.env`. Live-tests MariaDB, MySQL, PostgreSQL, and CockroachDB. SQL Server and Oracle are accepted but skip the live test (no tester exists for either) — verify connectivity manually after writing `.env`. Optional TLS and mutual TLS.
 
 ```bash
 ophix-manage configure_database

@@ -7,7 +7,10 @@ Prompts for each database setting, showing the current value as the default.
 Tests the connection directly (bypassing Django's ORM) before writing anything,
 so this command is safe to run before the database schema exists.
 
-Supports MariaDB, MySQL, and PostgreSQL. Set DB_ENGINE to select the backend.
+Live-tests MariaDB, MySQL, PostgreSQL, and CockroachDB (Postgres-wire-compatible).
+SQL Server and Oracle are accepted but skip the live test - this wizard has no
+tester for either; verify connectivity manually after writing .env. Set DB_ENGINE
+to select the backend.
 
 TLS is optional.  If a CA certificate path is supplied, TLS is enabled.
 Mutual TLS (client certificate authentication) is a further opt-in.
@@ -49,9 +52,12 @@ class Command(BaseCommand):
         engine = self._prompt_engine(current_engine)
 
         # Default port depends on engine; snap if currently at a known default.
+        _DEFAULT_PORTS = {
+            "postgres": "5432", "sqlserver": "1433", "oracle": "1521", "cockroachdb": "26257",
+        }
         current_port = os.getenv("DB_PORT", "")
-        if not current_port or current_port in ("3306", "5432"):
-            current_port = "5432" if engine == "postgres" else "3306"
+        if not current_port or current_port in ("3306", *_DEFAULT_PORTS.values()):
+            current_port = _DEFAULT_PORTS.get(engine, "3306")
 
         current = {
             "DB_HOST":     os.getenv("DB_HOST", "localhost"),
@@ -70,7 +76,18 @@ class Command(BaseCommand):
         ssl_ca, ssl_cert, ssl_key = self._prompt_tls(current_tls)
 
         # Test → retry loop
+        _UNTESTABLE_ENGINES = ("sqlserver", "oracle")
         while True:
+            if engine in _UNTESTABLE_ENGINES:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"\nSkipping live connection test — '{engine}' is not supported by "
+                        "this wizard's tester.\n  Verify connectivity manually (e.g. "
+                        "ophix-manage migrate) after writing .env.\n"
+                    )
+                )
+                break
+
             self.stdout.write("\nTesting connection... ")
             self.stdout.flush()
             error = self._test_connection(engine, host, port, name, user, password,
@@ -224,7 +241,8 @@ class Command(BaseCommand):
         host: str, port: str, name: str, user: str, password: str,
         ssl_ca: str = "", ssl_cert: str = "", ssl_key: str = "",
     ) -> str | None:
-        if engine == "postgres":
+        # CockroachDB is Postgres-wire-compatible - reuse the same tester.
+        if engine in ("postgres", "cockroachdb"):
             return self._test_postgres(host, port, name, user, password,
                                        ssl_ca, ssl_cert, ssl_key)
         return self._test_mysql(host, port, name, user, password,

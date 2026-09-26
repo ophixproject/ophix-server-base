@@ -1,5 +1,26 @@
 # ophix-server-base Release Notes
 
+## 2026.09.26.01
+
+- `configure_database`: fixed a real bug where selecting SQL Server, Oracle, or
+  CockroachDB in the interactive wizard ran the live connection test using the
+  MySQL tester regardless of engine — guaranteed to fail for all three (wrong
+  wire protocol). CockroachDB now correctly reuses the Postgres tester (it's
+  Postgres-wire-compatible); SQL Server and Oracle now skip the live test with
+  a clear message instead of silently testing the wrong protocol. Default port
+  suggestions also fixed for all engines (was only ever correct for
+  postgres/mariadb).
+- Docs: removed Oracle and OIDC from `server-installation.md`'s install
+  commands and the `DB_ENGINE` valid-values list — Oracle has no TLS wiring
+  and has never been verified even for plaintext connectivity; OIDC has no
+  test-harness evidence at all. Both stay code-complete, just not advertised
+  until each clears its own bar for release.
+- `testing/db-engines/` (dev tooling, not shipped): added a SQL Server cell to
+  the DB engine test harness, verifying its TLS-validates-against-OS-trust-store
+  claim directly rather than by code inspection only. All 4 real scenarios
+  pass — SQL Server now has the same empirical confidence as MariaDB/Postgres/
+  CockroachDB.
+
 ## 2026.08.31.01
 
 - Client change view: the "WARNING: Issuing a replacement token…" line now uses
