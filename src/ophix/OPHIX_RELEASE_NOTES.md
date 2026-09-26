@@ -1,5 +1,12 @@
 # ophix-server-base Release Notes
 
+## 2026.09.26.02
+
+- Docs: restored `ophix-auth-oidc` to `server-installation.md`'s optional
+  plugins list — it now has a real unit test suite (see `ophix-auth-oidc`'s
+  own release notes) clearing the bar for an Alpha release. Oracle stays
+  removed; its own confidence level hasn't changed.
+
 ## 2026.09.26.01
 
 - `configure_database`: fixed a real bug where selecting SQL Server, Oracle, or
