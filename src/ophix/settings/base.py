@@ -191,10 +191,23 @@ elif _db_engine == "sqlserver":
     # ODBC driver validates against the OS certificate trust store, not a file
     # path. See env.sample.j2 and the mssql plugin's env.fragment.j2 for the
     # operator-facing explanation.
+    #
+    # Encrypt/TrustServerCertificate MUST travel via OPTIONS["extra_params"]
+    # (a raw string glued onto the end of the connection string), not as their
+    # own top-level OPTIONS keys — mssql-django's _build_connection_string()
+    # only ever reads 'dsn'/'extra_params'/'host_is_server'/'python_driver'
+    # from top-level OPTIONS; Encrypt/TrustServerCertificate as separate keys
+    # are silently ignored (found via real testing: a fresh SQL Server
+    # instance's own self-signed cert was rejected even with
+    # DB_SQLSERVER_TRUST_CERT=yes, because the setting never reached the
+    # driver at all).
+    _db_extra_params = "Encrypt={};TrustServerCertificate={}".format(
+        os.getenv("DB_SQLSERVER_ENCRYPT", "yes"),
+        os.getenv("DB_SQLSERVER_TRUST_CERT", "no"),
+    )
     _db_options = {
         "driver": os.getenv("DB_SQLSERVER_DRIVER", "ODBC Driver 18 for SQL Server"),
-        "Encrypt": os.getenv("DB_SQLSERVER_ENCRYPT", "yes"),
-        "TrustServerCertificate": os.getenv("DB_SQLSERVER_TRUST_CERT", "no"),
+        "extra_params": _db_extra_params,
     }
     DATABASES = {
         "default": {

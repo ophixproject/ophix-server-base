@@ -1,5 +1,20 @@
 # ophix-server-base Release Notes
 
+## 2026.09.26.03
+
+- Fixed a real bug in the sqlserver DATABASES wiring: `DB_SQLSERVER_ENCRYPT`
+  and `DB_SQLSERVER_TRUST_CERT` were passed as top-level `OPTIONS` dict keys,
+  but the currently-resolved `mssql-django` (2.0.0) never reads them from
+  there — `_build_connection_string()` only reads `dsn`/`extra_params`/
+  `host_is_server`/`python_driver` from top-level `OPTIONS`. Both env vars
+  were silently doing nothing regardless of what an operator set. Found via
+  real testing (a fresh SQL Server instance's own self-signed cert was
+  rejected even with `DB_SQLSERVER_TRUST_CERT=yes`). Fixed by passing both
+  through `OPTIONS["extra_params"]` as a raw `Encrypt=...;TrustServerCertificate=...`
+  string, the format this mssql-django version actually expects. Verified
+  against a live SQL Server instance — migrate now succeeds with
+  `DB_SQLSERVER_TRUST_CERT=yes` against a default self-signed cert.
+
 ## 2026.09.26.02
 
 - Docs: restored `ophix-auth-oidc` to `server-installation.md`'s optional
