@@ -497,14 +497,15 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
                 return text
 
             ver_count = len(sections)
-            ver_label = f'{ver_count} version{"s" if ver_count != 1 else ""}'
+            ver_label = str(_("%(count)d version(s)")) % {"count": ver_count}
+            release_notes_title = str(_("Release Notes"))
 
             pkg_key = escape(obj.package_name)
             parts = [
                 f'<div class="ophix-release-notes" data-pkg="{pkg_key}">'
                 f'<div class="rn-outer-header" role="button">'
                 f'<button class="rn-toggle" type="button">▶</button>'
-                f'<span class="rn-outer-title">Release Notes</span>'
+                f'<span class="rn-outer-title">{release_notes_title}</span>'
                 f'<span class="rn-count">{ver_label}</span>'
                 f'</div>'
                 f'<div class="rn-outer-body" style="display:none">'
@@ -514,7 +515,7 @@ class PackageUpdateRecordAdmin(admin.ModelAdmin):
                 heading = section['heading']
                 display = 'v' + heading if re.match(r'^\d{4}', heading) else heading
                 item_count = len(section['items'])
-                item_label = f'{item_count} change{"s" if item_count != 1 else ""}'
+                item_label = str(_("%(count)d change(s)")) % {"count": item_count}
 
                 items_html = []
                 last_cat = None

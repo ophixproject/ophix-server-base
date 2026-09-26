@@ -19,6 +19,7 @@ from django.conf import settings
 from django.db import IntegrityError
 from django.http import FileResponse, Http404
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -49,7 +50,7 @@ def favicon_view(request):
     theme = Theme.objects.get_active()
     if not theme or not theme.favicon:
         raise Http404
-    content_type, _ = mimetypes.guess_type(theme.favicon.name)
+    content_type, _content_encoding = mimetypes.guess_type(theme.favicon.name)
     return FileResponse(theme.favicon.open("rb"), content_type=content_type or "image/x-icon")
 
 
@@ -137,7 +138,7 @@ class RegisterClientView(APIView):
         ]
         if missing:
             return Response(
-                {"error": f"Missing required field(s): {', '.join(missing)}"},
+                {"error": str(_("Missing required field(s): %(fields)s")) % {"fields": ", ".join(missing)}},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -148,19 +149,21 @@ class RegisterClientView(APIView):
         except Host.DoesNotExist:
             logger.info("Registration blocked: no host for IP %s", remote_ip)
             return Response(
-                {"error": "Unknown host"},
+                {"error": str(_("Unknown host"))},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
         if not host.enabled:
             return Response(
-                {"error": err_response("Host disabled")},
+                {"error": err_response(_("Host disabled"))},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
         if Client.objects.filter(host=host, name=client_name).exists():
             return Response(
-                {"error": err_response(f"Client '{client_name}' already registered for this host.")},
+                {"error": err_response(
+                    str(_("Client '%(name)s' already registered for this host.")) % {"name": client_name}
+                )},
                 status=status.HTTP_409_CONFLICT,
             )
 
@@ -176,7 +179,7 @@ class RegisterClientView(APIView):
             )
         except IntegrityError:
             return Response(
-                {"error": "Registration failed due to a database constraint violation."},
+                {"error": str(_("Registration failed due to a database constraint violation."))},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -237,14 +240,14 @@ class ClientViewSet(viewsets.ViewSet):
 
         if not new_token or len(new_token) != 64:
             return Response(
-                {"error": err_response("Invalid token format", "Bad request")},
+                {"error": err_response(_("Invalid token format"), _("Bad request"))},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         new_hash = hash_token(new_token)
         if Client.objects.filter(token_hash=new_hash).exists():
             return Response(
-                {"error": err_response("Token already in use", "Bad request")},
+                {"error": err_response(_("Token already in use"), _("Bad request"))},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -252,7 +255,7 @@ class ClientViewSet(viewsets.ViewSet):
             elapsed = (timezone.now() - client.last_token_rotation).total_seconds()
             if elapsed < MINIMUM_TOKEN_ROTATE_TIME():
                 return Response(
-                    {"error": err_response("Token rotation too frequent", "Bad request")},
+                    {"error": err_response(_("Token rotation too frequent"), _("Bad request"))},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 

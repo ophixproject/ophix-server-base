@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.http import JsonResponse
+from django.utils.translation import gettext_lazy as _
 
 
 _SAFE_METHODS = frozenset(["GET", "HEAD", "OPTIONS"])
@@ -24,7 +25,7 @@ class ReadOnlyModeMiddleware:
             and request.path.startswith("/api/")
         ):
             return JsonResponse(
-                {"error": "Server is in read-only mode — no changes are permitted."},
+                {"error": str(_("Server is in read-only mode — no changes are permitted."))},
                 status=503,
             )
         return self.get_response(request)

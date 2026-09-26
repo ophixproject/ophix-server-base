@@ -18,6 +18,7 @@ import logging
 
 from django.conf import settings
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from rest_framework.authentication import BaseAuthentication
 from rest_framework import exceptions
 
@@ -52,17 +53,17 @@ class ClientTokenAuthentication(BaseAuthentication):
             client = Client.objects.select_related("host").get(token_hash=hash_token(token))
         except Client.DoesNotExist:
             logger.info("Authentication failed: unrecognised token")
-            raise exceptions.AuthenticationFailed(self._msg("Invalid token"))
+            raise exceptions.AuthenticationFailed(self._msg(_("Invalid token")))
 
         # Client enabled check
         if not client.enabled:
             logger.info("Access blocked: client %s is disabled", client)
-            raise exceptions.AuthenticationFailed(self._msg("Client disabled"))
+            raise exceptions.AuthenticationFailed(self._msg(_("Client disabled")))
 
         # Host enabled check
         if not client.host.enabled:
             logger.info("Access blocked: host %s is disabled", client.host)
-            raise exceptions.AuthenticationFailed(self._msg("Host disabled"))
+            raise exceptions.AuthenticationFailed(self._msg(_("Host disabled")))
 
         # IP validation
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
@@ -81,7 +82,7 @@ class ClientTokenAuthentication(BaseAuthentication):
                 remote_ip,
                 ", ".join(registered_ips),
             )
-            raise exceptions.AuthenticationFailed(self._msg("Access blocked"))
+            raise exceptions.AuthenticationFailed(self._msg(_("Access blocked")))
 
         # Token lockout: if TOKEN_LOCKOUT_DAYS is set and >= TOKEN_REQUIRE_DAYS,
         # deny access entirely once the token age reaches the lockout threshold.
@@ -111,7 +112,7 @@ class ClientTokenAuthentication(BaseAuthentication):
                             age,
                             lockout_days,
                         )
-                        raise exceptions.AuthenticationFailed(self._msg("Access blocked"))
+                        raise exceptions.AuthenticationFailed(self._msg(_("Access blocked")))
 
         return (client, None)
 
@@ -120,4 +121,4 @@ class ClientTokenAuthentication(BaseAuthentication):
         """Return detail string or a generic message depending on AUTH_LEAK_INFO."""
         if getattr(settings, "AUTH_LEAK_INFO", False):
             return detail
-        return "Access blocked"
+        return _("Access blocked")

@@ -12,6 +12,7 @@ assert_artifact_access
 import logging
 
 from django.http import Http404
+from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import PermissionDenied
 
 logger = logging.getLogger(__name__)
@@ -115,7 +116,7 @@ def get_client_ip(request) -> str:
     return request.META.get("REMOTE_ADDR", "")
 
 
-def err_response(detail: str, fallback: str = "Access blocked") -> str:
+def err_response(detail: str, fallback: str = None) -> str:
     """
     Return *detail* if AUTH_LEAK_INFO is enabled, otherwise *fallback*.
 
@@ -123,11 +124,13 @@ def err_response(detail: str, fallback: str = "Access blocked") -> str:
     production while preserving useful messages in development::
 
         return Response(
-            {"error": err_response("Credential already exists", "Conflict")},
+            {"error": err_response(_("Credential already exists"), _("Conflict"))},
             status=status.HTTP_409_CONFLICT,
         )
     """
     from django.conf import settings
+    if fallback is None:
+        fallback = _("Access blocked")
     if getattr(settings, "AUTH_LEAK_INFO", False):
         return detail
     return fallback
