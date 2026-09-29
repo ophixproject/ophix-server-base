@@ -7,10 +7,9 @@ Prompts for each database setting, showing the current value as the default.
 Tests the connection directly (bypassing Django's ORM) before writing anything,
 so this command is safe to run before the database schema exists.
 
-Live-tests MariaDB, MySQL, PostgreSQL, and CockroachDB (Postgres-wire-compatible).
-SQL Server and Oracle are accepted but skip the live test - this wizard has no
-tester for either; verify connectivity manually after writing .env. Set DB_ENGINE
-to select the backend.
+Live-tests all six supported engines: MariaDB, MySQL, PostgreSQL, CockroachDB
+(Postgres-wire-compatible), SQL Server (via pyodbc), and Oracle (via oracledb,
+thin mode). Set DB_ENGINE to select the backend.
 
 TLS is optional.  If a CA certificate path is supplied, TLS is enabled.
 Mutual TLS (client certificate authentication) is a further opt-in.
@@ -76,18 +75,7 @@ class Command(BaseCommand):
         ssl_ca, ssl_cert, ssl_key = self._prompt_tls(current_tls)
 
         # Test → retry loop
-        _UNTESTABLE_ENGINES = ("sqlserver", "oracle")
         while True:
-            if engine in _UNTESTABLE_ENGINES:
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"\nSkipping live connection test — '{engine}' is not supported by "
-                        "this wizard's tester.\n  Verify connectivity manually (e.g. "
-                        "ophix-manage migrate) after writing .env.\n"
-                    )
-                )
-                break
-
             self.stdout.write("\nTesting connection... ")
             self.stdout.flush()
             error = self._test_connection(engine, host, port, name, user, password,
@@ -146,7 +134,10 @@ class Command(BaseCommand):
         self.stdout.write("Database engine\n")
         self.stdout.write("-" * 40 + "\n")
         self.stdout.write(f"  Valid values: {', '.join(_VALID_ENGINES)}\n")
-        self.stdout.write("  Extra engines require the matching ophix-dbengine-* plugin.\n")
+        self.stdout.write(
+            "  Every engine, mariadb/mysql included, requires the matching\n"
+            "  ophix-dbengine-* plugin to be installed for its driver.\n"
+        )
         engine = self._prompt("Database engine", current).lower()
         if engine not in _VALID_ENGINES:
             self.stdout.write(
@@ -245,6 +236,10 @@ class Command(BaseCommand):
         if engine in ("postgres", "cockroachdb"):
             return self._test_postgres(host, port, name, user, password,
                                        ssl_ca, ssl_cert, ssl_key)
+        if engine == "sqlserver":
+            return self._test_sqlserver(host, port, name, user, password)
+        if engine == "oracle":
+            return self._test_oracle(host, port, name, user, password)
         return self._test_mysql(host, port, name, user, password,
                                 ssl_ca, ssl_cert, ssl_key)
 
@@ -348,6 +343,105 @@ class Command(BaseCommand):
             if "SSL" in msg or "certificate" in msg.lower():
                 return "TLS/SSL connection error — check CA certificate path and server TLS configuration."
             return f"PostgreSQL error: {msg}"
+        except ValueError:
+            return f"Invalid port number: '{port}'"
+        except Exception as exc:
+            return str(exc)
+
+    def _test_sqlserver(
+        self,
+        host: str, port: str, name: str, user: str, password: str,
+    ) -> str | None:
+        """
+        Attempt a direct SQL Server connection via pyodbc. Returns None on
+        success, or an error message string on failure.
+
+        TLS for this engine is negotiated by the ODBC driver against the OS
+        certificate trust store, not a file path — DB_SSL_CA/CERT/KEY are
+        deliberately not used here, matching settings/base.py's runtime wiring.
+        Uses the same default driver name as settings/base.py
+        (DB_SQLSERVER_DRIVER); this wizard doesn't prompt for it separately.
+        """
+        try:
+            import pyodbc
+        except ImportError:
+            return "pyodbc is not installed.  Run: pip install pyodbc"
+
+        driver = os.getenv("DB_SQLSERVER_DRIVER", "ODBC Driver 18 for SQL Server")
+        conn_str = (
+            f"DRIVER={{{driver}}};SERVER={host},{port};DATABASE={name};"
+            f"UID={user};PWD={password};"
+        )
+
+        try:
+            conn = pyodbc.connect(conn_str, timeout=5)
+            conn.close()
+            return None
+        except pyodbc.Error as exc:
+            msg = str(exc)
+            if "Login failed" in msg:
+                return f"Access denied for user '{user}'@'{host}' — check credentials."
+            if "Cannot open database" in msg:
+                return (
+                    f"Unknown database '{name}'. "
+                    f"Create it first: CREATE DATABASE {name};"
+                )
+            if "IM002" in msg or "Data source name not found" in msg:
+                return (
+                    f"ODBC driver '{driver}' not found. Install Microsoft ODBC "
+                    "Driver 17 or 18 for SQL Server, or set DB_SQLSERVER_DRIVER "
+                    "to match the driver name installed on this machine."
+                )
+            if "server was not found" in msg or "timeout" in msg.lower():
+                return f"Cannot connect to SQL Server at {host}:{port} — is it running and reachable?"
+            return f"SQL Server error: {msg}"
+        except ValueError:
+            return f"Invalid port number: '{port}'"
+        except Exception as exc:
+            return str(exc)
+
+    def _test_oracle(
+        self,
+        host: str, port: str, name: str, user: str, password: str,
+    ) -> str | None:
+        """
+        Attempt a direct Oracle connection via oracledb (thin mode, no Oracle
+        Instant Client needed). Returns None on success, or an error message
+        string on failure.
+
+        TLS is not currently wired for this engine anywhere in Ophix — no
+        wallet configuration exists — so this test is plaintext only, matching
+        settings/base.py's runtime behaviour.
+        """
+        try:
+            import oracledb
+        except ImportError:
+            return "oracledb is not installed.  Run: pip install oracledb"
+
+        try:
+            conn = oracledb.connect(
+                user=user,
+                password=password,
+                host=host,
+                port=int(port),
+                service_name=name,
+                tcp_connect_timeout=5,
+            )
+            conn.close()
+            return None
+        except oracledb.DatabaseError as exc:
+            error_obj = exc.args[0] if exc.args else None
+            msg = getattr(error_obj, "message", None) or str(exc)
+            if "ORA-01017" in msg:
+                return f"Access denied for user '{user}'@'{host}' — check credentials."
+            if "ORA-12514" in msg:
+                return (
+                    f"Service '{name}' not known to the listener at {host}:{port} — "
+                    "check the service name."
+                )
+            if "ORA-12541" in msg or "ORA-12170" in msg:
+                return f"Cannot connect to Oracle at {host}:{port} — is the listener running and reachable?"
+            return f"Oracle error: {msg}"
         except ValueError:
             return f"Invalid port number: '{port}'"
         except Exception as exc:

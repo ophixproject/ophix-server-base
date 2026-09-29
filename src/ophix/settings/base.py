@@ -149,11 +149,15 @@ TEMPLATES = [
 # Database
 # DB_ENGINE: mariadb (default) | mysql | postgres | sqlserver | oracle | cockroachdb
 #
-# Plugin packages supply the required driver for non-default engines:
+# Every engine, mariadb/mysql included, needs its matching ophix-dbengine-*
+# plugin installed to supply the actual driver — none is bundled here:
+#   ophix-dbengine-mariadb      mysqlclient (also covers DB_ENGINE=mysql)
 #   ophix-dbengine-postgres     psycopg2-binary
 #   ophix-dbengine-mssql        mssql-django + ODBC Driver 17/18 (OS-level)
 #   ophix-dbengine-oracle       oracledb (thin mode, no OS dep)
 #   ophix-dbengine-cockroachdb  django-cockroachdb + psycopg2-binary
+# mariadb is still the default when DB_ENGINE is unset — install
+# ophix-dbengine-mariadb for that default to actually work.
 # ---------------------------------------------------------------------------
 
 _db_engine = os.getenv("DB_ENGINE", "mariadb").lower()
@@ -265,7 +269,8 @@ elif _db_engine == "cockroachdb":
     }
 
 else:
-    # mariadb / mysql — the Django MySQL backend handles both
+    # mariadb / mysql — the Django MySQL backend handles both.
+    # Requires: pip install ophix-dbengine-mariadb (mysqlclient)
     _db_options = {
         "charset": "utf8mb4",
         "init_command": "SET sql_mode='STRICT_TRANS_TABLES', time_zone='+00:00'",

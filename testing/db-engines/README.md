@@ -60,10 +60,13 @@ touching it again:
 - The container image has no `MSSQL_TLS_*` env vars (unlike some docs
   imply) — `mssql-conf set network.tlscert/tlskey/forceencryption` must be
   run post-boot, then the container restarted; `setup-mssql-tls.sh` does
-  this. It also needs mysqlclient build deps (`build-essential
-  default-libmysqlclient-dev pkg-config`) in the test image even though the
-  test targets sqlserver, since `ophix-server-base` unconditionally depends
-  on `mysqlclient` (MariaDB support is bundled, not a plugin).
+  this.
+- **Stale as of the `ophix-dbengine-mariadb` split**: this note used to say
+  the test image needed mysqlclient build deps even for sqlserver-only
+  testing, because `ophix-server-base` unconditionally depended on
+  `mysqlclient`. That's no longer true — `mysqlclient` now comes from
+  installing `ophix-dbengine-mariadb` explicitly, same as every other
+  engine's plugin. Only install it in the test image for the mariadb cells.
 
 ## Cell → connection settings
 

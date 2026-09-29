@@ -14,15 +14,17 @@ client self-management), plugin auto-discovery, and settings assembly.
 pip install ophix-server-base
 ```
 
-Install one domain plugin alongside it, with recommended extras:
+Install one domain plugin and a database engine plugin alongside it, with recommended extras:
 
 ```bash
-pip install ophix-creds ophix-docs venv-cmds
+pip install ophix-creds ophix-dbengine-mariadb ophix-docs venv-cmds
 ```
 
+- `ophix-dbengine-mariadb` — MariaDB/MySQL driver; install the matching `ophix-dbengine-*`
+  plugin instead if you're using a different engine (Postgres, SQL Server, Oracle, CockroachDB).
+  Every engine needs its plugin installed explicitly — none is bundled by default.
 - `ophix-docs` — inline documentation in the admin UI
 - `venv-cmds` — lists available venv commands and checks for package updates
-- A theme pack (e.g. `ophix-theme-midnight`) can be added for custom branding; the built-in Ophix theme is active on fresh installs by default
 
 ---
 
@@ -192,7 +194,7 @@ ophix-manage generate_config --all \
 ophix-manage generate_config --append
 ```
 
-**`configure_database`** — interactive prompt to configure and live-test the database connection, then write the result to `.env`. Live-tests MariaDB, MySQL, PostgreSQL, and CockroachDB. SQL Server and Oracle are accepted but skip the live test (no tester exists for either) — verify connectivity manually after writing `.env`. Optional TLS and mutual TLS.
+**`configure_database`** — interactive prompt to configure and live-test the database connection, then write the result to `.env`. Live-tests all six supported engines: MariaDB, MySQL, PostgreSQL, CockroachDB, SQL Server, and Oracle. Optional TLS and mutual TLS (not applicable to SQL Server or Oracle — see the driver plugin READMEs).
 
 ```bash
 ophix-manage configure_database

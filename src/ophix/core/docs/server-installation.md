@@ -45,13 +45,15 @@ uv doesn't install `pip` into the venv by default. Either replace `pip install` 
 
 ## 2. Install packages
 
-MariaDB support is built into `ophix-server-base` — no extra required. Install the domain plugin (`ophix-server-base` is pulled in automatically as a dependency):
+Install the domain plugin (`ophix-server-base` is pulled in automatically as a dependency) and a
+database engine plugin — every engine, including the recommended default, needs one explicitly;
+none is bundled:
 
 ```bash
-pip install ophix-creds        # or ophix-confs, ophix-certs, etc.
+pip install ophix-creds ophix-dbengine-mariadb   # or ophix-confs, ophix-certs, etc.
 ```
 
-**Other database engines** require a driver plugin in addition to the domain plugin:
+**Other database engines** — install the matching driver plugin instead of `ophix-dbengine-mariadb`:
 
 ```bash
 pip install ophix-dbengine-postgres     # PostgreSQL
@@ -294,7 +296,7 @@ All settings are controlled via `.env`. Run `ophix-manage generate_config --env`
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `DB_ENGINE` | `mariadb` | Database backend. Valid values: `mariadb`, `mysql`, `postgres`, `sqlserver`, `cockroachdb`. Install the matching driver plugin for non-MariaDB engines. |
+| `DB_ENGINE` | `mariadb` | Database backend. Valid values: `mariadb`, `mysql`, `postgres`, `sqlserver`, `cockroachdb`. Install the matching `ophix-dbengine-*` driver plugin — every engine needs one, including the `mariadb` default. |
 | `DB_NAME` | `ophix_db` | Database name |
 | `DB_USER` | `ophixuser` | Database user |
 | `DB_PASSWORD` | _(blank)_ | Database password |

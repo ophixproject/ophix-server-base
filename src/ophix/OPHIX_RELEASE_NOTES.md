@@ -13,6 +13,24 @@
   Debian/Ubuntu defaults `run_install` always used. `server-installation.md` updated to document
   the new prompts and the RHEL-style layout.
 
+- **Breaking (packaging only, not runtime): `mysqlclient` is no longer a hard dependency.**
+  Every install using MariaDB/MySQL now needs `ophix-dbengine-mariadb` installed explicitly, same
+  as every other engine already required. This removes the unwanted build-time cost (a
+  C-extension with no reliable universal wheel) for anyone using a different engine — Postgres,
+  SQL Server, Oracle, and CockroachDB installs no longer pull in a driver they never use. MariaDB
+  stays the *recommended* default across every install doc, just no longer silently bundled.
+  Already-deployed servers are unaffected — pip doesn't uninstall a dependency just because a
+  newer release stops requiring it. README, `server-installation.md`, and every domain package's
+  own install docs updated to include `ophix-dbengine-mariadb` in the recommended install line.
+
+- `configure_database`'s live connection test now covers all six supported engines, not four.
+  SQL Server (via `pyodbc`) and Oracle (via `oracledb`, thin mode) previously had no tester at
+  all — the wizard explicitly skipped the live test for both and asked the operator to verify
+  connectivity manually after writing `.env`. Both now get a real pre-flight check with the same
+  graceful "driver not installed, run: pip install X" handling the MySQL/Postgres testers already
+  had, plus pattern-matched guidance for the common failure cases (bad credentials, unknown
+  database/service, driver not found, unreachable server).
+
 ## 2026.09.26.05
 
 - i18n regression check: wrapped 12 previously-unwrapped user-facing strings across `auth.py`, `views.py`, `middleware.py`, `utils.py`, and `admin.py` (API error responses, read-only-mode message, Plugin Versions panel labels) in `gettext_lazy`/`gettext` — these files had never been brought into the earlier i18n pass at all, unlike `models.py`/`admin.py`'s field-level strings. Also fixed a shadowing bug in `favicon_view` where a throwaway `_` variable would have clobbered the new `gettext_lazy as _` import for the rest of the function (same footgun previously fixed in `check_updates.py`).
