@@ -1,5 +1,18 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `configure_install` now prompts for the nginx config directory and enabled directory, instead of
+  hardcoding the Debian/Ubuntu `sites-available`/`sites-enabled` split. Defaults unchanged
+  (`/etc/nginx/sites-available` + `/etc/nginx/sites-enabled`), so existing behaviour is preserved
+  for anyone who just presses Enter through the new prompts. Leaving the enabled directory blank
+  (e.g. pointed at `/etc/nginx/conf.d` for RHEL/Fedora-family distros) skips the symlink step
+  entirely in the generated `<slug>_sudo_install.sh`/`<slug>_sudo_uninstall.sh` — those distros
+  load `*.conf` files directly from one directory with no separate enable step. Stored in the new
+  `[nginx]` section of `.<slug>.conf`; existing `.conf` files without it fall back to the same
+  Debian/Ubuntu defaults `run_install` always used. `server-installation.md` updated to document
+  the new prompts and the RHEL-style layout.
+
 ## 2026.09.26.05
 
 - i18n regression check: wrapped 12 previously-unwrapped user-facing strings across `auth.py`, `views.py`, `middleware.py`, `utils.py`, and `admin.py` (API error responses, read-only-mode message, Plugin Versions panel labels) in `gettext_lazy`/`gettext` — these files had never been brought into the earlier i18n pass at all, unlike `models.py`/`admin.py`'s field-level strings. Also fixed a shadowing bug in `favicon_view` where a throwaway `_` variable would have clobbered the new `gettext_lazy as _` import for the rest of the function (same footgun previously fixed in `check_updates.py`).

@@ -264,6 +264,41 @@ class Command(BaseCommand):
         self.stdout.write("\n")
 
         # ------------------------------------------------------------------ #
+        # [nginx]
+        # ------------------------------------------------------------------ #
+        self.stdout.write("--- nginx ---\n")
+        self.stdout.write(
+            "  Debian/Ubuntu split nginx config into a staging directory\n"
+            "  (sites-available) that gets symlinked into an active one\n"
+            "  (sites-enabled). Other distros — RHEL/Fedora-family in\n"
+            "  particular — usually load *.conf files directly from one\n"
+            "  directory (conf.d) with no separate enable step. Leave the\n"
+            "  enabled directory blank for that layout.\n\n"
+        )
+
+        default_nginx_conf_dir = conf.get(
+            "nginx", "conf_dir", fallback="/etc/nginx/sites-available"
+        )
+        nginx_conf_dir = self._prompt_path(
+            "nginx config directory",
+            default_nginx_conf_dir,
+            required=True,
+        )
+        conf.set("nginx", "conf_dir", nginx_conf_dir)
+
+        default_nginx_enabled_dir = conf.get(
+            "nginx", "enabled_dir", fallback="/etc/nginx/sites-enabled"
+        )
+        nginx_enabled_dir = self._prompt_path(
+            "nginx enabled directory (blank = no separate enable step, e.g. conf.d)",
+            default_nginx_enabled_dir,
+            required=False,
+        )
+        conf.set("nginx", "enabled_dir", nginx_enabled_dir)
+
+        self.stdout.write("\n")
+
+        # ------------------------------------------------------------------ #
         # [tls]
         # ------------------------------------------------------------------ #
         self.stdout.write("--- TLS Certificates ---\n")

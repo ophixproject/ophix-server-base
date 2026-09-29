@@ -63,7 +63,6 @@ pip install ophix-dbengine-cockroachdb  # CockroachDB
 
 ```bash
 pip install ophix-docs             # inline markdown documentation in admin
-pip install ophix-theme-midnight   # custom branding theme (optional)
 pip install ophix-codemirror       # code editor widgets (used by ophix-creds, ophix-confs)
 pip install ophix-auth-oidc        # OpenID Connect / Azure AD SSO
 pip install ophix-auth-ldap        # Active Directory / LDAP authentication
@@ -87,10 +86,19 @@ This wizard collects:
 - Install directory (runtime data: logs, SSL certs, socket)
 - Server hostname (used in nginx config and TLS certificate validation)
 - Service user and group
+- nginx config directory and enabled directory (see below)
 - TLS certificate and private key paths (validated against the hostname)
 - Database connection details, with a live connection test before saving
 - Superuser username, email, and password
 - Theme to activate and admin title (if a theme package is installed)
+
+**nginx layout**: Debian/Ubuntu splits nginx config into a staging directory
+(`sites-available`, the default) that's symlinked into an active one (`sites-enabled`,
+the default). Distros that load `*.conf` files directly from one directory instead — RHEL/Fedora-
+family `conf.d` in particular — have no separate enable step; point the config directory at that
+directory and leave the enabled directory blank. `run_install`'s generated
+`<server_name>_sudo_install.sh` copies the config to the configured directory and only creates
+the symlink when an enabled directory is set.
 
 Any installed domain plugin or extension that requires a generated key (such as `CRED_ENCRYPTION_KEY` for `ophix-creds` or `CA_KEY_ENCRYPTION_KEY` for `ophix-certs-ca`) is prompted for at the end of the wizard. For fresh installs the key is auto-generated; if you are rebuilding a venv against an existing database you must supply the original key instead.
 
@@ -132,7 +140,8 @@ sudo bash credserver_sudo_install.sh
 This script:
 
 - Sets ownership and permissions on `INSTALL_DIR`
-- Installs `credserver.nginx.conf` into `/etc/nginx/sites-available/` and enables it
+- Installs `credserver.nginx.conf` into the nginx config directory chosen in Step 1 (Debian/Ubuntu
+  default: `/etc/nginx/sites-available/`) and symlinks it into the enabled directory, if one is set
 - Installs `credserver.service` into `/etc/systemd/system/`
 - Enables and starts the service
 

@@ -161,9 +161,16 @@ if [ -f "$INSTALL_DIR/ssl/private/$SLUG.key" ]; then
     chmod 640 "$INSTALL_DIR/ssl/private/$SLUG.key"
 fi
 
+NGINX_CONF_DIR="{{ nginx_conf_dir }}"
+{% if nginx_enabled_dir %}
+NGINX_ENABLED_DIR="{{ nginx_enabled_dir }}"
+{% endif %}
+
 echo "=== Installing nginx configuration ==="
-cp "$INSTALL_DIR/{{ slug }}.nginx.conf" /etc/nginx/sites-available/$SLUG.conf
-ln -sf /etc/nginx/sites-available/$SLUG.conf /etc/nginx/sites-enabled/
+cp "$INSTALL_DIR/{{ slug }}.nginx.conf" "$NGINX_CONF_DIR/$SLUG.conf"
+{% if nginx_enabled_dir %}
+ln -sf "$NGINX_CONF_DIR/$SLUG.conf" "$NGINX_ENABLED_DIR/"
+{% endif %}
 nginx -t
 systemctl reload nginx
 
@@ -199,8 +206,10 @@ rm -f /etc/systemd/system/$SLUG.service
 systemctl daemon-reload
 
 echo "=== Removing nginx configuration ==="
-rm -f /etc/nginx/sites-enabled/$SLUG.conf
-rm -f /etc/nginx/sites-available/$SLUG.conf
+{% if nginx_enabled_dir %}
+rm -f "{{ nginx_enabled_dir }}/$SLUG.conf"
+{% endif %}
+rm -f "{{ nginx_conf_dir }}/$SLUG.conf"
 nginx -t && systemctl reload nginx || true
 
 echo ""
@@ -420,6 +429,9 @@ class Command(BaseCommand):
         service_user  = _get("server", "service_user", "ophix")
         service_group = _get("server", "service_group", service_user)
 
+        nginx_conf_dir    = _get("nginx", "conf_dir", "/etc/nginx/sites-available")
+        nginx_enabled_dir = _get("nginx", "enabled_dir", "/etc/nginx/sites-enabled")
+
         cert_src      = _get("tls", "cert_path")
         key_src       = _get("tls", "key_path")
         ca_bundle_src = _get("tls", "ca_bundle")
@@ -533,6 +545,8 @@ class Command(BaseCommand):
             "service_user":  service_user,
             "service_group": service_group,
             "nginx_group":   nginx_group,
+            "nginx_conf_dir":    nginx_conf_dir,
+            "nginx_enabled_dir": nginx_enabled_dir,
             "ca_bundle_dest": ca_bundle_dest,
         }
         install_sh = install_dir / f"{slug}_sudo_install.sh"
