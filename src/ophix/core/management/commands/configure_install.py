@@ -496,9 +496,9 @@ class Command(BaseCommand):
         conf.set("backup", "backup_path", backup_path)
 
         self.stdout.write(
-            "  Backup passphrase — used to encrypt the .env backup and any\n"
+            "  Backup passphrase - used to encrypt the .env backup and any\n"
             "  credential/key exports. Without one, those backups are skipped\n"
-            "  entirely, not written unencrypted — secrets are never backed up\n"
+            "  entirely, not written unencrypted - secrets are never backed up\n"
             "  in the clear.\n"
         )
         has_passphrase = bool(conf.get("backup", "backup_passphrase", fallback=""))
