@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.09.30.02
 
 - **Real fresh-install bug, found on the first live taskserver walkthrough**: `configure_install`,
   `configure_database`, and `generate_config` were all crashing with a raw Django traceback
