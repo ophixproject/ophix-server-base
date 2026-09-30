@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Follow-up to the `mysqlclient` split below: both `configure_database` and `configure_install`
+  now check that the selected engine's driver is actually importable immediately after engine
+  selection, before asking for host/port/credentials/TLS. Previously a missing driver was only
+  caught at the live-test step, after the operator had already filled in every other database
+  field for nothing. Same friendly "no plugin installed for 'X', run: pip install
+  ophix-dbengine-X" message either way — just surfaced immediately instead of after several
+  wasted prompts.
+
+## 2026.09.29.01
+
 - `configure_install` now prompts for the nginx config directory and enabled directory, instead of
   hardcoding the Debian/Ubuntu `sites-available`/`sites-enabled` split. Defaults unchanged
   (`/etc/nginx/sites-available` + `/etc/nginx/sites-enabled`), so existing behaviour is preserved
@@ -30,14 +40,6 @@
   graceful "driver not installed, run: pip install X" handling the MySQL/Postgres testers already
   had, plus pattern-matched guidance for the common failure cases (bad credentials, unknown
   database/service, driver not found, unreachable server).
-
-- Follow-up to the `mysqlclient` split above: both `configure_database` and `configure_install`
-  now check that the selected engine's driver is actually importable immediately after engine
-  selection, before asking for host/port/credentials/TLS. Previously a missing driver was only
-  caught at the live-test step, after the operator had already filled in every other database
-  field for nothing. Same friendly "no plugin installed for 'X', run: pip install
-  ophix-dbengine-X" message either way — just surfaced immediately instead of after several
-  wasted prompts.
 
 ## 2026.09.26.05
 
