@@ -31,6 +31,14 @@
   had, plus pattern-matched guidance for the common failure cases (bad credentials, unknown
   database/service, driver not found, unreachable server).
 
+- Follow-up to the `mysqlclient` split above: both `configure_database` and `configure_install`
+  now check that the selected engine's driver is actually importable immediately after engine
+  selection, before asking for host/port/credentials/TLS. Previously a missing driver was only
+  caught at the live-test step, after the operator had already filled in every other database
+  field for nothing. Same friendly "no plugin installed for 'X', run: pip install
+  ophix-dbengine-X" message either way — just surfaced immediately instead of after several
+  wasted prompts.
+
 ## 2026.09.26.05
 
 - i18n regression check: wrapped 12 previously-unwrapped user-facing strings across `auth.py`, `views.py`, `middleware.py`, `utils.py`, and `admin.py` (API error responses, read-only-mode message, Plugin Versions panel labels) in `gettext_lazy`/`gettext` — these files had never been brought into the earlier i18n pass at all, unlike `models.py`/`admin.py`'s field-level strings. Also fixed a shadowing bug in `favicon_view` where a throwaway `_` variable would have clobbered the new `gettext_lazy as _` import for the rest of the function (same footgun previously fixed in `check_updates.py`).

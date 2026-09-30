@@ -20,11 +20,26 @@ Usage::
 """
 
 import getpass
+import importlib
 import os
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
 from dotenv import find_dotenv, set_key
+
+
+# Importable driver module and the plugin that provides it, per engine.
+# Checked immediately after engine selection so a missing driver is caught
+# before wasting the operator's time on host/port/credential/TLS prompts
+# that would only fail at the live-test step anyway.
+_ENGINE_DRIVERS = {
+    "mariadb":     ("MySQLdb",  "ophix-dbengine-mariadb"),
+    "mysql":       ("MySQLdb",  "ophix-dbengine-mariadb"),
+    "postgres":    ("psycopg2", "ophix-dbengine-postgres"),
+    "cockroachdb": ("psycopg2", "ophix-dbengine-cockroachdb"),
+    "sqlserver":   ("pyodbc",   "ophix-dbengine-mssql"),
+    "oracle":      ("oracledb", "ophix-dbengine-oracle"),
+}
 
 
 class Command(BaseCommand):
@@ -49,6 +64,11 @@ class Command(BaseCommand):
         # --- Engine ---
         current_engine = os.getenv("DB_ENGINE", "mariadb").lower()
         engine = self._prompt_engine(current_engine)
+
+        driver_error = self._check_driver(engine)
+        if driver_error:
+            self.stderr.write(f"\n{driver_error}\n")
+            return
 
         # Default port depends on engine; snap if currently at a known default.
         _DEFAULT_PORTS = {
@@ -91,6 +111,10 @@ class Command(BaseCommand):
                 self.stderr.write("Aborted — no changes written to .env\n")
                 return
             engine = self._prompt_engine(engine)
+            driver_error = self._check_driver(engine)
+            if driver_error:
+                self.stderr.write(f"\n{driver_error}\n")
+                return
             host, port, name, user, password = self._prompt_credentials(
                 {"DB_HOST": host, "DB_PORT": port, "DB_NAME": name,
                  "DB_USER": user, "DB_PASSWORD": password}
@@ -146,6 +170,22 @@ class Command(BaseCommand):
             engine = "mariadb"
         self.stdout.write("\n")
         return engine
+
+    def _check_driver(self, engine: str) -> str | None:
+        """
+        Return None if the driver module for `engine` is importable, else a
+        friendly message naming the plugin to install.
+        """
+        module_name, plugin_name = _ENGINE_DRIVERS.get(engine, ("MySQLdb", "ophix-dbengine-mariadb"))
+        try:
+            importlib.import_module(module_name)
+            return None
+        except ImportError:
+            return (
+                f"No database engine plugin installed for '{engine}'.\n"
+                f"  Run: pip install {plugin_name}\n"
+                f"  Then re-run this command."
+            )
 
     def _prompt_credentials(self, current: dict) -> tuple:
         """Prompt for all five DB settings and return (host, port, name, user, password)."""

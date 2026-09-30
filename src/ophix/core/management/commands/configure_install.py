@@ -352,6 +352,10 @@ class Command(BaseCommand):
         ).lower()
         engine = db_cmd._prompt_engine(current_engine)
 
+        driver_error = db_cmd._check_driver(engine)
+        if driver_error:
+            raise CommandError(driver_error)
+
         current_port = conf.get("database", "port", fallback="")
         if not current_port or current_port in ("3306", "5432"):
             current_port = "5432" if engine == "postgres" else "3306"
