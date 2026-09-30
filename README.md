@@ -1,10 +1,10 @@
 # ophix-server-base
 
-Shared Django base package for every [Ophix](https://ophix.io) fleet management server.
+**The shared foundation every [Ophix](https://ophix.io) server is built on** — a modular, self-hosted fleet management platform.
 
-Provides the common infrastructure all OPS servers are built on: Host/Client models,
-token + IP authentication, standard API endpoints (register, CA cert download,
-client self-management), plugin auto-discovery, and settings assembly.
+Managing a fleet of servers usually means picking between a heavyweight all-in-one agent that phones home to someone else's cloud, or stitching together your own scripts for credentials, configs, certificates, and scheduled tasks across every box. Ophix takes a different approach: install only the domains you actually need — credential distribution, configuration management, certificate issuance, task scheduling, DNS management — each running as its own lightweight, independently deployable server and client pair, sharing nothing but this common foundation.
+
+`ophix-server-base` is that foundation: host/client registration, token + IP authentication, the plugin system every domain and extension is built on, and the guided installer that gets a server running. You won't install this on its own — pair it with a domain package (`ophix-creds`, `ophix-tasks`, etc.) to get an actual running server.
 
 ---
 
