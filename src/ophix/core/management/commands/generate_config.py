@@ -55,7 +55,7 @@ The recommended way to deploy a fresh Ophix server is the guided installer:
 
    ophix-manage configure_install <slug>   # interactive wizard
    ophix-manage run_install <slug>         # runs migrate, collectstatic, creates superuser
-   sudo bash <slug>_sudo_install.sh        # sets ownership, installs nginx + systemd
+   sudo bash <slug>-sudo-install.sh        # sets ownership, installs nginx + systemd
 
 Where <slug> is a short name for this server instance (e.g. credserver, confserver).
 

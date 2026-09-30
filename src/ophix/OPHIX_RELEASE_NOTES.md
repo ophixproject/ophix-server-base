@@ -1,5 +1,39 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- **Three more findings from the same live taskserver walkthrough, all in `run_install`:**
+  - **Plugin Versions admin page stayed empty on a fresh install.** `check_updates` is what
+    populates it, and the generated `<slug>-update.sh` already runs `check_updates --quiet` on
+    every *subsequent* update — but nothing ran it once, the first time, so a brand-new server's
+    Plugin Versions page showed nothing until the operator either ran it manually or applied an
+    update. `run_install` now runs `check_updates --quiet` itself as its final step.
+  - **Real naming bug, not just cosmetic**: `create_backup_script`/`create_update_script` were
+    always invoked with no arguments, so they fell back to their own internal default filename —
+    based on `settings.SERVER_NAME` (a per-*domain* default, e.g. `"taskserver"`), not the slug
+    the operator actually typed into `configure_install`. Every other generated file
+    (`<slug>.nginx.conf`, `<slug>.service`, the sudo scripts) is already named after the slug
+    specifically *because* `SERVER_NAME` and the slug are allowed to differ (`run_install`'s own
+    `SERVICE_NAME` handling already says as much in a comment) — two instances of the same domain
+    on one box would previously have generated identically-named `taskserver-backup.sh`/
+    `taskserver-update.sh` regardless of how differently each instance's slug was chosen. Fixed by
+    passing `--output-file` explicitly from `run_install`, using the same slug-based naming as
+    everything else.
+  - **Inconsistent separator**: the sudo install/uninstall scripts used an underscore
+    (`<slug>_sudo_install.sh`) while backup/update scripts used a hyphen (`<slug>-backup.sh`) —
+    and once the naming-basis bug above was being fixed anyway, standardised on hyphens
+    everywhere (matching this project's own hyphenated pip-package/repo naming convention).
+    `<slug>_sudo_install.sh`/`<slug>_sudo_uninstall.sh` → `<slug>-sudo-install.sh`/
+    `<slug>-sudo-uninstall.sh`, including the self-referential filename mentioned inside the
+    generated script's own root-check error message (which separately was pointing at the wrong
+    Jinja variable — `{{ server_name }}` instead of `{{ slug }}` — a second latent bug in the same
+    two lines, just never visible until slug and server_name genuinely diverge). `run_uninstall`,
+    `generate_config`'s help epilog, `server-installation.md`, and `ophix-tasks`' own
+    `README.md`/`installation.md`/inline `task-scheduling.md` doc all updated to match — plus
+    `server-installation.md` and `installation.md`'s numbered step lists filled in with the
+    several steps (docs loading, error pages, backup/update script generation, the new
+    `check_updates` step) that had gone undocumented since they were added.
+
 ## 2026.09.30.03
 
 - Docs/copy fix, found on the same taskserver walkthrough: `configure_install`'s backup

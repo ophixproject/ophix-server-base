@@ -102,7 +102,7 @@ This wizard collects:
 the default). Distros that load `*.conf` files directly from one directory instead — RHEL/Fedora-
 family `conf.d` in particular — have no separate enable step; point the config directory at that
 directory and leave the enabled directory blank. `run_install`'s generated
-`<server_name>_sudo_install.sh` copies the config to the configured directory and only creates
+`<slug>-sudo-install.sh` copies the config to the configured directory and only creates
 the symlink when an enabled directory is set.
 
 Any installed domain plugin or extension that requires a generated key (such as `CRED_ENCRYPTION_KEY` for `ophix-creds` or `CA_KEY_ENCRYPTION_KEY` for `ophix-certs-ca`) is prompted for at the end of the wizard. For fresh installs the key is auto-generated; if you are rebuilding a venv against an existing database you must supply the original key instead.
@@ -126,20 +126,29 @@ This command reads `.credserver.conf` and performs all remaining setup steps:
 2. Copies TLS certificate and key into `ssl/certs/` and `ssl/private/`
 3. Generates `credserver.nginx.conf`
 4. Generates `credserver.service` (systemd unit for gunicorn)
-5. Generates `credserver_sudo_install.sh` — the root script for step 3
-6. Generates `credserver_sudo_uninstall.sh`
+5. Generates `credserver-sudo-install.sh` — the root script for step 3
+6. Generates `credserver-sudo-uninstall.sh`
 7. Writes any plugin-generated keys to `.env` (e.g. `CRED_ENCRYPTION_KEY`)
 8. Runs `migrate`
 9. Runs `collectstatic --noinput`
 10. Creates or updates the superuser
 11. Activates the selected theme and sets the admin title
+12. Loads inline documentation, if `ophix-docs` is installed
+13. Generates static error pages (400, 403, 404, 500, 503) using the active theme
+14. Creates the backup directory and generates `credserver-backup.sh`, if `BACKUP_PATH` is configured
+15. Generates `credserver-update.sh`, a convenience script for future upgrades
+16. Runs `check_updates --quiet` to populate the Plugin Versions admin page for the first time — nothing else does this on a fresh install; from here on, `credserver-update.sh` keeps it current on every subsequent update
+
+All generated per-instance filenames use the slug you passed to `configure_install`, not the
+domain's own default `SERVER_NAME` (e.g. `taskserver`) — the slug is what keeps filenames unique
+across multiple instances of the same domain on one box.
 
 Available flags: `--skip-migrate`, `--skip-collectstatic`, `--skip-superuser`
 
 ### Step 3 — System integration (as root)
 
 ```bash
-sudo bash credserver_sudo_install.sh
+sudo bash credserver-sudo-install.sh
 ```
 
 This script:
@@ -182,7 +191,7 @@ sudo systemctl restart credserver
 ```bash
 ophix-manage configure_install credserver    # re-prompts with existing values as defaults
 ophix-manage run_install credserver --skip-superuser
-sudo bash credserver_sudo_install.sh
+sudo bash credserver-sudo-install.sh
 ```
 
 Avoid re-running `configure_install` for routine upgrades — it rewrites `.env` from scratch, which would discard any manual edits not captured in `.credserver.conf`.

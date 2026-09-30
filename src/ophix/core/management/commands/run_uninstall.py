@@ -4,7 +4,7 @@ ophix.core.management.commands.run_uninstall
 Generate or display the uninstall script for an Ophix server.
 
 Reads .<server_name>.conf and either prints the sudo uninstall commands
-or (re)generates the <server_name>_sudo_uninstall.sh file in INSTALL_DIR.
+or (re)generates the <slug>-sudo-uninstall.sh file in INSTALL_DIR.
 
 The data directory is never removed automatically — this must be a
 deliberate manual step.
@@ -74,7 +74,7 @@ class Command(BaseCommand):
             self.stdout.write(content)
             return
 
-        script_path = install_dir / f"{slug}_sudo_uninstall.sh"
+        script_path = install_dir / f"{slug}-sudo-uninstall.sh"
         script_path.write_text(content, encoding="utf-8")
         try:
             script_path.chmod(0o755)
