@@ -184,6 +184,15 @@ class Command(BaseCommand):
         "Interactive first-run configuration wizard. "
         "Writes .<server_name>.conf and .env."
     )
+    # This command exists to bootstrap a server with no valid .env yet — the
+    # database connection it will eventually configure doesn't exist until
+    # this command finishes. Django's default system checks include
+    # backend-specific model field checks that open a real DB connection
+    # (e.g. the MySQL backend's data_types needs a live query to detect
+    # MariaDB vs MySQL) using whatever fallback/blank settings happen to be
+    # in place — on a fresh install that's a guaranteed failure before the
+    # wizard has asked a single question. Skip all system checks here.
+    requires_system_checks = []
 
     def add_arguments(self, parser):
         parser.add_argument(

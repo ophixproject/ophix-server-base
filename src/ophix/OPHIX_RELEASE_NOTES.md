@@ -1,5 +1,21 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- **Real fresh-install bug, found on the first live taskserver walkthrough**: `configure_install`,
+  `configure_database`, and `generate_config` were all crashing with a raw Django traceback
+  before ever prompting for anything, on a server with no `.env` yet. Django's `BaseCommand`
+  runs its full system check suite before `handle()` starts for every management command by
+  default — for the MySQL/MariaDB backend, even an unrelated model field check needs a real DB
+  connection just to build its internal type map (`has_native_uuid_field` requires a live query
+  to detect MariaDB vs MySQL), and that connection attempt used whatever fallback/blank settings
+  happened to be in `os.environ`, which is never a real working account on a fresh box. All three
+  commands now set `requires_system_checks = []` to skip this entirely — matching what
+  `configure_database`'s own docstring already promised ("safe to run before the database schema
+  exists") but Django's default behaviour was quietly breaking. `run_install` is unaffected and
+  intentionally untouched — by the time it runs, `.env` already has real, tested credentials from
+  `configure_install`, so the checks there are legitimate.
+
 ## 2026.09.30.01
 
 - Follow-up to the `mysqlclient` split below: `configure_database` and `configure_install` now

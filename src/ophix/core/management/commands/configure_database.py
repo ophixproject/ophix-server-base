@@ -68,6 +68,13 @@ class Command(BaseCommand):
         "Interactively configure and test the database connection, "
         "writing credentials to .env on success"
     )
+    # Safe to run before the database exists or .env has real credentials —
+    # deliberately bypasses Django's ORM entirely (see module docstring).
+    # Django's default system checks would undo that guarantee: backend-
+    # specific model field checks open a real DB connection using whatever
+    # fallback/blank settings are currently in place, which fails before
+    # this command's own prompting even starts. Skip all system checks.
+    requires_system_checks = []
 
     def handle(self, *args, **options):
         try:

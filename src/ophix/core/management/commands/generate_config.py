@@ -392,6 +392,12 @@ class Command(BaseCommand):
         "Generate deployment configuration files (nginx, systemd, .env sample). "
         "Plugin env fragments are automatically discovered and appended."
     )
+    # Same bootstrap timing as configure_install: this is the legacy manual
+    # equivalent, meant to run on a server with no valid .env yet. Skip
+    # Django's default system checks — see configure_install.py for the
+    # full explanation of why they'd otherwise open a real DB connection
+    # before this command runs at all.
+    requires_system_checks = []
 
     def create_parser(self, prog_name, subcommand, **kwargs):
         kwargs.setdefault("formatter_class", argparse.RawDescriptionHelpFormatter)
