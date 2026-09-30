@@ -90,7 +90,10 @@ This wizard collects:
 - Service user and group
 - nginx config directory and enabled directory (see below)
 - TLS certificate and private key paths (validated against the hostname)
-- Database connection details, with a live connection test before saving
+- Database engine and connection details, with a live connection test before saving. The engine
+  itself is only prompted for when it's ambiguous: no dbengine plugin installed aborts
+  immediately with install instructions, exactly one installed is auto-selected with no prompt,
+  and only two or more actually shows a choice (restricted to what's installed).
 - Superuser username, email, and password
 - Theme to activate and admin title (if a theme package is installed)
 

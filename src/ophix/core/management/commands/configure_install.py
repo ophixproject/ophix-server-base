@@ -347,10 +347,13 @@ class Command(BaseCommand):
         db_cmd.stderr = self.stderr
         db_cmd.style = self.style
 
+        has_prior_engine = conf.has_option("database", "engine")
         current_engine = conf.get(
             "database", "engine", fallback=os.getenv("DB_ENGINE", "mariadb")
         ).lower()
-        engine = db_cmd._prompt_engine(current_engine)
+        engine = db_cmd._select_engine(current_engine, has_prior_engine)
+        if engine is None:
+            raise CommandError("No usable database engine plugin installed.")
 
         driver_error = db_cmd._check_driver(engine)
         if driver_error:

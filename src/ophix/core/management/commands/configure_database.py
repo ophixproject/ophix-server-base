@@ -11,6 +11,13 @@ Live-tests all six supported engines: MariaDB, MySQL, PostgreSQL, CockroachDB
 (Postgres-wire-compatible), SQL Server (via pyodbc), and Oracle (via oracledb,
 thin mode). Set DB_ENGINE to select the backend.
 
+Engine selection is driven by which ophix-dbengine-* plugins are actually
+installed: with none installed, aborts immediately with install instructions
+before any other prompt; with exactly one installed, auto-selects it (unless
+a different engine was already explicitly configured, in which case it warns
+and asks rather than silently switching); with two or more, prompts but only
+offers the installed ones as valid choices.
+
 TLS is optional.  If a CA certificate path is supplied, TLS is enabled.
 Mutual TLS (client certificate authentication) is a further opt-in.
 
@@ -41,6 +48,20 @@ _ENGINE_DRIVERS = {
     "oracle":      ("oracledb", "ophix-dbengine-oracle"),
 }
 
+# Installed-plugin module name -> the one canonical DB_ENGINE value it
+# provides. Used to discover which engines are actually usable via the same
+# entry-point mechanism every other Ophix plugin is discovered through —
+# NOT by checking driver-module importability, since psycopg2 alone can't
+# tell ophix-dbengine-postgres apart from ophix-dbengine-cockroachdb (both
+# depend on it).
+_PLUGIN_ENGINE_MODULES = {
+    "ophix_dbengine_mariadb":     "mariadb",
+    "ophix_dbengine_postgres":    "postgres",
+    "ophix_dbengine_mssql":       "sqlserver",
+    "ophix_dbengine_oracle":      "oracle",
+    "ophix_dbengine_cockroachdb": "cockroachdb",
+}
+
 
 class Command(BaseCommand):
     help = (
@@ -62,8 +83,11 @@ class Command(BaseCommand):
         self.stdout.write("Press Enter to keep the current value shown in [brackets].\n\n")
 
         # --- Engine ---
+        has_prior_value = "DB_ENGINE" in os.environ
         current_engine = os.getenv("DB_ENGINE", "mariadb").lower()
-        engine = self._prompt_engine(current_engine)
+        engine = self._select_engine(current_engine, has_prior_value)
+        if engine is None:
+            return
 
         driver_error = self._check_driver(engine)
         if driver_error:
@@ -110,7 +134,7 @@ class Command(BaseCommand):
             if retry != "y":
                 self.stderr.write("Aborted — no changes written to .env\n")
                 return
-            engine = self._prompt_engine(engine)
+            engine = self._prompt_engine(engine, valid_engines=self._available_engines() or None)
             driver_error = self._check_driver(engine)
             if driver_error:
                 self.stderr.write(f"\n{driver_error}\n")
@@ -153,23 +177,93 @@ class Command(BaseCommand):
     # Prompting helpers
     # -----------------------------------------------------------------------
 
-    def _prompt_engine(self, current: str) -> str:
-        _VALID_ENGINES = ("mariadb", "mysql", "postgres", "sqlserver", "oracle", "cockroachdb")
+    def _prompt_engine(self, current: str, valid_engines=None) -> str:
+        _ALL_ENGINES = ("mariadb", "mysql", "postgres", "sqlserver", "oracle", "cockroachdb")
+        valid = tuple(valid_engines) if valid_engines else _ALL_ENGINES
         self.stdout.write("Database engine\n")
         self.stdout.write("-" * 40 + "\n")
-        self.stdout.write(f"  Valid values: {', '.join(_VALID_ENGINES)}\n")
-        self.stdout.write(
-            "  Every engine, mariadb/mysql included, requires the matching\n"
-            "  ophix-dbengine-* plugin to be installed for its driver.\n"
-        )
-        engine = self._prompt("Database engine", current).lower()
-        if engine not in _VALID_ENGINES:
+        self.stdout.write(f"  Valid values: {', '.join(valid)}\n")
+        if valid_engines:
+            self.stdout.write("  (Only engines with an installed ophix-dbengine-* plugin are listed.)\n")
+        else:
             self.stdout.write(
-                self.style.WARNING(f"  Unknown engine '{engine}' — defaulting to mariadb\n")
+                "  Every engine, mariadb/mysql included, requires the matching\n"
+                "  ophix-dbengine-* plugin to be installed for its driver.\n"
             )
-            engine = "mariadb"
+        engine = self._prompt("Database engine", current).lower()
+        if engine not in valid:
+            self.stdout.write(
+                self.style.WARNING(f"  '{engine}' is not a valid/installed choice — defaulting to {valid[0]}\n")
+            )
+            engine = valid[0]
         self.stdout.write("\n")
         return engine
+
+    def _available_engines(self) -> list:
+        """
+        Return the distinct DB_ENGINE values with an installed
+        ophix-dbengine-* plugin, in _PLUGIN_ENGINE_MODULES' declared order.
+        """
+        try:
+            from importlib.metadata import entry_points
+            installed = {ep.value for ep in entry_points(group="ophix.plugins")}
+        except Exception:
+            return []
+        return [
+            engine for module_name, engine in _PLUGIN_ENGINE_MODULES.items()
+            if module_name in installed
+        ]
+
+    def _select_engine(self, current_engine: str, has_prior_value: bool) -> str | None:
+        """
+        Decide which DB_ENGINE to use based on what's actually installed,
+        printing any explanation directly (via self.stdout/stderr) rather
+        than returning it, so both callers (this command and
+        configure_install, which shares stdout/stderr with this instance)
+        get identical behaviour for free.
+
+        Returns the chosen engine, or None if no dbengine plugin is
+        installed at all — callers must abort before any further prompting
+        in that case, since there is nothing valid to proceed with.
+        """
+        available = self._available_engines()
+
+        if not available:
+            self.stderr.write("\nNo database engine plugin is installed. Install one of:\n")
+            seen_plugins = set()
+            for _engine, (_module, plugin_name) in _ENGINE_DRIVERS.items():
+                if plugin_name in seen_plugins:
+                    continue
+                seen_plugins.add(plugin_name)
+                self.stderr.write(f"  pip install {plugin_name}\n")
+            self.stderr.write("Then re-run this command.\n")
+            return None
+
+        if len(available) == 1:
+            only = available[0]
+            only_module = _ENGINE_DRIVERS[only][0]
+            aliases = {e for e, (m, _p) in _ENGINE_DRIVERS.items() if m == only_module}
+
+            if not has_prior_value or current_engine in aliases:
+                engine = current_engine if current_engine in aliases else only
+                self.stdout.write(
+                    f"\nOnly one database engine plugin is installed — using '{engine}'.\n\n"
+                )
+                return engine
+
+            # A prior explicit value exists and conflicts with the only
+            # engine actually available — don't silently switch it.
+            self.stdout.write(
+                self.style.WARNING(
+                    f"\n  Configured engine is '{current_engine}', but only the driver for "
+                    f"'{only}' is installed.\n"
+                    f"  Install the matching plugin to keep using '{current_engine}', or "
+                    f"continue to switch to '{only}'.\n\n"
+                )
+            )
+            return self._prompt_engine(only, valid_engines=available)
+
+        return self._prompt_engine(current_engine, valid_engines=available)
 
     def _check_driver(self, engine: str) -> str | None:
         """

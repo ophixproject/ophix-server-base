@@ -2,13 +2,16 @@
 
 ## Unreleased
 
-- Follow-up to the `mysqlclient` split below: both `configure_database` and `configure_install`
-  now check that the selected engine's driver is actually importable immediately after engine
-  selection, before asking for host/port/credentials/TLS. Previously a missing driver was only
-  caught at the live-test step, after the operator had already filled in every other database
-  field for nothing. Same friendly "no plugin installed for 'X', run: pip install
-  ophix-dbengine-X" message either way — just surfaced immediately instead of after several
-  wasted prompts.
+- Follow-up to the `mysqlclient` split below: `configure_database` and `configure_install` now
+  base database engine selection on which `ophix-dbengine-*` plugins are actually installed,
+  instead of always prompting for an engine and only discovering a missing driver later. With no
+  dbengine plugin installed at all, both abort immediately with install instructions for every
+  engine — before any host/port/credential/TLS prompt, not just before the live test. With
+  exactly one plugin installed (the common case — e.g. just `ophix-dbengine-mariadb`), it's
+  auto-selected with no prompt at all, unless a *different* engine was already explicitly
+  configured from a prior run, in which case it warns about the mismatch and asks rather than
+  silently switching a working config. With two or more installed, the engine prompt still
+  appears but only offers the installed ones as valid choices.
 
 ## 2026.09.29.01
 
