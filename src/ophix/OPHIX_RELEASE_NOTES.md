@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.09.30.03
 
 - Docs/copy fix, found on the same taskserver walkthrough: `configure_install`'s backup
   passphrase prompt said "Leave blank to skip encryption," which undersells what actually
