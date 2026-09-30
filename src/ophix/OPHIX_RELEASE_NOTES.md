@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.09.30.04
 
 - **Three more findings from the same live taskserver walkthrough, all in `run_install`:**
   - **Plugin Versions admin page stayed empty on a fresh install.** `check_updates` is what
