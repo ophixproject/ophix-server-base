@@ -16,6 +16,17 @@
   intentionally untouched — by the time it runs, `.env` already has real, tested credentials from
   `configure_install`, so the checks there are legitimate.
 
+- **Second real bug from the same walkthrough**: `configure_install`'s new `[nginx]` section
+  (added in `2026.09.29.01`) crashed with `configparser.NoSectionError: No section: 'nginx'` the
+  moment the wizard tried to save the nginx config directory prompt. `_handle()` pre-creates every
+  `.conf` section it's about to write to in one place — `for section in ("server", "tls",
+  "database", "superuser", "admin", "backup")` — and `"nginx"` was simply never added to that
+  tuple when the section was introduced. `conf.get(..., fallback=...)` tolerates a missing
+  section silently, which is why the read side of the new prompts worked fine right up until the
+  first `conf.set()` call. Fixed by adding `"nginx"` to the tuple. No partial `.conf` file is ever
+  written on a crash like this — the file is only written once, at the very end of the wizard —
+  so this required no cleanup on the affected test install, just a re-run.
+
 ## 2026.09.30.01
 
 - Follow-up to the `mysqlclient` split below: `configure_database` and `configure_install` now

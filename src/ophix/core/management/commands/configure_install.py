@@ -227,7 +227,7 @@ class Command(BaseCommand):
 
         self.stdout.write("=" * 60 + "\n\n")
 
-        for section in ("server", "tls", "database", "superuser", "admin", "backup"):
+        for section in ("server", "nginx", "tls", "database", "superuser", "admin", "backup"):
             if not conf.has_section(section):
                 conf.add_section(section)
 
