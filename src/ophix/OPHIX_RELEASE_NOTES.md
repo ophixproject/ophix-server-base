@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.09.30.01
 
 - Follow-up to the `mysqlclient` split below: `configure_database` and `configure_install` now
   base database engine selection on which `ophix-dbengine-*` plugins are actually installed,
