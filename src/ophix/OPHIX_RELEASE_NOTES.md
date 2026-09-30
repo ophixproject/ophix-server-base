@@ -1,5 +1,15 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- Docs/copy fix, found on the same taskserver walkthrough: `configure_install`'s backup
+  passphrase prompt said "Leave blank to skip encryption," which undersells what actually
+  happens — leaving it blank doesn't produce an unencrypted backup of those targets, it skips
+  backing them up **entirely** (confirmed by the very next line the wizard prints: "No passphrase
+  set — .env file backup will be disabled", and later by "Targets requiring a passphrase
+  excluded"). Reworded to state the real consequence directly, and explain why (secrets are never
+  written to a backup unencrypted). `server-backup.md`'s equivalent line updated to match.
+
 ## 2026.09.30.02
 
 - **Real fresh-install bug, found on the first live taskserver walkthrough**: `configure_install`,
