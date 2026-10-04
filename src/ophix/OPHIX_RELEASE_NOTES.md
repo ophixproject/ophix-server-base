@@ -1,5 +1,20 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `check_updates`'s `_run_pip_list_outdated()` now passes `--no-cache-dir` to pip (`--no-cache`
+  to its uv fallback). Found during the live taskserver walkthrough: a `ChunkedEncodingError`/
+  `IncompleteRead` on `pip list --outdated` reproduced identically across repeated runs — the
+  same exact byte count both times, which a genuine transient network blip wouldn't do. Confirmed
+  via `pip list --outdated --no-cache-dir` succeeding where the cached call kept failing: a
+  corrupted local pip HTTP cache entry (likely from a connection that dropped mid-download once)
+  was being replayed on every subsequent call, with no way to recover short of a manual
+  `pip cache purge`. Since `update.sh`'s update-check step runs under `set -e`, a corrupted cache
+  entry here silently wedges the *entire* automated update pipeline — migrate, collectstatic, the
+  actual package upgrade — until a human notices and purges it by hand. This is purely a
+  periodic "what's outdated" listing (often run unattended via cron), so the extra network cost
+  of always re-fetching is cheap insurance against that class of bug recurring.
+
 ## 2026.09.30.04
 
 - **Three more findings from the same live taskserver walkthrough, all in `run_install`:**

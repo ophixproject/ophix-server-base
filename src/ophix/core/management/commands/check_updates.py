@@ -51,9 +51,17 @@ def _run_pip_list_outdated(timeout: int) -> subprocess.CompletedProcess:
     interpreter>` if pip isn't importable (e.g. a seedless uv-created venv).
     The explicit --python flag targets this exact interpreter rather than
     relying on VIRTUAL_ENV, which isn't reliably set under cron/systemd.
+
+    --no-cache-dir / --no-cache: a corrupted local HTTP cache entry (e.g. from
+    a connection that dropped mid-download) can make pip/uv replay the same
+    truncated response on every subsequent call indefinitely, with no way to
+    recover short of a manual `pip cache purge`. This is purely an
+    outdated-package listing, run periodically (often unattended via cron),
+    so the extra network cost of always re-fetching is cheap insurance
+    against that class of bug recurring silently.
     """
     result = subprocess.run(
-        [sys.executable, "-m", "pip", "list", "--outdated", "--format=json"],
+        [sys.executable, "-m", "pip", "--no-cache-dir", "list", "--outdated", "--format=json"],
         capture_output=True,
         text=True,
         timeout=timeout,
@@ -64,7 +72,7 @@ def _run_pip_list_outdated(timeout: int) -> subprocess.CompletedProcess:
     uv_path = shutil.which("uv")
     if uv_path:
         return subprocess.run(
-            [uv_path, "pip", "list", "--outdated", "--format=json", "--python", sys.executable],
+            [uv_path, "--no-cache", "pip", "list", "--outdated", "--format=json", "--python", sys.executable],
             capture_output=True,
             text=True,
             timeout=timeout,
