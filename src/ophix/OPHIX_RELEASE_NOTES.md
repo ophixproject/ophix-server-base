@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.10.04.01
 
 - `check_updates`'s `_run_pip_list_outdated()` now passes `--no-cache-dir` to pip (`--no-cache`
   to its uv fallback). Found during the live taskserver walkthrough: a `ChunkedEncodingError`/
