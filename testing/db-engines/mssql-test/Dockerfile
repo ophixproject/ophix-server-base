@@ -12,9 +12,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install --no-cache-dir pyodbc
 
-# ophix-server-base/ophix-dbengine-mssql live on the internal index only -
-# --extra-index-url (not --index-url) so public PyPI stays reachable too for
-# Django and everything else's own dependencies.
+# Internal dev/test harness, not part of the shipped package. The two pins below
+# were installed from the maintainer's own private PyPI mirror at build time and
+# won't resolve for anyone else - pypi.internal.ophix.io is not publicly reachable.
+# To reproduce this harness yourself, point --extra-index-url/--trusted-host at
+# your own package index instead (or drop them and use public PyPI once both
+# packages have a public release at or above the pinned versions below).
 RUN pip install --no-cache-dir \
     --extra-index-url https://pypi.internal.ophix.io/simple/ \
     --trusted-host pypi.internal.ophix.io \
