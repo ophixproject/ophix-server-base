@@ -1,6 +1,18 @@
 # ophix-server-base Release Notes
 
-## 2026.10.04.01
+## Unreleased
+
+- `client-quickstart.md` fully converted to use the `{{ token }}` substitution mechanism
+  (`ophix-docs` 2026.10.07.01+): `client_command`, `client_env`, `client_env_prefix` used
+  throughout instead of hardcoded `cred-client`/`.cred.env`/`CREDSERVER_*` examples. The
+  "example output" blocks for `quickstart` and `doctor` were also rewritten to match what
+  the CLI actually prints (verified against `client_core.commands`'s real source and a live
+  registration test) — the previous versions used a `→`/`✓` symbol format that doesn't exist
+  in the real output, and the `doctor` example was missing the "Checking server
+  connectivity..." and "Client identity:" sections entirely. The "local env file" table
+  (previously hardcoding only 2 of 5 domains) was dropped in favor of an inline
+  `{{ client_env }}` reference, consistent with the rest of the page now being
+  per-server-accurate rather than generic.
 
 - `check_updates`'s `_run_pip_list_outdated()` now passes `--no-cache-dir` to pip (`--no-cache`
   to its uv fallback). Found during the live taskserver walkthrough: a `ChunkedEncodingError`/
