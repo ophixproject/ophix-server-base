@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.10.07.01
 
 - `client-quickstart.md` fully converted to use the `{{ token }}` substitution mechanism
   (`ophix-docs` 2026.10.07.01+): `client_command`, `client_env`, `client_env_prefix` used
