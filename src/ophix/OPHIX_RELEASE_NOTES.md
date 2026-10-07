@@ -13,6 +13,13 @@
   (previously hardcoding only 2 of 5 domains) was dropped in favor of an inline
   `{{ client_env }}` reference, consistent with the rest of the page now being
   per-server-accurate rather than generic.
+- Added a "Token rotation" subsection on automated, server-initiated rotation —
+  verified against `client_core`'s own `check_rotation_signal()`/`_api_request()` (the
+  response-header auto-rotation path, confirmed real and transparent on any normal API
+  call) and `ClientTokenAuthentication`'s `TOKEN_LOCKOUT_DAYS` enforcement (confirmed
+  this is core `ophix-server-base` behaviour, not gated on `ophix-client-management` —
+  the plugin adds the signal/dashboard/visibility on top of enforcement that already
+  exists without it).
 
 - `check_updates`'s `_run_pip_list_outdated()` now passes `--no-cache-dir` to pip (`--no-cache`
   to its uv fallback). Found during the live taskserver walkthrough: a `ChunkedEncodingError`/
