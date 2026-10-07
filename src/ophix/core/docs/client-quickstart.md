@@ -192,12 +192,24 @@ The server can also enforce a **hard lockout**: once a token exceeds a configure
 
 ---
 
-## Granting access to artifacts
+## Granting access to {{ artifact_name_lower }}s
 
-A client can only retrieve artifacts it has been explicitly linked to by an administrator. After registering a client:
+A client can only retrieve {{ artifact_name_lower }}s it is linked to on the server. There are two ways to do this — both live in the same admin UI at {{ server_url }}.
 
-1. Go to **Admin** and navigate to the artifact (credential or configuration)
-2. In the **Clients** inline, add the client and set the appropriate permissions
-3. The client can now retrieve that artifact
+### From the client
 
-Alternatively, manage links from the **Client** detail page using the domain inline.
+1. Go to {{ server_url }} and open **Clients** in the left-hand menu (under Server Core)
+2. Select the client you want to grant access to
+3. Click the **{{ artifact_name }}s** tab in the right-hand panel
+4. Click **Add {{ artifact_name }}** and select the required {{ artifact_name_lower }} from the dropdown
+
+You can add multiple {{ artifact_name_lower }}s this way.
+
+### From the {{ artifact_name_lower }}
+
+1. Go to {{ server_url }} and click **{{ artifact_name }}s** in the left-hand menu
+2. Select the {{ artifact_name_lower }} you want to grant access to
+3. Click the **Clients** tab in the right-hand panel
+4. Click **Add Client** and select the client from the dropdown
+
+You can add multiple clients this way.

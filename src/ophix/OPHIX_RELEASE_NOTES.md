@@ -20,6 +20,17 @@
   this is core `ophix-server-base` behaviour, not gated on `ophix-client-management` —
   the plugin adds the signal/dashboard/visibility on top of enforcement that already
   exists without it).
+- Rewrote "Granting access to artifacts" → "Granting access to `{{ artifact_name_lower }}s`":
+  dropped "artifact" and "inline" as jargon, in favor of `{{ artifact_name }}`/
+  `{{ artifact_name_lower }}` tokens and a plain description of the two UI paths
+  (via the Client's tabs, or via the {{ artifact_name_lower }}'s tabs) instead of naming
+  Django-specific concepts. Checked the actual on-screen tab labels across all 5 domains
+  before writing anything — found "Clients" is not universal (certs shows "Client Access",
+  zones shows "Producers (Clients)") — deliberately left "Clients" as plain literal text
+  rather than tokenizing it, since certs/zones are both still pre-release so the slight
+  inaccuracy there doesn't matter yet; revisit if a 6th token becomes worth it once those
+  domains ship. Also softened "explicitly linked to by an administrator" → "linked to on
+  the server", since not every domain requires an admin to create the link.
 
 - `check_updates`'s `_run_pip_list_outdated()` now passes `--no-cache-dir` to pip (`--no-cache`
   to its uv fallback). Found during the live taskserver walkthrough: a `ChunkedEncodingError`/
