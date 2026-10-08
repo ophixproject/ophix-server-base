@@ -186,7 +186,7 @@ Rotation jobs must be monitored. A silent rotation failure leaves the client wit
 
 ### Automated, server-initiated rotation
 
-If [ophix-client-management](client-management) is installed, rotation doesn't have to rely on a cron job at all. The server can flag a client for rotation — automatically once its token passes an age threshold, or manually from the Status dashboard — and the client picks this up on its *next normal API call*, rotating its own token transparently with no cron job and no operator action required on the client side.
+If `ophix-client-management` is installed, rotation doesn't have to rely on a cron job at all. The server can flag a client for rotation — automatically once its token passes an age threshold, or manually from the Status dashboard — and the client picks this up on its *next normal API call*, rotating its own token transparently with no cron job and no operator action required on the client side.
 
 The server can also enforce a **hard lockout**: once a token exceeds a configured maximum age, the client is refused authentication entirely until an operator unlocks it. This protection is always available (`TOKEN_LOCKOUT_DAYS` in `.env`), even without the plugin. With `ophix-client-management` installed, token rotation is easier to control and easy to see at a glance — a dashboard showing token age across the whole fleet, one-click rotation requests, and the self-healing rotation signal described above keeping clients ahead of the lockout threshold automatically.
 

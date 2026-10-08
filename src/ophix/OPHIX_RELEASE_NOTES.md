@@ -1,5 +1,15 @@
 # ophix-server-base Release Notes
 
+## 2026.10.09.01
+
+- `client-quickstart.md`'s "Automated, server-initiated rotation" section no longer links
+  `ophix-client-management` as `[ophix-client-management](client-management)` — that assumed
+  a docs cross-linking feature (`/admin/docs/crosslink/<app_label>/<slug>/`) that was only ever
+  designed, never actually built, so the link rendered as a plain relative `href` that 404s.
+  Named as plain text instead. Cross-links will only ever make sense once the referenced
+  package (and its documentation) is actually installed, so a hyperlink here was premature
+  regardless of the missing feature.
+
 ## 2026.10.07.01
 
 - `client-quickstart.md` fully converted to use the `{{ token }}` substitution mechanism
