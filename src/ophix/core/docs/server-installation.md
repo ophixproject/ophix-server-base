@@ -39,7 +39,7 @@ uv venv
 source .venv/bin/activate
 ```
 
-uv doesn't install `pip` into the venv by default. Either replace `pip install` with `uv pip install` in the commands throughout this guide, or create the venv with `uv venv --seed` to have plain `pip` available. Ophix has no dependency on how the venv was created — see [Client Quickstart](client-quickstart) for the equivalent note on the client side.
+uv doesn't install `pip` into the venv by default. Either replace `pip install` with `uv pip install` in the commands throughout this guide, or create the venv with `uv venv --seed` to have plain `pip` available. Ophix has no dependency on how the venv was created — see [Client Quickstart](/admin/ophix_docs/docpage/crosslink/ophix.core/client-quickstart/) for the equivalent note on the client side.
 
 ---
 
@@ -276,7 +276,7 @@ sudo systemctl restart credserver
 Once the server is running:
 
 1. Go to **Admin → Hosts** and create a Host entry for the IP address of each machine that will run a client.
-2. Clients register themselves on first run using the `quickstart` command — see [Client Quickstart](client-quickstart).
+2. Clients register themselves on first run using the `quickstart` command — see [Client Quickstart](/admin/ophix_docs/docpage/crosslink/ophix.core/client-quickstart/).
 
 You do not need to pre-create Client records. Registration is handled by the client.
 
@@ -374,7 +374,7 @@ sudo systemctl restart mariadb
 
 PostgreSQL, SQL Server, Oracle, and CockroachDB are not affected — they carry their own timezone data.
 
-See [Access Auditing](access-auditing) for the full audit log documentation.
+See [Access Auditing](/admin/ophix_docs/docpage/crosslink/ophix.core/access-auditing/) for the full audit log documentation.
 
 ### Authentication plugins
 

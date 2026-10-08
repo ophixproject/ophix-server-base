@@ -6,6 +6,10 @@
   `ophix-client-management` as `[ophix-client-management](client-management)` — that assumed
   a docs cross-linking feature (`/admin/docs/crosslink/<app_label>/<slug>/`) that was only ever
   designed, never actually built, so the link rendered as a plain relative `href` that 404s.
+- The crosslink feature referenced above has now actually been built (in `ophix-docs`), scoped
+  to docs guaranteed to exist on the installing server. `server-installation.md`'s three
+  previously-broken links (two to Client Quickstart, one to Access Auditing) now point at the
+  real redirect URL instead of a bare relative slug.
   Named as plain text instead. Cross-links will only ever make sense once the referenced
   package (and its documentation) is actually installed, so a hyperlink here was premature
   regardless of the missing feature.
