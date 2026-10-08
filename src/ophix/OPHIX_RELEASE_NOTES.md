@@ -1,5 +1,15 @@
 # ophix-server-base Release Notes
 
+## 2026.10.09.02
+
+- `client-quickstart.md`'s "Automated, server-initiated rotation" section now links
+  `ophix-client-management` via a self-gating token pair (`{{ cm_link_open }}`/
+  `{{ cm_link_close }}`) contributed by that plugin's own `get_doc_tokens()` hook.
+  Since the hook is only ever discovered when the plugin is actually installed, the
+  mention renders as a real crosslink to that plugin's own doc page when present, and
+  as plain unlinked text (both tokens substitute to blank) when absent — no separate
+  fallback logic needed.
+
 ## 2026.10.09.01
 
 - `client-quickstart.md`'s "Automated, server-initiated rotation" section no longer links
