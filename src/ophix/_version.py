@@ -1,2 +1,2 @@
-__version__ = "2026.10.07.01"
+__version__ = "2026.10.09.01"
 __package_name__ = "ophix-server-base"
