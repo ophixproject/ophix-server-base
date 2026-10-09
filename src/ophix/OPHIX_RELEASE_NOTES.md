@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.10.09.03
 
 - New `ophix.core.crypto` module — shared encryption helpers for every encrypted
   export/import command. Adds a second cipher scheme, `stable-aesgcmsiv`
