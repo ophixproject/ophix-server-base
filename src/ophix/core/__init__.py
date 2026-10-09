@@ -9,6 +9,10 @@ def get_revisions_targets():
         {
             "name": "hosts",
             "app_label": "ophix_core",
+            # Precise model match — without this, any other ophix_core
+            # model save (e.g. PackageUpdateRecord) would also trigger this
+            # target just for sharing the same app_label.
+            "models": ["ophix_core.host"],
             "export_command": "export_hosts",
             "encrypted": False,
             "stable": True,
@@ -16,6 +20,8 @@ def get_revisions_targets():
         {
             "name": "clients",
             "app_label": "ophix_core",
+            # Precise model match — see "hosts" above.
+            "models": ["ophix_core.client"],
             "export_command": "export_clients",
             "encrypted": False,
             "stable": True,

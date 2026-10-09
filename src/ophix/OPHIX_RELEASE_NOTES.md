@@ -1,5 +1,17 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `ophix.core.get_revisions_targets()`'s `hosts` and `clients` entries now declare a
+  precise `"models"` list (`["ophix_core.host"]` / `["ophix_core.client"]`), narrowing
+  which saves actually trigger them. Previously both only matched by `app_label`
+  (`"ophix_core"`), which `PackageUpdateRecord` also shares — so every `check_updates`
+  run was enqueueing `hosts`/`clients` snapshots for data that never changed, as well as
+  masking real commit errors behind a burst of unrelated no-op events (see
+  `ophix-revisions`'s own release notes for the full story). Requires
+  `ophix-revisions>=2026.10.09.03` to take effect; older `ophix-revisions` versions
+  ignore the new `"models"` key and keep matching by `app_label` only, with no error.
+
 ## 2026.10.09.03
 
 - New `ophix.core.crypto` module — shared encryption helpers for every encrypted
