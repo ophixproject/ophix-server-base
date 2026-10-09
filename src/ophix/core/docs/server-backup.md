@@ -138,11 +138,18 @@ Preview without writing:
 ophix-manage export_env --output-file env.json --passphrase --dry-run
 ```
 
+Add `--stable` to produce deterministic output — an unchanged `.env` always encrypts to the same ciphertext on this server, so a git-backed history of this file (e.g. `ophix-revisions`) shows an empty diff when nothing real has changed:
+
+```bash
+ophix-manage export_env --output-file env.json --passphrase-env BACKUP_PASSPHRASE --stable
+```
+
 | Flag | Description |
 | --- | --- |
 | `--output-file FILE` | _(required)_ Destination path |
 | `--passphrase [VALUE]` | Encrypt with passphrase. Omit value to be prompted securely |
 | `--passphrase-env ENVVAR` | Read passphrase from named environment variable |
+| `--stable` | Produce deterministic, diff-friendly output instead of the default random encryption |
 | `--dry-run` | Show what would be exported without writing |
 | `--quiet` | Suppress all output |
 

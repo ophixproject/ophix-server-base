@@ -51,6 +51,22 @@ if not SECRET_KEY:
     if env_file:
         set_key(env_file, "DJANGO_SECRET_KEY", SECRET_KEY, quote_mode="always")
 
+# Per-install salt for the deterministic "--stable" export cipher
+# (see ophix.core.crypto). Generated once, the same way as DJANGO_SECRET_KEY
+# above. Unlike DJANGO_SECRET_KEY, losing or changing this does not break
+# decryption of anything already exported — every stable-mode export embeds
+# its own salt in the payload. The only consequence of changing it is that
+# the next --stable export re-encrypts every field even where the underlying
+# data is unchanged, producing one spurious "everything changed" commit in
+# ophix-revisions' history. Never rotate this deliberately.
+STABLE_EXPORT_SALT = os.getenv("STABLE_EXPORT_SALT")
+if not STABLE_EXPORT_SALT:
+    import base64
+    STABLE_EXPORT_SALT = base64.urlsafe_b64encode(os.urandom(16)).decode()
+    env_file = find_dotenv(usecwd=True)
+    if env_file:
+        set_key(env_file, "STABLE_EXPORT_SALT", STABLE_EXPORT_SALT, quote_mode="always")
+
 DEBUG = get_bool_env("DEBUG", default=False)
 
 ALLOWED_HOSTS = get_list_env("ALLOWED_HOSTS", default=["*"])

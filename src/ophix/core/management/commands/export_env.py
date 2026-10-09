@@ -10,6 +10,12 @@ no plaintext export option.
 Use import_env on the receiving server to restore. The passphrase used here
 must be supplied to import_env.
 
+Use --stable together with --passphrase/--passphrase-env to produce
+deterministic output (same .env content always encrypts to the same
+ciphertext on this server) — intended for ophix-revisions' git-backed
+history, where an unchanged .env should produce an empty diff. Normal
+(non-stable) output is unaffected by this flag's presence or absence.
+
 Examples
 --------
 Export with passphrase (prompted securely):
@@ -18,23 +24,20 @@ Export with passphrase (prompted securely):
 Export with passphrase from environment variable (for automated/cron use):
     ophix-manage export_env --output-file env.json --passphrase-env BACKUP_PASSPHRASE
 
+Deterministic export (for ophix-revisions):
+    ophix-manage export_env --output-file env.json --passphrase-env BACKUP_PASSPHRASE --stable
+
 Preview without writing:
     ophix-manage export_env --output-file env.json --passphrase --dry-run
 """
 
-import base64
 import json
 import os
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-
-def _derive_key(passphrase: str, salt: bytes) -> bytes:
-    from cryptography.hazmat.primitives import hashes
-    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=480000)
-    return base64.urlsafe_b64encode(kdf.derive(passphrase.encode()))
+from ophix.core import crypto
 
 
 def _build_meta(command: str) -> dict:
@@ -89,6 +92,15 @@ class Command(BaseCommand):
             help="Read the passphrase from the named environment variable (for automated use).",
         )
         parser.add_argument(
+            "--stable",
+            action="store_true",
+            help=(
+                "Produce deterministic output — unchanged .env content always "
+                "encrypts to the same ciphertext on this server. For use with "
+                "ophix-revisions or any other git-backed history of this file."
+            ),
+        )
+        parser.add_argument(
             "--dry-run",
             action="store_true",
             help="Show what would be exported without writing anything.",
@@ -100,12 +112,12 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        from cryptography.fernet import Fernet
         from dotenv import find_dotenv
 
         output_path    = Path(options["output_file"])
         passphrase     = options["passphrase"]
         passphrase_env = options["passphrase_env"]
+        stable         = options["stable"]
         dry_run        = options["dry_run"]
         quiet          = options["quiet"]
 
@@ -153,22 +165,22 @@ class Command(BaseCommand):
 
         env_content = env_path.read_text(encoding="utf-8")
 
-        salt = os.urandom(16)
-        salt_b64 = base64.urlsafe_b64encode(salt).decode()
-        fernet = Fernet(_derive_key(passphrase, salt))
-        encrypted_content = fernet.encrypt(env_content.encode()).decode()
+        cipher = crypto.build_export_cipher(passphrase, stable=stable)
+        encrypted_content = cipher.encrypt(env_content)
 
         payload = {
             "version":   1,
-            "meta":      _build_meta("export_env"),
             "env_path":  str(env_path),
             "encrypted": True,
-            "salt":      salt_b64,
+            "cipher":    cipher.name,
+            "salt":      cipher.salt_b64,
             "content":   encrypted_content,
         }
+        if not stable:
+            payload["meta"] = _build_meta("export_env")
 
         with output_path.open("w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=2)
+            json.dump(payload, f, indent=2, sort_keys=stable)
 
         if not quiet:
             self.stdout.write(self.style.SUCCESS(

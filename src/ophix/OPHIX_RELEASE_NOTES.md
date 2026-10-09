@@ -1,5 +1,28 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- New `ophix.core.crypto` module — shared encryption helpers for every encrypted
+  export/import command. Adds a second cipher scheme, `stable-aesgcmsiv`
+  (AES-GCM-SIV, deterministic nonce derived from the plaintext, key derived
+  from a per-install `STABLE_EXPORT_SALT` that is generated once and never
+  rotated), alongside the existing `fernet` scheme. This is Phase B of the
+  `ophix-revisions` design — it lets encrypted targets (`creds`, `certs`,
+  `certs_ca`, `env`) produce byte-identical output across unchanged exports,
+  which `--stable` already does for every unencrypted target. A new
+  `STABLE_EXPORT_SALT` setting is generated and persisted to `.env` the same
+  way `DJANGO_SECRET_KEY` already is.
+- `export_env`/`import_env` gained a `--stable` flag and are the first pair
+  wired to the new cipher. Every export payload now carries a `"cipher"` key
+  (`"fernet"` or `"stable-aesgcmsiv"`) so `import_env` knows which scheme to
+  use; files from before this change have no such key and default to
+  `"fernet"`, decrypting exactly as before — fully backward compatible.
+- `ophix.core.get_revisions_targets()`'s `env` entry now declares
+  `"stable": True` — `ophix-revisions` can produce a diff-friendly `.env`
+  history without any change on its own side.
+- `cryptography` dependency floor raised `>=41.0` → `>=42.0` (required for
+  `AESGCMSIV`, added in that release).
+
 ## 2026.10.09.02
 
 - `client-quickstart.md`'s "Automated, server-initiated rotation" section now links

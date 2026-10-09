@@ -28,6 +28,6 @@ def get_revisions_targets():
             "app_label": None,
             "export_command": "export_env",
             "encrypted": True,
-            "stable": False,  # Phase B — Fernet's random IV/salt make this impossible today
+            "stable": True,
         },
     ]

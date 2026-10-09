@@ -33,7 +33,6 @@ Preview decrypted content without writing:
     ophix-manage import_env --input-file env.json --passphrase --dry-run
 """
 
-import base64
 import json
 import os
 import re
@@ -41,12 +40,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-
-def _derive_key(passphrase: str, salt: bytes) -> bytes:
-    from cryptography.hazmat.primitives import hashes
-    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=480000)
-    return base64.urlsafe_b64encode(kdf.derive(passphrase.encode()))
+from ophix.core import crypto
 
 
 class Command(BaseCommand):
@@ -101,8 +95,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        from cryptography.fernet import Fernet, InvalidToken
-
         input_path     = Path(options["input_file"])
         passphrase     = options["passphrase"]
         passphrase_env = options["passphrase_env"]
@@ -151,10 +143,11 @@ class Command(BaseCommand):
 
         # Decrypt
         try:
-            salt = base64.urlsafe_b64decode(payload["salt"])
-            fernet = Fernet(_derive_key(passphrase, salt))
-            env_content = fernet.decrypt(payload["content"].encode()).decode()
-        except (InvalidToken, KeyError, Exception) as exc:
+            cipher = crypto.build_import_cipher(
+                payload.get("cipher"), passphrase, payload.get("salt")
+            )
+            env_content = cipher.decrypt(payload["content"])
+        except (crypto.DecryptionError, KeyError, Exception) as exc:
             raise CommandError(
                 "Decryption failed — wrong passphrase or corrupt file."
             ) from exc
