@@ -13,6 +13,7 @@ def get_revisions_targets():
             # model save (e.g. PackageUpdateRecord) would also trigger this
             # target just for sharing the same app_label.
             "models": ["ophix_core.host"],
+            "records_key": "hosts",
             "export_command": "export_hosts",
             "encrypted": False,
             "stable": True,
@@ -22,6 +23,7 @@ def get_revisions_targets():
             "app_label": "ophix_core",
             # Precise model match — see "hosts" above.
             "models": ["ophix_core.client"],
+            "records_key": "clients",
             "export_command": "export_clients",
             "encrypted": False,
             "stable": True,

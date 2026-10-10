@@ -1,5 +1,14 @@
 # ophix-server-base Release Notes
 
+## 2026.10.10.01
+
+- `ophix.core.get_revisions_targets()`'s `hosts` and `clients` entries now declare
+  `records_key` (`"hosts"`/`"clients"`), making both eligible for `ophix-revisions`'
+  new cherry-pick restore — an operator can select individual records to restore
+  from a snapshot instead of the whole thing. Requires
+  `ophix-revisions>=2026.10.10.06` to take effect; older `ophix-revisions` versions
+  ignore the new key and keep the original whole-snapshot restore behavior.
+
 ## 2026.10.09.04
 
 - `ophix.core.get_revisions_targets()`'s `hosts` and `clients` entries now declare a
