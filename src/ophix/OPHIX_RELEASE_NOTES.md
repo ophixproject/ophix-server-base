@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.10.09.04
 
 - `ophix.core.get_revisions_targets()`'s `hosts` and `clients` entries now declare a
   precise `"models"` list (`["ophix_core.host"]` / `["ophix_core.client"]`), narrowing
