@@ -17,6 +17,7 @@ refer to it directly.
 import logging
 
 from django.conf import settings
+from django.dispatch import Signal
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework.authentication import BaseAuthentication
@@ -27,6 +28,14 @@ from .models import Client, hash_token
 logger = logging.getLogger(__name__)
 
 _KEYWORD = "Token"
+
+# Fired once a Client has passed every check below (token, enabled, host
+# enabled, IP, lockout) — not just a successful token lookup. Generic
+# infrastructure with no awareness of any specific listener: an optional
+# add-on that needs to know "which Client made this API request", within
+# the same request/thread, can connect to it without ophix-server-base ever
+# needing to know that add-on exists. Sent with keyword arg `client`.
+client_authenticated = Signal()
 
 
 class ClientTokenAuthentication(BaseAuthentication):
@@ -114,6 +123,7 @@ class ClientTokenAuthentication(BaseAuthentication):
                         )
                         raise exceptions.AuthenticationFailed(self._msg(_("Access blocked")))
 
+        client_authenticated.send(sender=Client, client=client)
         return (client, None)
 
     @staticmethod

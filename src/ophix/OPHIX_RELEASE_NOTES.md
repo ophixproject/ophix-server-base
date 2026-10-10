@@ -1,5 +1,15 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `ClientTokenAuthentication.authenticate()` now fires a new generic Django
+  signal, `ophix.core.auth.client_authenticated`, once a Client has passed
+  every check (not just a successful token lookup). Pure infrastructure with
+  no awareness of any specific listener — an optional add-on that needs to
+  know "which Client made this API request", within the same request/thread,
+  can connect to it without ophix-server-base ever needing to know that
+  add-on exists. No behavior change for anything that doesn't connect to it.
+
 ## 2026.10.10.01
 
 - `ophix.core.get_revisions_targets()`'s `hosts` and `clients` entries now declare
