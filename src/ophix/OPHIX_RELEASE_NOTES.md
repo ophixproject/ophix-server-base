@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.10.10.02
 
 - `ClientTokenAuthentication.authenticate()` now fires a new generic Django
   signal, `ophix.core.auth.client_authenticated`, once a Client has passed
