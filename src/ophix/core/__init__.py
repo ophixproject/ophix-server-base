@@ -47,7 +47,7 @@ def get_revisions_targets():
 # ophix-admin-settings/ophix-admin-interface, all unconditional dependencies
 # of every install, so there's nothing for an operator to be guided to.
 # Excluded from _discover_domain_target_names()'s output below.
-_CORE_TARGET_NAMES = frozenset({"hosts", "clients", "settings", "theme", "env"})
+_CORE_TARGET_NAMES = frozenset({"hosts", "clients", "settings", "themes", "env"})
 
 
 def _discover_domain_target_names():

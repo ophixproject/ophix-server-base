@@ -18,6 +18,10 @@
   previously punting the operator to "see the backup documentation for
   your installed domain" is gone — the example on this page is now
   self-sufficient.
+- `_CORE_TARGET_NAMES` updated: `theme` → `themes`, matching `ophix-admin-interface`'s
+  breaking rename of its own revisions target of the same name (its
+  `name` field had never been updated to plural when its `export_command`
+  was, back when the `theme` target was actually fixed to work at all).
 
 ## 2026.10.10.02
 
