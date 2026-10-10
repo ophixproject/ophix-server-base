@@ -1,5 +1,24 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- New `get_doc_tokens()` hook (discovered by `ophix-docs`, if installed):
+  builds an accurate, copy-pasteable `BACKUP_TARGETS`/`BACKUP_TARGETS_ENCRYPTED`
+  example for `server-backup.md`, reflecting whatever domain plugin(s) are
+  actually installed on this server right now, instead of a hand-typed
+  example that silently drifts whenever a domain package's own
+  `get_revisions_targets()` changes. Computed by a new
+  `_discover_domain_target_names()` helper — enumerates every installed
+  plugin's own `get_revisions_targets()` hook (if it has one) purely to
+  read each target's declared `name`/`encrypted` fields; this works
+  whether or not `ophix-revisions` itself is installed, since the hook is
+  just a plain function any domain package already ships. `server-backup.md`'s
+  `BACKUP_TARGETS`/`BACKUP_TARGETS_ENCRYPTED` example lines now use
+  `{{ backup_target }}`/`{{ backup_target_encrypted }}`, and the line
+  previously punting the operator to "see the backup documentation for
+  your installed domain" is gone — the example on this page is now
+  self-sufficient.
+
 ## 2026.10.10.02
 
 - `ClientTokenAuthentication.authenticate()` now fires a new generic Django

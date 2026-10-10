@@ -258,8 +258,8 @@ If you set up backup settings manually or want to review what was written, add t
 
 ```ini
 BACKUP_PATH=/home/ophix/backups/taskserver
-BACKUP_TARGETS=hosts,clients,settings
-BACKUP_TARGETS_ENCRYPTED=env
+BACKUP_TARGETS=hosts,clients,settings{{ backup_target }}
+BACKUP_TARGETS_ENCRYPTED=env{{ backup_target_encrypted }}
 BACKUP_PASSPHRASE=your-passphrase
 ```
 
@@ -276,7 +276,7 @@ BACKUP_PASSPHRASE=your-passphrase
 
 The uninstall script removes the entire install directory. Backups inside that tree go with it. A parallel `backups/<server>/` structure also prevents simultaneous cron runs from writing colliding filenames — all servers export identically named files (`hosts_<timestamp>.json` etc.) and with `--compress` the bundling step would pick up files from the wrong server if both ran into the same directory at the same second.
 
-`hosts`, `clients`, and `settings` contain no secrets — client tokens are SHA-256 hashes. They always go in `BACKUP_TARGETS` regardless of server type. See the backup documentation for your installed domain to add the domain-specific target.
+`hosts`, `clients`, and `settings` contain no secrets — client tokens are SHA-256 hashes. They always go in `BACKUP_TARGETS` regardless of server type. The example above already includes whichever domain-specific target(s) this server's installed plugin(s) contribute — nothing to look up elsewhere.
 
 Pass `--compress` to bundle all exported `.json` files into a single dated `.tgz` and remove the originals:
 
