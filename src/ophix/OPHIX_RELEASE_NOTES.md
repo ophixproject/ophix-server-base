@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.10.10.03
 
 - New `get_doc_tokens()` hook (discovered by `ophix-docs`, if installed):
   builds an accurate, copy-pasteable `BACKUP_TARGETS`/`BACKUP_TARGETS_ENCRYPTED`
