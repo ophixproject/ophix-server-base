@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.10.13.01
 
 - **Fixed: changelist filters stopped being remembered at all after any
   dropdown selection made while other filters were still active.**
