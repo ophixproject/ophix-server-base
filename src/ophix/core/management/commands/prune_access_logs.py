@@ -1,10 +1,19 @@
 """
 ophix-manage prune_access_logs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Delete AccessLog records older than N days.
+Delete AccessLog records older than N days, optionally narrowed to a
+specific host, client, and/or artifact name.
 
 Intended to be run periodically via cron to keep the access log table
-from growing unbounded. Operates in a single DELETE query.
+from growing unbounded, but also useful interactively once a subset of
+records has been identified by eye (e.g. in the admin) and needs
+clearing regardless of age. Operates in a single DELETE query.
+
+--host/--client/--name are independent filters, combined with AND when
+more than one is given, and apply on top of whichever age constraint is
+in effect (--days, the PRUNE_ACCESS_LOG_DAYS setting, or --all). --all
+only overrides the age constraint (same as today) -- it does not bypass
+--host/--client/--name.
 
 Examples
 --------
@@ -16,6 +25,12 @@ Delete records older than 30 days:
 
 Delete all records:
     ophix-manage prune_access_logs --all
+
+Delete every record for a specific client, regardless of age:
+    ophix-manage prune_access_logs --all --client cred-client-01
+
+Delete records older than 30 days for one artifact on one host:
+    ophix-manage prune_access_logs --days 30 --host dbhost01 --name DB_PASSWORD
 
 Preview how many records would be removed without deleting:
     ophix-manage prune_access_logs --dry-run
@@ -29,7 +44,10 @@ from django.utils import timezone
 
 
 class Command(BaseCommand):
-    help = "Delete AccessLog records older than N days (default: PRUNE_ACCESS_LOG_DAYS setting, or 90)."
+    help = (
+        "Delete AccessLog records older than N days (default: PRUNE_ACCESS_LOG_DAYS "
+        "setting, or 90), optionally narrowed by --host/--client/--name."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -43,7 +61,31 @@ class Command(BaseCommand):
             "--all",
             action="store_true",
             dest="prune_all",
-            help="Delete all records regardless of age. Overrides --days and PRUNE_ACCESS_LOG_DAYS.",
+            help="Delete regardless of age. Overrides --days and PRUNE_ACCESS_LOG_DAYS "
+                 "only -- still narrowed by --host/--client/--name if given.",
+        )
+        parser.add_argument(
+            "--host",
+            type=str,
+            default=None,
+            metavar="NAME",
+            help="Only delete records for this host (matched by Host.name).",
+        )
+        parser.add_argument(
+            "--client",
+            type=str,
+            default=None,
+            metavar="NAME",
+            help="Only delete records for this client (matched by Client.name).",
+        )
+        parser.add_argument(
+            "--name",
+            type=str,
+            default=None,
+            metavar="NAME",
+            help="Only delete records for this artifact, matched against the "
+                 "snapshotted artifact name -- works across every domain, since "
+                 "every artifact type has a name.",
         )
         parser.add_argument(
             "--dry-run",
@@ -64,16 +106,31 @@ class Command(BaseCommand):
         prune_all = options["prune_all"]
         dry_run   = options["dry_run"]
         quiet     = options["quiet"]
+        host      = options["host"]
+        client    = options["client"]
+        name      = options["name"]
 
         if prune_all:
             qs = AccessLog.objects.all()
-            qualifier = "all"
+            qualifier_parts = ["all"]
         else:
             if days is None:
                 days = getattr(settings, "PRUNE_ACCESS_LOG_DAYS", 90)
             cutoff = timezone.now() - timedelta(days=days)
             qs = AccessLog.objects.filter(timestamp__lt=cutoff)
-            qualifier = f"older than {days} days"
+            qualifier_parts = [f"older than {days} days"]
+
+        if host:
+            qs = qs.filter(host__name=host)
+            qualifier_parts.append(f"host='{host}'")
+        if client:
+            qs = qs.filter(client__name=client)
+            qualifier_parts.append(f"client='{client}'")
+        if name:
+            qs = qs.filter(artifact_name=name)
+            qualifier_parts.append(f"name='{name}'")
+
+        qualifier = ", ".join(qualifier_parts)
 
         count = qs.count()
 

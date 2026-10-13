@@ -1,5 +1,16 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- `prune_access_logs` gained `--host`, `--client`, and `--name` flags. Each
+  narrows which records are deleted (AND-combined when more than one is
+  given), independently of age — useful once a subset of records has been
+  found by eyeballing the Access Logs admin and needs clearing regardless
+  of how old it is, not only on a date cutoff. `--name` matches the
+  snapshotted artifact name, so it works identically across every domain.
+  `--all` still only overrides the age constraint (`--days`/
+  `PRUNE_ACCESS_LOG_DAYS`); it does not bypass these new filters.
+
 ## 2026.10.13.01
 
 - **Fixed: changelist filters stopped being remembered at all after any

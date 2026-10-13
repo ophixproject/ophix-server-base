@@ -73,15 +73,39 @@ ophix-manage prune_access_logs
 # Delete records older than 30 days
 ophix-manage prune_access_logs --days 30
 
+# Delete every record regardless of age
+ophix-manage prune_access_logs --all
+
 # Preview how many records would be removed
 ophix-manage prune_access_logs --dry-run
 ophix-manage prune_access_logs --days 30 --dry-run
+
+# Suppress output (for cron)
+ophix-manage prune_access_logs --quiet
 ```
 
 Run this on a schedule — a daily or weekly cron job is typical:
 
 ```cron
-0 3 * * 0   ophixuser  /path/to/venv/bin/ophix-manage prune_access_logs --days 90
+0 3 * * 0   ophixuser  /path/to/venv/bin/ophix-manage prune_access_logs --days 90 --quiet
 ```
 
 Always run `--dry-run` first on a production server before adjusting the retention period to confirm the expected number of records will be removed.
+
+### Pruning a specific subset
+
+`--host`, `--client`, and `--name` narrow which records are deleted, independently of
+age. Combine any of them (AND logic) with each other and with `--days`/`--all`:
+
+```bash
+# Every record for one client, regardless of age
+ophix-manage prune_access_logs --all --client cred-client-01
+
+# Records older than 30 days for one artifact on one host
+ophix-manage prune_access_logs --days 30 --host dbhost01 --name DB_PASSWORD
+```
+
+`--name` matches against the snapshotted artifact name, so it works the same way
+across every domain (creds, confs, certs, zones, tasks) — there is no per-domain
+variant of this flag. `--all` only overrides the age constraint (`--days`/
+`PRUNE_ACCESS_LOG_DAYS`) — it does not bypass `--host`/`--client`/`--name`.
