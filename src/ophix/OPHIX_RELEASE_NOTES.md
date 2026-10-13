@@ -1,5 +1,21 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+- **Fixed: changelist filters stopped being remembered at all after any
+  dropdown selection made while other filters were still active.**
+  `custom.js`'s filter-memory mechanism only cleared its one-shot
+  "user just reset filters" flag when the resulting navigation had zero
+  filter params in the URL. Changing one filter while others stayed
+  active left that flag set but never consumed, so it lingered
+  indefinitely - the very next time the changelist was opened normally
+  (no filter params in the URL, nothing to do with resetting anything),
+  the stale flag made it look like an intentional reset had just
+  happened, silently wiping the remembered filter state instead of
+  restoring it. The flag is now consumed on every page load regardless
+  of outcome, not only when the resulting filter set happened to be
+  empty.
+
 ## 2026.10.10.03
 
 - New `get_doc_tokens()` hook (discovered by `ophix-docs`, if installed):

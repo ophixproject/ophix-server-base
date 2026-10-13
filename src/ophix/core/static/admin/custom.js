@@ -22,12 +22,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var filterStr = getFilterString();
 
+    // Consume the reset flag unconditionally, on every load, regardless of
+    // which branch below fires. It is set by any filter-dropdown selection
+    // (see admin_interface's select2-init.js) whether or not that selection
+    // leaves other filters active — e.g. changing one of three active
+    // filters still has a non-empty filterStr here, so the "filters active"
+    // branch runs and never looks at this flag. If it were only cleared in
+    // the empty-filterStr branch, it would linger unconsumed across that
+    // navigation and then wrongly suppress the restore on some later,
+    // unrelated bare page load (confirmed live 2026-10-13: filters silently
+    // stopped being remembered at all after touching a dropdown while other
+    // filters were still active).
+    var wasReset = !!sessionStorage.getItem(resetKey);
+    if (wasReset) {
+        sessionStorage.removeItem(resetKey);
+    }
+
     if (filterStr) {
         // Filters active — save current state
         localStorage.setItem(storageKey, filterStr);
-    } else if (sessionStorage.getItem(resetKey)) {
+    } else if (wasReset) {
         // User just cleared filters — wipe saved state, don't redirect
-        sessionStorage.removeItem(resetKey);
         localStorage.removeItem(storageKey);
     } else {
         var saved = localStorage.getItem(storageKey);
