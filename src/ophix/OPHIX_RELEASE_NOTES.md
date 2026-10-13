@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.10.13.02
 
 - `prune_access_logs` gained `--host`, `--client`, and `--name` flags. Each
   narrows which records are deleted (AND-combined when more than one is
