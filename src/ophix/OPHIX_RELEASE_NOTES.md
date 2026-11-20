@@ -69,10 +69,29 @@ keep `proxy_set_header X-Real-IP $remote_addr;`.
   the template's `http_redirect` value was never supplied; it now defaults
   to generating the HTTP-to-HTTPS redirect.
 - `server-installation.md` documents the new prompt and replaces the
-  incorrect load-balancer production note. The generated config enables none
-  of the features named in the 2026 "nginx2root" nginx advisories (HTTP/2,
-  HTTP/3, runtime resolver, mirror, mail proxy); upgrading nginx itself to
-  1.30.7 / 1.31.9 (or your distro's backport) is still required to fix those.
+  incorrect load-balancer production note.
+
+### nginx "nginx2root" advisories (CVE-2026-123007, CVE-2026-123633, CVE-2026-121810, CVE-2026-123634, CVE-2026-113425)
+
+These are vulnerabilities in nginx itself, not in Ophix. They are fixed in
+nginx **1.30.7** (stable) and **1.31.9** (mainline). Distro packages may
+carry a backported fix under an older version number, so check your
+distro's advisory for the exact package version.
+
+- The config Ophix generates does not use any of the features these
+  advisories involve: no HTTP/2 or HTTP/3/QUIC listeners, no runtime
+  `resolver` lookups or variables in `proxy_pass` (it proxies to a fixed
+  unix socket), no `mirror`, and no `mail` block. It already matches the
+  published temporary workarounds, so no template change is needed, and
+  the config passes `nginx -t` on 1.30.7 and 1.31.9.
+- **Upgrade nginx anyway.** The workarounds stop applying if HTTP/2 or any
+  of the other features is later enabled by hand, and the same nginx
+  release also fixes unrelated issues. After upgrading, restart nginx
+  (`sudo systemctl restart nginx`); a reload does not replace the running
+  binary.
+- The template deliberately does not add `http2 off;`. HTTP/2 is already
+  off by default, and the directive does not exist before nginx 1.25.1, so
+  it would break `nginx -t` on distros such as Ubuntu 22.04 and Debian 12.
 
 ## 2026.10.13.02
 
