@@ -24,6 +24,7 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework import exceptions
 
 from .models import Client, hash_token
+from .utils import get_client_ip
 
 logger = logging.getLogger(__name__)
 
@@ -75,12 +76,7 @@ class ClientTokenAuthentication(BaseAuthentication):
             raise exceptions.AuthenticationFailed(self._msg(_("Host disabled")))
 
         # IP validation
-        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        remote_ip = (
-            x_forwarded_for.split(",")[0].strip()
-            if x_forwarded_for
-            else request.META.get("REMOTE_ADDR")
-        )
+        remote_ip = get_client_ip(request)
 
         host = client.host
         registered_ips = {a for a in (host.ipv4_address, host.ipv6_address) if a}

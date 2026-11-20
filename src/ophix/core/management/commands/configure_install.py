@@ -27,6 +27,8 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
+from ophix.core.utils import parse_trusted_proxies
+
 from ophix.core.management.commands.generate_config import (
     _discover_domain_version,
     _discover_plugin_fragments,
@@ -304,6 +306,29 @@ class Command(BaseCommand):
             required=False,
         )
         conf.set("nginx", "enabled_dir", nginx_enabled_dir)
+
+        self.stdout.write(
+            "\n  Ophix authenticates fleet clients by token AND source IP.\n"
+            "  If clients reach this server through a load balancer or\n"
+            "  reverse proxy, list that proxy's addresses/CIDRs so nginx\n"
+            "  can recover the real client IP from it. Only list proxies\n"
+            "  you control - any address listed here can claim to be any\n"
+            "  client. Leave empty if clients connect to nginx directly.\n\n"
+        )
+        default_trusted_proxies = conf.get("nginx", "trusted_proxies", fallback="")
+        while True:
+            raw_proxies = self._prompt(
+                "Trusted upstream proxies (comma-separated; 'none' to clear)",
+                default_trusted_proxies,
+            )
+            if raw_proxies.strip().lower() == "none":
+                raw_proxies = ""
+            try:
+                trusted_proxies = parse_trusted_proxies(raw_proxies)
+                break
+            except ValueError as exc:
+                self.stdout.write(self.style.ERROR(f"  {exc}\n"))
+        conf.set("nginx", "trusted_proxies", ",".join(trusted_proxies))
 
         self.stdout.write("\n")
 

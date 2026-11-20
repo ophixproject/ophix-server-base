@@ -89,6 +89,7 @@ This wizard collects:
 - Server hostname (used in nginx config and TLS certificate validation)
 - Service user and group
 - nginx config directory and enabled directory (see below)
+- Trusted upstream proxies, only if clients reach this server through a load balancer or reverse proxy (see below)
 - TLS certificate and private key paths (validated against the hostname)
 - Database engine and connection details, with a live connection test before saving. The engine
   itself is only prompted for when it's ambiguous: no dbengine plugin installed aborts
@@ -104,6 +105,18 @@ family `conf.d` in particular — have no separate enable step; point the config
 directory and leave the enabled directory blank. `run_install`'s generated
 `<slug>-sudo-install.sh` copies the config to the configured directory and only creates
 the symlink when an enabled directory is set.
+
+**Client IP and upstream proxies**: Ophix authenticates fleet clients by token *and* source IP,
+and client registration is gated by source IP alone, so the IP Django sees must be one a client
+cannot choose. The generated nginx config sends Django only nginx's own `$remote_addr` (as
+`X-Real-IP`) and never forwards a client-supplied `X-Forwarded-For`; Django ignores
+`X-Forwarded-For` entirely. If clients connect to nginx directly, leave the trusted-proxies
+prompt empty. If a load balancer or reverse proxy sits in front of nginx, enter its addresses or
+CIDRs (comma-separated, for example `10.0.5.10, 10.0.6.0/24`). The generated config then uses
+nginx's realip module (`set_real_ip_from`, `real_ip_header X-Forwarded-For`,
+`real_ip_recursive on`) to take the client address reported by those proxies, and only those
+proxies. List only proxies you control: any address listed can claim to be any client. To
+remove the list later, re-run the wizard and enter `none`.
 
 Any installed domain plugin or extension that requires a generated key (such as `CRED_ENCRYPTION_KEY` for `ophix-creds` or `CA_KEY_ENCRYPTION_KEY` for `ophix-certs-ca`) is prompted for at the end of the wizard. For fresh installs the key is auto-generated; if you are rebuilding a venv against an existing database you must supply the original key instead.
 
@@ -253,7 +266,8 @@ Full legacy sequence: `generate_config --all` → `configure_database` → `conf
 
 - `.env` and `.credserver.conf` both contain secrets — they are written with `chmod 600` by the installer. Verify this after any manual edits.
 - Set `DEBUG=False` and `AUTH_LEAK_INFO=False` in production (both are `False` by default).
-- If deployed behind a load balancer, the LB **must** strip and re-set `X-Forwarded-For` before requests reach nginx. Ophix uses the source IP as part of client authentication — a misconfigured proxy allows IP spoofing.
+- Ophix uses the source IP as part of client authentication. Do not hand-edit the generated nginx config to forward or trust `X-Forwarded-For`; if a load balancer or reverse proxy sits in front of nginx, set it as a trusted upstream proxy in `configure_install` (or `generate_config --trusted-proxies` on the legacy path) instead. Gunicorn must only listen on the unix socket nginx proxies to, never on a network port.
+- Keep nginx itself patched. The generated config enables none of the features involved in the 2026 "nginx2root" advisories (HTTP/2, HTTP/3/QUIC, runtime `resolver` lookups, `mirror`, the mail proxy, `alias` combined with `try_files`/`rewrite`). Adding any of them is your own change, and upgrading to nginx 1.30.7 / 1.31.9 or your distro's backported package is still the actual fix.
 - Back up `CRED_ENCRYPTION_KEY` and `CA_KEY_ENCRYPTION_KEY` (if applicable) to secure offline storage. These keys are not recoverable if lost, and losing them means losing access to all encrypted data.
 
 ---

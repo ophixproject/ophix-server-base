@@ -27,9 +27,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .auth import ClientTokenAuthentication
-from .models import Client, Host, generate_api_token, hash_token
+from .models import Client, generate_api_token, hash_token
 from .serializers import ClientSerializer
-from .utils import get_client_ip, err_response
+from .utils import get_client_ip, get_host_for_ip, err_response
 
 logger = logging.getLogger(__name__)
 
@@ -144,9 +144,8 @@ class RegisterClientView(APIView):
 
         remote_ip = get_client_ip(request)
 
-        try:
-            host = Host.objects.get(ipv4_address=remote_ip)
-        except Host.DoesNotExist:
+        host = get_host_for_ip(remote_ip)
+        if host is None:
             logger.info("Registration blocked: no host for IP %s", remote_ip)
             return Response(
                 {"error": str(_("Unknown host"))},

@@ -9,6 +9,7 @@ assert_artifact_access
     this rather than reimplementing the 4-layer check each time.
 """
 
+import ipaddress
 import logging
 
 from django.http import Http404
@@ -109,11 +110,92 @@ def assert_artifact_access(
 
 
 def get_client_ip(request) -> str:
-    """Extract the real client IP, respecting X-Forwarded-For."""
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        return x_forwarded_for.split(",")[0].strip()
-    return request.META.get("REMOTE_ADDR", "")
+    """
+    Return the connecting client's IP address, normalised to canonical form.
+
+    This is the ONLY place in Ophix that decides a request's source IP:
+    token+IP authentication and client/DNS-server registration all call it.
+    Never parse X-Forwarded-For anywhere else.
+
+    The value comes from the X-Real-IP header, which the bundled nginx
+    config sets unconditionally to ``$remote_addr``, overwriting anything
+    the client sent.  X-Forwarded-For is deliberately ignored: it is a
+    client-supplied, append-only chain, and trusting any entry in it lets a
+    caller choose its own apparent source IP.
+
+    When Ophix runs behind a load balancer or other upstream proxy, the
+    decision about which proxies to trust is made in nginx (the realip
+    module: ``set_real_ip_from`` / ``real_ip_header`` / ``real_ip_recursive``,
+    rendered from the ``[nginx] trusted_proxies`` setting), so ``$remote_addr``
+    (and therefore X-Real-IP) is already the true client address by the
+    time the request reaches Django.
+
+    Falls back to REMOTE_ADDR when X-Real-IP is absent (e.g. ``runserver``
+    during development).  Gunicorn listens only on a unix socket that nginx
+    owns, so clients cannot reach it directly to forge X-Real-IP.
+
+    IPv4-mapped IPv6 addresses (``::ffff:10.0.0.5``) are reduced to their
+    IPv4 form so they compare equal to a Host's ``ipv4_address``.  Returns
+    ``""`` if no valid address is available.
+    """
+    return normalise_ip(
+        request.META.get("HTTP_X_REAL_IP")
+        or request.META.get("REMOTE_ADDR")
+        or ""
+    )
+
+
+def normalise_ip(value: str) -> str:
+    """
+    Return ``value`` as a canonical IP address string, or ``""`` if invalid.
+
+    IPv6 is compressed and lower-cased; IPv4-mapped IPv6 is reduced to IPv4.
+    Use this before comparing any externally supplied IP string against
+    ``get_client_ip()`` or a Host's stored address.
+    """
+    try:
+        addr = ipaddress.ip_address((value or "").strip())
+    except ValueError:
+        return ""
+    if isinstance(addr, ipaddress.IPv6Address) and addr.ipv4_mapped:
+        addr = addr.ipv4_mapped
+    return str(addr)
+
+
+def get_host_for_ip(ip: str):
+    """
+    Return the Host registered with this IP address (IPv4 or IPv6), or None.
+
+    ``ip`` should come from ``get_client_ip()`` so it is already normalised.
+    Both address fields are unique, so at most one Host can match.
+    """
+    from .models import Host  # local import: models must not depend on utils
+
+    if not ip:
+        return None
+    field = "ipv6_address" if ":" in ip else "ipv4_address"
+    return Host.objects.filter(**{field: ip}).first()
+
+
+def parse_trusted_proxies(value) -> list:
+    """
+    Parse a comma/whitespace-separated list of trusted upstream proxy
+    addresses or CIDRs (the ``[nginx] trusted_proxies`` setting).
+
+    Returns a list of normalised network strings suitable for nginx's
+    ``set_real_ip_from`` directive.  Raises ``ValueError`` naming the first
+    invalid entry.  Blank input returns an empty list (no proxies trusted,
+    the safe default for a server clients connect to directly).
+    """
+    if not value:
+        return []
+    networks = []
+    for item in value.replace(",", " ").split():
+        try:
+            networks.append(str(ipaddress.ip_network(item, strict=False)))
+        except ValueError:
+            raise ValueError(f"Not a valid IP address or CIDR: {item!r}")
+    return networks
 
 
 def err_response(detail: str, fallback: str = None) -> str:

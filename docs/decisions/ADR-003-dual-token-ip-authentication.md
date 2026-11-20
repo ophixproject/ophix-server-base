@@ -37,3 +37,16 @@ This rule is non-negotiable and must never be relaxed for API endpoints.
 - Load balancers and proxies must strip and re-set `X-Forwarded-For` before requests reach nginx, otherwise clients on internal networks could spoof their source IP
 - The `AUTH_LEAK_INFO=False` default means authentication failures are opaque in production — intentional to prevent fingerprinting
 - Scheduled token rotation is load-bearing security infrastructure (not optional nicety) — a captured token has a bounded useful lifetime
+
+## Follow-up (2026-11-20): source IP no longer read from X-Forwarded-For
+
+The original implementation took the leftmost `X-Forwarded-For` entry as the source IP, and the generated nginx config forwarded that header with `$proxy_add_x_forwarded_for`, which *appends* to whatever the client sent. On a stock install, with no load balancer involved, any client could therefore choose its own apparent IP by sending one header. That reduced token+IP authentication to token-only and let anyone who could reach the server register a client (or, in `ophix-zones`, a DNS server) against any registered Host. The "load balancers must strip and re-set X-Forwarded-For" consequence above described only part of the exposure.
+
+Changes:
+
+- `ophix.core.utils.get_client_ip()` is the single place the source IP is decided, and every caller uses it (core auth and registration, `ophix-zones` auth and registration). It reads `X-Real-IP` (set by nginx to `$remote_addr`, overwriting any client value), falls back to `REMOTE_ADDR`, and never parses `X-Forwarded-For`.
+- The generated nginx config sets `X-Forwarded-For` to `$remote_addr` instead of appending to it.
+- Trust in upstream proxies is configured in nginx, not Django: `configure_install`'s trusted-upstream-proxies prompt (`[nginx] trusted_proxies`) renders `set_real_ip_from` / `real_ip_header X-Forwarded-For` / `real_ip_recursive on`, so `$remote_addr` is already the real client address when a load balancer is in front.
+- `ophix-zones`' `/api/dns-register/` no longer accepts a caller-chosen `host_ip`; a supplied value must equal the source IP.
+
+The consequence above should now read: a load balancer or reverse proxy in front of nginx must be listed as a trusted upstream proxy, and the nginx config must never be edited to trust `X-Forwarded-For` from arbitrary sources.

@@ -1,5 +1,79 @@
 # ophix-server-base Release Notes
 
+## Unreleased
+
+### Security: client source IP could be spoofed with an X-Forwarded-For header
+
+Ophix authenticates fleet clients by token **and** source IP, and client
+registration is gated by source IP alone. The source IP was read from the
+leftmost `X-Forwarded-For` entry, and the generated nginx config forwarded
+that header with `$proxy_add_x_forwarded_for`, which appends to whatever the
+client sent rather than replacing it. On a standard install, any client could
+therefore make a request appear to come from any IP by sending one header.
+A leaked token was usable from anywhere, and anyone able to reach the server
+could register a client against any registered Host.
+
+- The source IP is now decided in one place,
+  `ophix.core.utils.get_client_ip()`, which reads `X-Real-IP` (set by nginx
+  to `$remote_addr`, overwriting any client value), falls back to
+  `REMOTE_ADDR`, and never reads `X-Forwarded-For`. Token authentication and
+  client registration both use it. Addresses are normalised, so IPv4-mapped
+  IPv6 (`::ffff:10.0.0.5`) matches the IPv4 Host record.
+- Client registration now matches a Host by IPv6 address as well as IPv4;
+  IPv6-only Hosts could previously authenticate but never register.
+- New helpers `get_host_for_ip()`, `normalise_ip()` and
+  `parse_trusted_proxies()` in `ophix.core.utils`.
+
+### nginx configuration changes (action required on existing servers)
+
+The generated `<slug>.nginx.conf` has changed:
+
+- `X-Forwarded-For` is now set to `$remote_addr` instead of
+  `$proxy_add_x_forwarded_for`, so a client-supplied value is never passed
+  upstream.
+- A comment block explains how the client IP is handled. The previous
+  comment saying spoofing was only a concern behind a load balancer was
+  wrong and has been removed.
+- New, optional: if clients reach this server through a load balancer or
+  reverse proxy, `configure_install` now asks for **trusted upstream
+  proxies** (`[nginx] trusted_proxies` in `.<slug>.conf`, comma-separated
+  addresses/CIDRs; enter `none` to clear). When set, the config adds nginx
+  realip directives (`set_real_ip_from`, `real_ip_header X-Forwarded-For`,
+  `real_ip_recursive on`) so the real client IP is taken from those proxies
+  only. On the legacy path, use `generate_config --nginx --trusted-proxies`.
+  This uses nginx's `ngx_http_realip_module`, included in the official nginx
+  packages and in Debian/Ubuntu's.
+
+Upgrading the package fixes the Django side immediately: `X-Forwarded-For`
+is ignored even with an old nginx config. Without a trusted proxy configured,
+though, a server that sits behind a load balancer will see the load
+balancer's address as every client's IP, so authentication fails until
+the proxy is configured. To pick up the new nginx config on an existing server:
+
+1. If a load balancer or reverse proxy is in front of this server, run
+   `ophix-manage configure_install <slug>` and enter its addresses at the
+   trusted upstream proxies prompt. (Otherwise skip this step.)
+2. `ophix-manage run_install <slug> --skip-migrate --skip-collectstatic --skip-superuser`
+   to regenerate `<slug>.nginx.conf`.
+3. Copy it into place (or re-run `sudo bash <slug>_sudo_install.sh`), then
+   `sudo nginx -t && sudo systemctl reload nginx`.
+
+If you maintain the nginx config by hand, the minimum change is to replace
+`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` with
+`proxy_set_header X-Forwarded-For $remote_addr;` in every `location`, and to
+keep `proxy_set_header X-Real-IP $remote_addr;`.
+
+### Other fixes
+
+- `generate_config --nginx` (legacy manual path) failed to render because
+  the template's `http_redirect` value was never supplied; it now defaults
+  to generating the HTTP-to-HTTPS redirect.
+- `server-installation.md` documents the new prompt and replaces the
+  incorrect load-balancer production note. The generated config enables none
+  of the features named in the 2026 "nginx2root" nginx advisories (HTTP/2,
+  HTTP/3, runtime resolver, mirror, mail proxy); upgrading nginx itself to
+  1.30.7 / 1.31.9 (or your distro's backport) is still required to fix those.
+
 ## 2026.10.13.02
 
 - `prune_access_logs` gained `--host`, `--client`, and `--name` flags. Each

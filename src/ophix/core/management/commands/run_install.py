@@ -49,6 +49,8 @@ from pathlib import Path
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 
+from ophix.core.utils import parse_trusted_proxies
+
 from ophix.core.management.commands.generate_config import (
     _discover_domain_version,
     _render_template,
@@ -439,6 +441,13 @@ class Command(BaseCommand):
 
         nginx_conf_dir    = _get("nginx", "conf_dir", "/etc/nginx/sites-available")
         nginx_enabled_dir = _get("nginx", "enabled_dir", "/etc/nginx/sites-enabled")
+        try:
+            trusted_proxies = parse_trusted_proxies(_get("nginx", "trusted_proxies", ""))
+        except ValueError as exc:
+            raise CommandError(
+                f"[nginx] trusted_proxies in {conf_path}: {exc}. "
+                f"Re-run configure_install to correct it."
+            )
 
         cert_src      = _get("tls", "cert_path")
         key_src       = _get("tls", "key_path")
@@ -510,6 +519,7 @@ class Command(BaseCommand):
             "venv_path":       sys.prefix,
             "domain_version":  domain_ver or "",
             "http_redirect":   http_redirect,
+            "trusted_proxies": trusted_proxies,
         }
         if ca_bundle_dest:
             ctx["ca_bundle_dest"] = ca_bundle_dest

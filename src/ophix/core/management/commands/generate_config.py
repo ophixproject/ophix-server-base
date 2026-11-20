@@ -42,6 +42,8 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from ophix.core.utils import parse_trusted_proxies
+
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent.parent / "deploy_templates"
 
 # ---------------------------------------------------------------------------
@@ -126,9 +128,14 @@ SECURITY NOTES
 - chmod 600 .env — the .env file contains database credentials and the secret key
 - Set DEBUG=False in production (it is False by default)
 - Set AUTH_LEAK_INFO=False in production (it is False by default)
-- If deployed behind a load balancer, the LB must strip and re-set
-  X-Forwarded-For before requests reach nginx.  Without this, clients on an
-  internal network could spoof their source IP and bypass token authentication.
+- Client IP: Ophix authenticates fleet clients by token AND source IP.  The
+  generated nginx config passes Django only $remote_addr (as X-Real-IP) and
+  never forwards a client-supplied X-Forwarded-For, so the IP cannot be
+  spoofed by sending a header.  If a load balancer or reverse proxy sits in
+  front of nginx, pass --trusted-proxies with its addresses/CIDRs so nginx's
+  realip module recovers the real client IP from it; do NOT edit the config
+  to trust X-Forwarded-For from arbitrary sources.  Gunicorn must only ever
+  listen on the unix socket nginx proxies to, never on a network port.
 - Tighten ALLOWED_HOSTS to explicit hostnames before going to production.
 """
 
@@ -445,6 +452,15 @@ class Command(BaseCommand):
             help="Hostname for the nginx server_name directive (required for --nginx/--all)",
         )
         opts.add_argument(
+            "--trusted-proxies", metavar="CIDRS", default="",
+            help=(
+                "Comma-separated addresses/CIDRs of upstream load balancers or "
+                "reverse proxies allowed to report the client IP via "
+                "X-Forwarded-For (nginx realip module). Omit when clients "
+                "connect to nginx directly."
+            ),
+        )
+        opts.add_argument(
             "--service-user", metavar="USER",
             help="Linux user that gunicorn will run as (required for --systemd/--all)",
         )
@@ -552,7 +568,16 @@ class Command(BaseCommand):
 
         # --- nginx config ---
         if options["nginx"]:
-            ctx = {**ctx_base, "server_hostname": options["server_hostname"]}
+            try:
+                trusted_proxies = parse_trusted_proxies(options.get("trusted_proxies"))
+            except ValueError as exc:
+                raise CommandError(f"--trusted-proxies: {exc}")
+            ctx = {
+                **ctx_base,
+                "server_hostname": options["server_hostname"],
+                "http_redirect": True,
+                "trusted_proxies": trusted_proxies,
+            }
             content = _render_template("nginx.conf.j2", ctx)
             dest = output_dir / f"{slug}.nginx.conf"
             if _write_file(dest, content, options["force"], self.stdout):
