@@ -1,6 +1,6 @@
 # ophix-server-base Release Notes
 
-## Unreleased
+## 2026.11.20.01
 
 ### Security: client source IP could be spoofed with an X-Forwarded-For header
 
